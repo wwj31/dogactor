@@ -167,7 +167,7 @@ func (s *actor) runActor() {
 	s.logger.Debug("actor startup")
 
 	var err error
-	tools.Try(func() { err = s.handler.Init() }, func(ex interface{}) { err = errors.New("actor init panic") })
+	tools.Try(func() { err = s.handler.Init() }, nil)
 
 	if err != nil {
 		s.logger.KV("error", err).Error("actor InitGame failed")
@@ -205,7 +205,7 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 	s.logger.KVs(log.Fields{"message": msg}).Bule().Debug("Recv ActorMessage")
 	message, ok := msg.(*actor_msg.ActorMessage)
 	if !ok {
-		s.logger.KVs(log.Fields{"message": message}).Red().Warn("unkown actor message type,neither ActorMessage nor localMessage")
+		s.logger.KVs(log.Fields{"message": message}).Red().Warn("unkown actor message type")
 		return
 	}
 

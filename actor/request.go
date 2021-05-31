@@ -71,7 +71,7 @@ func (s *waitActor) Stop() bool {
 func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (result interface{}, err error) {
 	//新起actor等待结果
 	waiter := NewActor(tools.UUID(), &waitActor{}, SetLocalized())
-	s.ActorSystem().Regist(waiter)
+	expect.Nil(s.ActorSystem().Regist(waiter))
 
 	//超时设定
 	interval := DefaultTimeout
@@ -103,8 +103,7 @@ func (s *actor) Response(requestId string, msg interface{}) error {
 	if !ok {
 		return fmt.Errorf("error requestId:%v", requestId)
 	}
-	s.actorSystem.Send(s.id, reqSourceId, requestId, msg)
-	return nil
+	return s.actorSystem.Send(s.id, reqSourceId, requestId, msg)
 }
 
 func (s *actor) newRequest(targetId string) (req *request) {
