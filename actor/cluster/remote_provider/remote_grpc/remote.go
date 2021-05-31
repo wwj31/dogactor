@@ -1,0 +1,144 @@
+package remote_grpc
+
+import (
+	"errors"
+	"github.com/golang/protobuf/proto"
+	cmap "github.com/orcaman/concurrent-map"
+	"go.uber.org/atomic"
+
+	"github.com/wwj31/godactor/actor"
+	"github.com/wwj31/godactor/actor/cluster/remote_provider/remote_grpc/internal/actor_grpc"
+	"github.com/wwj31/godactor/actor/internal/actor_msg"
+	"github.com/wwj31/godactor/log"
+	"github.com/wwj31/godactor/tools"
+)
+
+// 管理所有远端的session
+type RemoteMgr struct {
+	actorSystem *actor.ActorSystem
+	listener    *actor_grpc.Server
+
+	stop     atomic.Int32
+	sessions cmap.ConcurrentMap //host=>session
+	clients  cmap.ConcurrentMap //host=>client
+
+	ping   *actor_msg.ActorMessage
+	regist *actor_msg.ActorMessage
+}
+
+func NewRemoteMgr() *RemoteMgr {
+	mgr := &RemoteMgr{
+		sessions: cmap.New(),
+		clients:  cmap.New(),
+	}
+	return mgr
+}
+
+func (s *RemoteMgr) Start(actorSystem *actor.ActorSystem) error {
+	s.actorSystem = actorSystem
+
+	listener, err := actor_grpc.NewServer(s.actorSystem.Address(), func() actor_grpc.IHandler { return &remoteHandler{remote: s} }, s)
+	if err != nil {
+		return err
+	}
+
+	s.regist = actor_msg.NewNetActorMessage("", "", "", "$regist", []byte(s.actorSystem.Address()))
+	if err != nil {
+		return err
+	}
+
+	s.listener = listener
+
+	s.actorSystem.RegistCmd("", "remoteinfo", s.remoteinfo)
+	return err
+}
+
+func (s *RemoteMgr) Stop() {
+	if s.stop.CAS(0, 1) {
+		if s.listener != nil {
+			s.listener.Stop()
+		}
+		s.clients.IterCb(func(key string, v interface{}) { v.(*actor_grpc.Client).Stop() })
+	}
+}
+
+func (s *RemoteMgr) NewClient(host string) {
+	c := actor_grpc.NewClient(host, func() actor_grpc.IHandler { return &remoteHandler{remote: s, peerHost: host} })
+	s.clients.Set(host, c)
+	c.Start(true)
+}
+
+func (s *RemoteMgr) StopClient(host string) {
+	if c, ok := s.clients.Pop(host); ok {
+		c.(*actor_grpc.Client).Stop()
+	}
+}
+
+// 远端actor发送消息
+func (s *RemoteMgr) Send(addr string, sourceId, targetId, requestId string, actMsg proto.Message) error {
+	session, ok := s.sessions.Get(addr)
+	if !ok {
+		return errors.New("remote addr not found")
+	}
+
+	//TODO 开协程处理？
+	data, err := proto.Marshal(actMsg)
+	if err != nil {
+		return err
+	}
+
+	msg := actor_msg.NewNetActorMessage(sourceId, targetId, requestId, tools.MsgName(actMsg), data)
+	return session.(*remoteHandler).Send(msg)
+}
+
+///////////////////////////////////////// remoteHandler /////////////////////////////////////////////
+type remoteHandler struct {
+	actor_grpc.BaseHandler
+
+	remote   *RemoteMgr
+	peerHost string
+	logger   *log.Logger
+}
+
+func (s *remoteHandler) OnSessionCreated() {
+	s.logger = log.NewWithDefaultAndLogger(logger, map[string]interface{}{"session": s.Id()})
+	s.Send(s.remote.regist)
+}
+
+func (s *remoteHandler) OnSessionClosed() {
+	if len(s.peerHost) > 0 {
+		s.remote.sessions.Remove(s.peerHost)
+		s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_delSession{Host: s.peerHost})
+	}
+}
+
+func (s *remoteHandler) OnRecv(msg *actor_msg.ActorMessage) {
+	if s.remote == nil {
+		s.Stop()
+		return
+	}
+
+	if msg.MsgName == "$regist" {
+		s.peerHost = string(msg.Data)
+		s.remote.sessions.Set(s.peerHost, s)
+		s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_newSession{Host: s.peerHost})
+	} else {
+		if s.peerHost == "" {
+			s.logger.KV("msg", msg.MsgName).Error("has not regist")
+			return
+		}
+
+		tp, err := tools.FindMsgByName(msg.MsgName)
+		if err != nil {
+			s.logger.KV("msgName", msg.MsgName).KV("err", err).Error("msg name not find")
+			return
+		}
+
+		actMsg := tp.New().Interface().(proto.Message)
+		if err = proto.Unmarshal(msg.Data, actMsg); err != nil {
+			s.logger.KV("msgName", msg.MsgName).KV("err", err).Error("Unmarshal failed")
+			return
+		}
+		s.remote.actorSystem.Send(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
+	}
+}

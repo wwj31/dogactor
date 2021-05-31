@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package actor_msg;
+
+message ActorMessage
+{
+    string SourceId  = 1;
+    string TargetId  = 2;
+    string RequestId = 3;
+    string MsgName   = 4;
+    bytes  Data      = 5;
+}
+
+message RequestDeadLetter
+{
+    string Err = 1;
+}
+
+service ActorService {
+    rpc Receive(stream actor_msg.ActorMessage) returns (stream actor_msg.ActorMessage);
+}
