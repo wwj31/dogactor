@@ -40,7 +40,11 @@ func (s *request) Handle(fn func(resp interface{}, err error)) {
 
 func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Duration) (req *request) {
 	req = s.newRequest(targetId)
-	s.actorSystem.Send(s.id, targetId, req.id, msg)
+	e := s.actorSystem.Send(s.id, targetId, req.id, msg)
+	if req.err != nil {
+		req.err = e
+		return req
+	}
 
 	interval := DefaultTimeout
 	if len(timeout) > 0 {
