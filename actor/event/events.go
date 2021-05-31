@@ -23,7 +23,7 @@ func NewActorEvent() *EventDispatcher {
 	return &EventDispatcher{listeners: make(listener)}
 }
 
-func (ed *EventDispatcher) Start(actorSystem *actor.ActorSystem) {
+func (ed *EventDispatcher) Init(actorSystem *actor.ActorSystem) {
 	ed.sys = actorSystem
 }
 

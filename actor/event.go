@@ -1,7 +1,9 @@
 package actor
 
+import "github.com/wwj31/godactor/actor/err"
+
 type IEvent interface {
-	Start(actorSystem *ActorSystem)
+	Init(actorSystem *ActorSystem)
 	RegistEvent(actorId string, events ...interface{}) error
 	CancelEvent(actorId string, events ...interface{}) error
 	CancelAll(actorId string)
@@ -12,33 +14,38 @@ type IEvent interface {
 func WithEvent(event IEvent) SystemOption {
 	return func(system *ActorSystem) error {
 		system.event = event
-		event.Start(system)
+		event.Init(system)
 		return nil
 	}
 }
 
-func (s *ActorSystem) RegistEvent(actorId string, events ...interface{}) {
-	if s.event != nil {
-		s.event.RegistEvent(actorId, events...)
+func (s *ActorSystem) RegistEvent(actorId string, events ...interface{}) error {
+	if s.event == nil {
+		return err.EventHasNotErr
 	}
+	return s.event.RegistEvent(actorId, events...)
 }
 
-func (s *ActorSystem) CancelEvent(actorId string, events ...interface{}) {
+func (s *ActorSystem) CancelEvent(actorId string, events ...interface{}) error {
 	if s.event != nil {
-		s.event.CancelEvent(actorId, events...)
+		return err.EventHasNotErr
 	}
+	return s.event.CancelEvent(actorId, events...)
 }
 
-func (s *ActorSystem) CancelAllEvent(actorId string) {
+func (s *ActorSystem) CancelAllEvent(actorId string) error {
 	if s.event != nil {
-		s.event.CancelAll(actorId)
+		return err.EventHasNotErr
 	}
+	s.event.CancelAll(actorId)
+	return nil
 }
 
-func (s *ActorSystem) DispatchEvent(sourceId string, event interface{}) {
+func (s *ActorSystem) DispatchEvent(sourceId string, event interface{}) error {
 	if s.event != nil {
-		s.event.DispatchEvent(sourceId, event)
+		return err.EventHasNotErr
 	}
+	return s.event.DispatchEvent(sourceId, event)
 }
 
 type Ev_newActor struct {

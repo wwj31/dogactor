@@ -18,4 +18,5 @@ var (
 	RegisterActorSameIdErr = fmt.Errorf("actor with same id")
 	ActorNotFoundErr       = fmt.Errorf("local actor not found")
 	ActorPushMsgErr        = fmt.Errorf("push a nil msg to actor")
+	EventHasNotErr         = fmt.Errorf("system event has not been set")
 )
