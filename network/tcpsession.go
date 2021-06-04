@@ -12,7 +12,7 @@ import (
 	"github.com/wwj31/godactor/tools"
 )
 
-func newTcpSession(conn net.Conn, coder ICodec, handler INetHandler) *TcpSession {
+func newTcpSession(conn net.Conn, coder ICodec, handler ...INetHandler) *TcpSession {
 	session := &TcpSession{
 		id:      GenNetSessionId(),
 		conn:    conn,
@@ -22,7 +22,6 @@ func newTcpSession(conn net.Conn, coder ICodec, handler INetHandler) *TcpSession
 		sendQue: make(chan []byte, 16),
 	}
 	log.KVs(log.Fields{"sessionId": session.Id(), "local": session.LocalAddr(), "remote": session.RemoteAddr()}).Debug("new tcp session")
-	handler.setSession(session)
 	return session
 }
 
@@ -33,7 +32,7 @@ type TcpSession struct {
 
 	running int32
 	coder   ICodec
-	handler INetHandler
+	handler []INetHandler
 	sendQue chan []byte
 }
 
@@ -67,7 +66,11 @@ func (s *TcpSession) Load(key interface{}) (value interface{}, ok bool) {
 }
 
 func (s *TcpSession) start() {
-	tools.Try(s.handler.OnSessionCreated, nil)
+	for _, v := range s.handler {
+		tools.Try(func() {
+			v.OnSessionCreated(s)
+		}, nil)
+	}
 	tools.GoEngine(s.read)
 	tools.GoEngine(s.write)
 }
@@ -75,20 +78,23 @@ func (s *TcpSession) start() {
 func (s *TcpSession) Stop() {
 	if atomic.CompareAndSwapInt32(&s.running, 1, 0) {
 		close(s.sendQue)
-		s.conn.Close()
-		tools.Try(s.handler.OnSessionClosed, nil)
+		err := s.conn.Close()
+		if err != nil {
+			log.KV("err", err).Error("stop error")
+		}
+		for _, v := range s.handler {
+			tools.Try(v.OnSessionClosed, nil)
+		}
 		log.KV("sessionId", s.id).Debug("tcp session close")
 	}
 }
 
-var errSessionStop = errors.New("tcp session has stopped")
-
 func (s *TcpSession) SendMsg(msg []byte) error {
-	err := errSessionStop
-	if atomic.LoadInt32(&s.running) == 1 {
-		tools.Try(func() { s.sendQue <- msg; err = nil }, nil)
+	if atomic.LoadInt32(&s.running) == 0 {
+		return errors.New("tcp session was stop")
 	}
-	return err
+	tools.Try(func() { s.sendQue <- msg }, nil)
+	return nil
 }
 
 func (s *TcpSession) read() {
@@ -120,7 +126,9 @@ func (s *TcpSession) read() {
 		}
 
 		for _, d := range datas {
-			tools.Try(func() { s.handler.OnRecv(d) }, nil)
+			for _, v := range s.handler {
+				tools.Try(func() { v.OnRecv(d) }, nil)
+			}
 		}
 	}
 	s.Stop()

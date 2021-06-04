@@ -71,7 +71,8 @@ func (s *RemoteMgr) Stop() {
 }
 
 func (s *RemoteMgr) NewClient(host string) {
-	c := network.NewTcpClient(host, func() network.ICodec { return &network.StreamCodec{} }, func() network.INetHandler { return &remoteHandler{remote: s, peerHost: host} })
+	c := network.NewTcpClient(host, func() network.ICodec { return &network.StreamCodec{} })
+	c.AddLast(func() network.INetHandler { return &remoteHandler{remote: s, peerHost: host} })
 	s.clients.Set(host, c)
 	c.Start(true)
 }
@@ -120,22 +121,28 @@ func (s *RemoteMgr) Send(addr string, sourceId, targetId, requestId string, actM
 
 ///////////////////////////////////////// remoteHandler /////////////////////////////////////////////
 type remoteHandler struct {
-	network.BaseNetHandler
-
+	network.INetSession
 	remote   *RemoteMgr
 	peerHost string
 	logger   *log.Logger
 }
 
-func (s *remoteHandler) OnSessionCreated() {
-	s.logger = log.NewWithDefaultAndLogger(logger, map[string]interface{}{"local": s.LocalAddr(), "remote": s.RemoteAddr(), "session": s.Id()})
-	s.SendMsg(s.remote.regist)
+func (s *remoteHandler) OnSessionCreated(sess network.INetSession) {
+	s.INetSession = sess
+	s.logger = log.NewWithDefaultAndLogger(logger, map[string]interface{}{"local": sess.LocalAddr(), "remote": sess.RemoteAddr(), "session": sess.Id()})
+	err := sess.SendMsg(s.remote.regist)
+	if err != nil {
+		log.KV("err", err).Error("sendmsg error")
+	}
 }
 
 func (s *remoteHandler) OnSessionClosed() {
 	if len(s.peerHost) > 0 {
 		s.remote.sessions.Remove(s.peerHost)
-		s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_delSession{Host: s.peerHost})
+		err := s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_delSession{Host: s.peerHost})
+		if err != nil {
+			log.KV("err", err).Error("dispatch event error")
+		}
 	}
 }
 
@@ -155,7 +162,10 @@ func (s *remoteHandler) OnRecv(data []byte) {
 	if msg.MsgName == "$regist" {
 		s.peerHost = string(msg.Data)
 		s.remote.sessions.Set(s.peerHost, s)
-		s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_newSession{Host: s.peerHost})
+		err := s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_newSession{Host: s.peerHost})
+		if err != nil {
+			log.KV("err", err).Error("dispatch event error")
+		}
 	} else if msg.MsgName == "$ping" {
 		//do nothing
 		//s.logger.Debug("recv ping")
@@ -176,6 +186,9 @@ func (s *remoteHandler) OnRecv(data []byte) {
 			s.logger.KV("MsgName", msg.MsgName).KV("err", err).Error("Unmarshal failed")
 			return
 		}
-		s.remote.actorSystem.Send(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
+		err = s.remote.actorSystem.Send(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
+		if err != nil {
+			log.KV("err", err).Error("actor send error")
+		}
 	}
 }

@@ -33,17 +33,21 @@ type ActorSystem struct {
 	event IEvent
 }
 
-func NewActorSystem(op ...SystemOption) (*ActorSystem, error) {
+func Go(op ...SystemOption) (*ActorSystem, error) {
 	sys := &ActorSystem{
 		waitStop:    &sync.WaitGroup{},
 		waitRun:     make(chan *actor, 100),
 		clusterInit: &sync.WaitGroup{},
 	}
-
 	for _, f := range op {
 		if e := f(sys); e != nil {
 			return nil, fmt.Errorf("%w %w", err.ActorSystemOptionErr, e.Error())
 		}
+	}
+
+	if len(sys.waitRun) > 0 {
+		cluster := <-sys.waitRun
+		sys.runActor(cluster)
 	}
 	return sys, nil
 }
@@ -126,28 +130,13 @@ func (s *ActorSystem) runActor(actor *actor) {
 		return
 	}
 	go func() {
-		defer func() {
-			logger.KV("actor", actor.GetID()).Info("actor done")
-			s.actorCache.Delete(actor.GetID())
-			s.waitStop.Done()
-		}()
-
 		actor.runActor()
-	}()
-}
 
-// 获取本地同一类型的actorId
-// t Actor类型
-// f actor筛选器
-func (s *ActorSystem) LocalActorFilter(t string, f func(t, reg string) bool) []string {
-	ret := []string{}
-	s.actorCache.Range(func(key, value interface{}) bool {
-		if f(t, key.(string)) {
-			ret = append(ret, value.(*actor).GetID())
-		}
-		return true
-	})
-	return ret
+		// exit
+		logger.KV("actor", actor.GetID()).Info("actor done")
+		s.actorCache.Delete(actor.GetID())
+		s.waitStop.Done()
+	}()
 }
 
 // actor之间发送消息,

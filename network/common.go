@@ -21,6 +21,7 @@ type INetListener interface {
 
 type INetClient interface {
 	SendMsg([]byte) error
+	AddLast(hander func() INetHandler)
 	Start(reconect bool) error
 	Stop()
 }
@@ -39,18 +40,10 @@ type INetSession interface {
 }
 
 type INetHandler interface {
-	OnSessionCreated()
+	OnSessionCreated(INetSession)
 	OnSessionClosed()
 	OnRecv([]byte)
-
-	setSession(session INetSession)
 }
-
-type BaseNetHandler struct {
-	INetSession
-}
-
-func (s *BaseNetHandler) setSession(session INetSession) { s.INetSession = session }
 
 var GenNetSessionId = _gen_net_session_id()
 

@@ -21,7 +21,7 @@ func main() {
 	exit := make(chan os.Signal)
 	signal.Notify(exit, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
-	actorSystem1, _ := actor.NewActorSystem(
+	actorSystem1, _ := actor.Go(
 		actor.Addr("127.0.0.1:1111"),
 		actor.WithCMD(cmd.New()),
 		actor.WithEvent(event.NewActorEvent()),
@@ -30,7 +30,7 @@ func main() {
 	actorSystem1.Start()
 	actorSystem1.Regist(actor.NewActor("demo1", &DemoA{}))
 
-	actorSystem2, _ := actor.NewActorSystem(
+	actorSystem2, _ := actor.Go(
 		actor.Addr("127.0.0.1:2222"),
 		actor.WithCMD(cmd.New()),
 		actor.WithEvent(event.NewActorEvent()),
