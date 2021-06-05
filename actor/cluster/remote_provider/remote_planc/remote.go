@@ -2,7 +2,7 @@ package remote_planc
 
 import (
 	"errors"
-	gproto "github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	cmap "github.com/orcaman/concurrent-map"
 	"go.uber.org/atomic"
 	"time"
@@ -99,14 +99,14 @@ func (s *RemoteMgr) keepAlive() {
 }
 
 // 远端actor发送消息
-func (s *RemoteMgr) Send(addr string, sourceId, targetId, requestId string, actMsg gproto.Message) error {
+func (s *RemoteMgr) Send(addr string, sourceId, targetId, requestId string, actMsg proto.Message) error {
 	session, ok := s.sessions.Get(addr)
 	if !ok {
 		return errors.New("remote addr not found")
 	}
 
 	//TODO 开协程处理？
-	data, err := gproto.Marshal(actMsg)
+	data, err := proto.Marshal(actMsg)
 	if err != nil {
 		return err
 	}
@@ -181,8 +181,8 @@ func (s *remoteHandler) OnRecv(data []byte) {
 			return
 		}
 
-		actMsg := tp.New().Interface().(gproto.Message)
-		if err = gproto.Unmarshal(msg.Data, actMsg); err != nil {
+		actMsg := tp.New().Interface().(proto.Message)
+		if err = proto.Unmarshal(msg.Data, actMsg); err != nil {
 			s.logger.KV("MsgName", msg.MsgName).KV("err", err).Error("Unmarshal failed")
 			return
 		}

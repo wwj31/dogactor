@@ -3,15 +3,29 @@ package cluster
 import (
 	"errors"
 	"fmt"
+	"github.com/wwj31/godactor/actor"
+	"github.com/wwj31/godactor/actor/cluster/remote_provider/remote_planc"
+	"github.com/wwj31/godactor/actor/cluster/servmesh_provider/etcd"
+	"github.com/wwj31/godactor/actor/err"
 	"reflect"
 	"strings"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/wwj31/godactor/actor"
-	"github.com/wwj31/godactor/expect"
 )
 
-func NewCluster(cluster IServiceMeshProvider, remote IRemoteProvider) *Cluster {
+func WithRemote(ectd_addr, prefix string) actor.SystemOption {
+	return func(system *actor.ActorSystem) error {
+		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_planc.NewRemoteMgr())
+		actor := actor.New("cluster", cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
+		if e := system.Regist(actor); e != nil {
+			return fmt.Errorf("%w %w", err.RegistClusterErr, e)
+		}
+		system.SetCluster(actor.GetID())
+		return nil
+	}
+}
+
+func newCluster(cluster IServiceMeshProvider, remote IRemoteProvider) *Cluster {
 	c := &Cluster{
 		serviceMesh: cluster,
 		remote:      remote,
@@ -34,20 +48,19 @@ type Cluster struct {
 	ready   map[string]bool            //host=>true
 }
 
-func (c *Cluster) Init() (err error) {
+func (c *Cluster) Init() {
 	c.ActorSystem().RegistEvent(c.GetID(), (*actor.Ev_newActor)(nil), (*actor.Ev_clusterUpdate)(nil), (*actor.Ev_newSession)(nil))
 
-	if err = c.remote.Start(c.ActorSystem()); err != nil {
-		return
+	if e := c.remote.Start(c.ActorSystem()); e != nil {
+		logger.KV("err", e).Error("remote start error")
 	}
 
-	if err = c.serviceMesh.Start(c.ActorSystem()); err != nil {
-		return
+	if e := c.serviceMesh.Start(c.ActorSystem()); e != nil {
+		logger.KV("err", e).Error("serviceMesh start error")
 	}
 
 	c.RegistCmd("clusterinfo", c.clusterinfo)
 	c.ready[c.ActorSystem().Address()] = true
-	return err
 }
 
 func (c *Cluster) Stop() (immediatelyStop bool) {
@@ -62,17 +75,6 @@ func (c *Cluster) HandleRequest(sourceId, targetId, requestId string, msg interf
 			return err
 		}
 		return
-	}
-
-	switch msg.(type) {
-	case *actor.ClusterReq:
-		arr := []string{}
-		for k, _ := range c.actors {
-			arr = append(arr, k)
-		}
-		expect.Nil(c.Response(requestId, &actor.ClusterResp{Actors: arr}))
-	default:
-		return errors.New("not regist handler")
 	}
 	return
 }

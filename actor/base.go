@@ -12,8 +12,8 @@ func (s *ActorHanlerBase) initActor(actor IActor) {
 	s.IActor = actor
 }
 
-func (s *ActorHanlerBase) Init() error { return nil }
-func (s *ActorHanlerBase) Stop() bool  { return true }
+func (s *ActorHanlerBase) Init()      {}
+func (s *ActorHanlerBase) Stop() bool { return true }
 
 func (s *ActorHanlerBase) HandleMessage(sourceId, targetId string, msg interface{}) {
 	logger.KV("actorId", s.GetID()).Warn("not implement HandleMessage")
