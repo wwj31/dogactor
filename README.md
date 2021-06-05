@@ -60,6 +60,7 @@ func (s *PongActor) HandleMessage(sourceId, targetId string, msg interface{}) {
 
 
 ```
+add the following lines,in your go.mod
 ```mod
 replace (
     github.com/coreos/bbolt => go.etcd.io/bbolt v1.3.4
