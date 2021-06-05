@@ -14,6 +14,13 @@ import (
 	"github.com/wwj31/godactor/expect"
 )
 
+type (
+	ClusterReq  struct{}
+	ClusterResp struct {
+		Actors []string
+	}
+)
+
 func WithRemote(ectd_addr, prefix string) SystemOption {
 	return func(system *ActorSystem) error {
 		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_planc.NewRemoteMgr())
@@ -80,12 +87,12 @@ func (c *Cluster) HandleRequest(sourceId, targetId, requestId string, msg interf
 	}
 
 	switch msg.(type) {
-	case *actor.ClusterReq:
+	case *ClusterReq:
 		arr := []string{}
 		for k, _ := range c.actors {
 			arr = append(arr, k)
 		}
-		expect.Nil(c.Response(requestId, &actor.ClusterResp{Actors: arr}))
+		expect.Nil(c.Response(requestId, &ClusterResp{Actors: arr}))
 	default:
 		return errors.New("not regist handler")
 	}
