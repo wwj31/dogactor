@@ -70,7 +70,7 @@ func (s *waitActor) Stop() bool {
 
 func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (result interface{}, err error) {
 	//新起actor等待结果
-	waiter := NewActor(tools.UUID(), &waitActor{}, SetLocalized())
+	waiter := New(tools.UUID(), &waitActor{}, SetLocalized())
 	expect.Nil(s.ActorSystem().Regist(waiter))
 
 	//超时设定

@@ -1,8 +1,0 @@
-syntax = "proto3";
-package inner_message;
-option  go_package = "/inner";
-
-message DemoMsg
-{
-    string ModelName  = 1;
-}

@@ -1,20 +1,3 @@
-<p align="center">game server framework</a></p>
-
-a actor model framework written in Go.
-it has implemented server discovery using ETCD.
-
-Getting Started
-===============
-
-# 1.Installing
-#### To start using godactor, install Go and run `go get`:
-```sh
-$ go get -u github.com/wwj31/godactor
-```
-
-# 2.Quick Start
-Copy and paste the following code in your main files
-```go
 package main
 
 import (
@@ -23,6 +6,13 @@ import (
 
 	"github.com/wwj31/godactor/actor"
 )
+
+//
+//var (
+//	ETCD_ADDR   = "127.0.0.1:2379"
+//	ETCD_PREFIX = "demo/"
+//)
+
 type PingActor struct{ actor.ActorHanlerBase }
 type PongActor struct{ actor.ActorHanlerBase }
 
@@ -57,6 +47,3 @@ func (s *PongActor) HandleMessage(sourceId, targetId string, msg interface{}) {
 		s.Send(sourceId, 99999)
 	}
 }
-
-
-```

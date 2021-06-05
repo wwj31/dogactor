@@ -2,7 +2,6 @@ package actor
 
 import (
 	"fmt"
-	"github.com/wwj31/godactor/log"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -133,10 +132,7 @@ func (s *ActorSystem) runActor(actor *actor, ok chan struct{}) {
 	}
 
 	go func() {
-		if err := actor.run(ok); err != nil {
-			logger.KVs(log.Fields{"err": err, "actor": actor.GetID()}).Error("actor run err")
-		}
-
+		actor.run(ok)
 		// exit
 		logger.KV("actor", actor.GetID()).Info("actor done")
 		s.actorCache.Delete(actor.GetID())

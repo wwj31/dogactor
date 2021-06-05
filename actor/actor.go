@@ -41,7 +41,7 @@ type (
 	IActorHandler interface {
 		initActor(actor IActor)
 
-		Init() error
+		Init()
 		Stop() (immediatelyStop bool) // true 立刻停止，false 延迟停止
 
 		HandleEvent(event interface{})                                                       //事件消息
@@ -81,7 +81,7 @@ type (
 // id 		actorId外部定义  @和$为内部符号，其他id尽量不占用
 // handler  消息处理模块
 // op  修改默认属性
-func NewActor(id string, handler IActorHandler, op ...ActorOption) *actor {
+func New(id string, handler IActorHandler, op ...ActorOption) *actor {
 	a := &actor{
 		id:            id,
 		handler:       handler,
@@ -158,14 +158,10 @@ func (s *actor) push(msg actor_msg.IMessage) error {
 	return nil
 }
 
-func (s *actor) run(ok chan struct{}) error {
+func (s *actor) run(ok chan struct{}) {
 	s.logger.Debug("actor startup")
 
-	var err error
-	tools.Try(func() { err = s.handler.Init() }, nil)
-	if err != nil {
-		return err
-	}
+	tools.Try(func() { s.handler.Init() }, nil)
 	if ok != nil {
 		ok <- struct{}{}
 	}
@@ -178,7 +174,7 @@ func (s *actor) run(ok chan struct{}) error {
 
 	for {
 		if s.stopCheck() {
-			return nil
+			return
 		}
 
 		select {
