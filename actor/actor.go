@@ -158,34 +158,27 @@ func (s *actor) push(msg actor_msg.IMessage) error {
 	return nil
 }
 
-func (s *actor) runActor() {
-	if s.GetID() != s.actorSystem.clusterId {
-		s.actorSystem.clusterInit.Wait()
-	}
-
+func (s *actor) run(ok chan struct{}) error {
 	s.logger.Debug("actor startup")
 
 	var err error
 	tools.Try(func() { err = s.handler.Init() }, nil)
-
 	if err != nil {
-		s.logger.KV("error", err).Error("actor InitGame failed")
-		return
+		return err
+	}
+	if ok != nil {
+		ok <- struct{}{}
 	}
 
 	s.actorSystem.DispatchEvent(s.id, &Ev_newActor{ActorId: s.id, Publish: s.remote})
 	defer func() { s.actorSystem.DispatchEvent(s.id, &Ev_delActor{ActorId: s.id, Publish: s.remote}) }()
-
-	if s.GetID() == s.actorSystem.clusterId {
-		s.actorSystem.clusterInit.Done()
-	}
 
 	up_timer := time.NewTicker(time.Millisecond * time.Duration(s.timerAccuracy))
 	defer up_timer.Stop()
 
 	for {
 		if s.stopCheck() {
-			return
+			return nil
 		}
 
 		select {

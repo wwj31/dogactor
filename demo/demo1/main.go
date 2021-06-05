@@ -1,6 +1,7 @@
 package main
 
 import (
+	main2 "github.com/wwj31/godactor/demo/demo2"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,7 +12,6 @@ import (
 	"github.com/wwj31/godactor/actor/cluster/remote_provider/remote_planc"
 	"github.com/wwj31/godactor/actor/cluster/servmesh_provider/etcd"
 	"github.com/wwj31/godactor/actor/cmd"
-	"github.com/wwj31/godactor/actor/event"
 	"github.com/wwj31/godactor/log"
 )
 
@@ -21,19 +21,19 @@ func main() {
 	exit := make(chan os.Signal)
 	signal.Notify(exit, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
-	actorSystem1, _ := actor.Go(
+	actorSystem1, _ := actor.System(
 		actor.Addr("127.0.0.1:1111"),
 		actor.WithCMD(cmd.New()),
-		actor.WithEvent(event.NewActorEvent()),
+		actor.WithEvent(actor.NewActorEvent()),
 		actor.WithCluster(cluster.NewCluster(etcd.NewEtcd("127.0.0.1:2379", "demo/"), remote_planc.NewRemoteMgr())),
 	)
 	actorSystem1.Start()
 	actorSystem1.Regist(actor.NewActor("demo1", &DemoA{}))
 
-	actorSystem2, _ := actor.Go(
+	actorSystem2, _ := actor.System(
 		actor.Addr("127.0.0.1:2222"),
 		actor.WithCMD(cmd.New()),
-		actor.WithEvent(event.NewActorEvent()),
+		actor.WithEvent(actor.NewActorEvent()),
 		actor.WithCluster(cluster.NewCluster(etcd.NewEtcd("127.0.0.1:2379", "demo/"), remote_planc.NewRemoteMgr())),
 	)
 	actorSystem2.Start()
@@ -54,11 +54,11 @@ type DemoA struct {
 func (s *DemoA) Init() error {
 	s.AddTimer(time.Second*5, -1, func(dt int64) {
 		if s.GetID() == "demo1" {
-			s.Request("demo2", &DemoMsg{ModelName: s.GetID()}).Handle(func(resp interface{}, err error) {
+			s.Request("demo2", &main2.DemoMsg{ModelName: s.GetID()}).Handle(func(resp interface{}, err error) {
 				if err != nil {
 					log.KV("error", err).Info("response from")
 				} else {
-					rep := resp.(*DemoMsg)
+					rep := resp.(*main2.DemoMsg)
 					log.KV("model", rep.ModelName).Info("response from")
 				}
 
@@ -74,9 +74,9 @@ func (s *DemoA) HandleRequest(sourceId, targetId, requestId string, msg interfac
 		log.KV("msg", req).Info("recv req")
 		time.Sleep(5 * time.Second)
 		s.Response(requestId, "sleep 10")
-	case *DemoMsg:
+	case *main2.DemoMsg:
 		log.KV("model", req.ModelName).Info("request from")
-		s.Response(requestId, &DemoMsg{ModelName: s.GetID()})
+		s.Response(requestId, &main2.DemoMsg{ModelName: s.GetID()})
 	}
 	return nil
 }
@@ -88,10 +88,10 @@ type DemoB struct {
 func (s *DemoB) Init() error {
 	log.Info("Init DemoB")
 	s.AddTimer(time.Second*5, -1, func(dt int64) {
-		resp, err := s.RequestWait("demo1", &DemoMsg{ModelName: s.GetID()})
+		resp, err := s.RequestWait("demo1", &main2.DemoMsg{ModelName: s.GetID()})
 		log.KVs(log.Fields{"resp": resp, "err": err}).Info("demoB recv1")
 
-		resp, err = s.RequestWait("demo1111", &DemoMsg{ModelName: s.GetID()})
+		resp, err = s.RequestWait("demo1111", &main2.DemoMsg{ModelName: s.GetID()})
 		log.KVs(log.Fields{"resp": resp, "err": err}).Info("demoB recv2")
 	})
 	return nil

@@ -2,6 +2,7 @@ package actor
 
 import (
 	"fmt"
+	"github.com/wwj31/godactor/log"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -25,48 +26,47 @@ type ActorSystem struct {
 	waitRun    chan *actor // 等待启动的actor列表
 
 	//集群管理actorId
-	clusterId   string
-	clusterInit *sync.WaitGroup
+	clusterId string
 
 	// 辅助模块
-	cmd   ICmd
-	event IEvent
+	cmd ICmd
+	*EventDispatcher
 }
 
-func Go(op ...SystemOption) (*ActorSystem, error) {
+func System(op ...SystemOption) (*ActorSystem, error) {
 	sys := &ActorSystem{
-		waitStop:    &sync.WaitGroup{},
-		waitRun:     make(chan *actor, 100),
-		clusterInit: &sync.WaitGroup{},
+		waitStop: &sync.WaitGroup{},
+		waitRun:  make(chan *actor, 100),
 	}
+	sys.EventDispatcher = NewActorEvent(sys)
+
 	for _, f := range op {
 		if e := f(sys); e != nil {
 			return nil, fmt.Errorf("%w %w", err.ActorSystemOptionErr, e.Error())
 		}
 	}
 
-	if len(sys.waitRun) > 0 {
+	for len(sys.waitRun) > 0 {
 		cluster := <-sys.waitRun
-		sys.runActor(cluster)
+		wait := make(chan struct{})
+		sys.runActor(cluster, wait)
+		<-wait
 	}
-	return sys, nil
-}
 
-func (s *ActorSystem) Start() {
-	logger.Info("ActorSystem Start")
 	tools.GoEngine(func() {
 		for {
 			select {
-			case actor, ok := <-s.waitRun:
+			case actor, ok := <-sys.waitRun:
 				if !ok {
 					return
 				}
-				s.runActor(actor)
+				sys.runActor(actor, nil)
 			}
 		}
 	})
+	logger.Info("ActorSystem Start")
+	return sys, nil
 }
-
 func (s *ActorSystem) waitCluster() {
 	for {
 		continueWait := false
@@ -86,6 +86,9 @@ func (s *ActorSystem) waitCluster() {
 
 func (s *ActorSystem) Address() string {
 	return s.actorAddr
+}
+func (s *ActorSystem) SetCluster(id string) {
+	s.clusterId = id
 }
 
 func (s *ActorSystem) Stop() {
@@ -124,13 +127,15 @@ func (s *ActorSystem) Regist(actor *actor) error {
 	return nil
 }
 
-func (s *ActorSystem) runActor(actor *actor) {
+func (s *ActorSystem) runActor(actor *actor, ok chan struct{}) {
 	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
-		//logger.Error(fmt.Errorf("%w actor:%v", err.RunActorInStopErr, actor.GetID()).Error())
 		return
 	}
+
 	go func() {
-		actor.runActor()
+		if err := actor.run(ok); err != nil {
+			logger.KVs(log.Fields{"err": err, "actor": actor.GetID()}).Error("actor run err")
+		}
 
 		// exit
 		logger.KV("actor", actor.GetID()).Info("actor done")

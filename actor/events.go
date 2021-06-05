@@ -1,4 +1,4 @@
-package event
+package actor
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/wwj31/godactor/actor"
 	"github.com/wwj31/godactor/actor/err"
 	"github.com/wwj31/godactor/actor/internal/actor_msg"
 )
@@ -15,16 +14,12 @@ type listener map[string]map[string]bool // map[evType][actorId]bool
 
 type EventDispatcher struct {
 	sync.RWMutex
-	sys       *actor.ActorSystem
+	sys       *ActorSystem
 	listeners listener
 }
 
-func NewActorEvent() *EventDispatcher {
-	return &EventDispatcher{listeners: make(listener)}
-}
-
-func (ed *EventDispatcher) Init(actorSystem *actor.ActorSystem) {
-	ed.sys = actorSystem
+func NewActorEvent(s *ActorSystem) *EventDispatcher {
+	return &EventDispatcher{listeners: make(listener), sys: s}
 }
 
 // 注册actor事件
