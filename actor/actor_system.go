@@ -13,9 +13,9 @@ import (
 )
 
 /* 所有actor的驱动器和调度器*/
-type SystemOption func(*ActorSystem) error
+type SystemOption func(*System) error
 
-type ActorSystem struct {
+type System struct {
 	actorAddr string          // 远程actor连接端口
 	waitStop  *sync.WaitGroup // stop wait
 	exiting   int32           // 停止标记
@@ -29,15 +29,15 @@ type ActorSystem struct {
 
 	// 辅助模块
 	cmd ICmd
-	*EventDispatcher
+	*evDispatcher
 }
 
-func System(op ...SystemOption) (*ActorSystem, error) {
-	sys := &ActorSystem{
+func NewSystem(op ...SystemOption) (*System, error) {
+	sys := &System{
 		waitStop: &sync.WaitGroup{},
 		waitRun:  make(chan *actor, 100),
 	}
-	sys.EventDispatcher = NewActorEvent(sys)
+	sys.evDispatcher = newEvent(sys)
 
 	for _, f := range op {
 		if e := f(sys); e != nil {
@@ -63,10 +63,10 @@ func System(op ...SystemOption) (*ActorSystem, error) {
 			}
 		}
 	})
-	logger.Info("ActorSystem Start")
+	logger.Info("System Start")
 	return sys, nil
 }
-func (s *ActorSystem) waitCluster() {
+func (s *System) waitCluster() {
 	for {
 		continueWait := false
 		s.actorCache.Range(func(key, value interface{}) bool {
@@ -83,30 +83,30 @@ func (s *ActorSystem) waitCluster() {
 	}
 }
 
-func (s *ActorSystem) Address() string {
+func (s *System) Address() string {
 	return s.actorAddr
 }
-func (s *ActorSystem) SetCluster(id string) {
+func (s *System) SetCluster(id string) {
 	s.clusterId = id
 }
 
-func (s *ActorSystem) Stop() {
+func (s *System) Stop() {
 	if atomic.CompareAndSwapInt32(&s.exiting, 0, 1) {
 		//shutdown() 通知所有actor执行关闭
 		s.actorCache.Range(func(key, value interface{}) bool {
-			value.(*actor).SystemStop()
+			value.(*actor).stop()
 			return true
 		})
 		s.waitCluster()
 		s.Send("", s.clusterId, "", "stop")
 		s.waitStop.Wait()
 		close(s.waitRun)
-		logger.Info("ActorSystem Exit")
+		logger.Info("System Exit")
 	}
 }
 
 // 注册actor，外部创建对象，保证ActorId唯一性
-func (s *ActorSystem) Regist(actor *actor) error {
+func (s *System) Regist(actor *actor) error {
 	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
 		return fmt.Errorf("%w actor:%v", err.RegisterActorSystemErr, actor.GetID())
 	}
@@ -126,7 +126,7 @@ func (s *ActorSystem) Regist(actor *actor) error {
 	return nil
 }
 
-func (s *ActorSystem) runActor(actor *actor, ok chan struct{}) {
+func (s *System) runActor(actor *actor, ok chan struct{}) {
 	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
 		return
 	}
@@ -144,7 +144,7 @@ func (s *ActorSystem) runActor(actor *actor, ok chan struct{}) {
 // sourceid 发送源actor
 // targetid 目标actor
 // message 消息内容
-func (s *ActorSystem) Send(sourceId, targetId, requestId string, msg interface{}) error {
+func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) error {
 	var atr *actor
 	if localActor, ok := s.actorCache.Load(targetId); ok { //消息能否发给本地
 		atr = localActor.(*actor)
@@ -166,13 +166,13 @@ func (s *ActorSystem) Send(sourceId, targetId, requestId string, msg interface{}
 	return nil
 }
 
-func (s *ActorSystem) ClusterId() string {
+func (s *System) ClusterId() string {
 	return s.clusterId
 }
 
 // 设置Actor监听的端口
 func Addr(addr string) SystemOption {
-	return func(system *ActorSystem) error {
+	return func(system *System) error {
 		system.actorAddr = addr
 		return nil
 	}

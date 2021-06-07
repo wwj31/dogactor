@@ -40,7 +40,7 @@ func (s *request) Handle(fn func(resp interface{}, err error)) {
 
 func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Duration) (req *request) {
 	req = s.newRequest(targetId)
-	e := s.actorSystem.Send(s.id, targetId, req.id, msg)
+	e := s.system.Send(s.id, targetId, req.id, msg)
 	if req.err != nil {
 		req.err = e
 		return req
@@ -71,7 +71,7 @@ func (s *waitActor) Stop() bool {
 func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (result interface{}, err error) {
 	//新起actor等待结果
 	waiter := New(tools.UUID(), &waitActor{}, SetLocalized())
-	expect.Nil(s.ActorSystem().Regist(waiter))
+	expect.Nil(s.System().Regist(waiter))
 
 	//超时设定
 	interval := DefaultTimeout
@@ -91,7 +91,7 @@ func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Du
 		result = resp
 		err = e
 		respC <- struct{}{}
-		waiter.LogicStop()
+		waiter.Stop()
 	})
 
 	<-respC // 阻塞等待waiter返回结果
@@ -103,12 +103,12 @@ func (s *actor) Response(requestId string, msg interface{}) error {
 	if !ok {
 		return fmt.Errorf("error requestId:%v", requestId)
 	}
-	return s.actorSystem.Send(s.id, reqSourceId, requestId, msg)
+	return s.system.Send(s.id, reqSourceId, requestId, msg)
 }
 
 func (s *actor) newRequest(targetId string) (req *request) {
 	req = &request{
-		id:       requestId(s.id, targetId, s.actorSystem.Address()),
+		id:       requestId(s.id, targetId, s.system.Address()),
 		sourceId: s.GetID(),
 		targetId: targetId,
 		result:   nil,

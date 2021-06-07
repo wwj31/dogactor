@@ -18,7 +18,7 @@ type Cmd struct {
 }
 
 type Commands struct {
-	actorSystem *actor.ActorSystem
+	actorSystem *actor.System
 	cmds        sync.Map
 }
 
@@ -36,7 +36,7 @@ func New() *Commands {
 	return cmd
 }
 
-func (c *Commands) Start(actorSystem *actor.ActorSystem) {
+func (c *Commands) Start(actorSystem *actor.System) {
 	c.actorSystem = actorSystem
 	tools.GoEngine(c.loop)
 }

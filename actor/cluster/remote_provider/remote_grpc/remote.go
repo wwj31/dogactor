@@ -15,7 +15,7 @@ import (
 
 // 管理所有远端的session
 type RemoteMgr struct {
-	actorSystem *actor.ActorSystem
+	actorSystem *actor.System
 	listener    *actor_grpc.Server
 
 	stop     atomic.Int32
@@ -34,7 +34,7 @@ func NewRemoteMgr() *RemoteMgr {
 	return mgr
 }
 
-func (s *RemoteMgr) Start(actorSystem *actor.ActorSystem) error {
+func (s *RemoteMgr) Start(actorSystem *actor.System) error {
 	s.actorSystem = actorSystem
 
 	listener, err := actor_grpc.NewServer(s.actorSystem.Address(), func() actor_grpc.IHandler { return &remoteHandler{remote: s} }, s)

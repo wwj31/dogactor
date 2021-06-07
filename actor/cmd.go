@@ -6,13 +6,13 @@ import (
 )
 
 type ICmd interface {
-	Start(actorSystem *ActorSystem)
+	Start(actorSystem *System)
 	RegistCmd(actorId, cmd string, f func(...string))
 }
 
 // 设置Actor监听的端口
 func WithCMD(cmd ICmd) SystemOption {
-	return func(system *ActorSystem) error {
+	return func(system *System) error {
 		system.cmd = cmd
 		cmd.RegistCmd("", "actorinfo", system.actorInfo)
 		cmd.RegistCmd("", "loadlua", system.loadlua)
@@ -21,13 +21,13 @@ func WithCMD(cmd ICmd) SystemOption {
 	}
 }
 
-func (as *ActorSystem) RegistCmd(actorId, cmd string, fn func(...string)) {
+func (as *System) RegistCmd(actorId, cmd string, fn func(...string)) {
 	if as.cmd != nil {
 		as.cmd.RegistCmd(actorId, cmd, fn)
 	}
 }
 
-func (s *ActorSystem) actorInfo(param ...string) {
+func (s *System) actorInfo(param ...string) {
 	actors := []string{}
 	s.actorCache.Range(func(key, value interface{}) bool {
 		actors = append(actors, fmt.Sprintf("[actorId=%v mail-box=%v]", key, len(value.(*actor).mailBox)))
@@ -41,7 +41,7 @@ func (s *ActorSystem) actorInfo(param ...string) {
 	logger.Info(fmt.Sprintf(format, strings.Join(actors, "\n")))
 }
 
-func (s *ActorSystem) loadlua(param ...string) {
+func (s *System) loadlua(param ...string) {
 	s.actorCache.Range(func(key, value interface{}) bool {
 		a := value.(*actor)
 		if a.lua != nil {

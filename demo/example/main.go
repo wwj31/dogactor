@@ -17,7 +17,7 @@ type PingActor struct{ actor.ActorHanlerBase }
 type PongActor struct{ actor.ActorHanlerBase }
 
 func main() {
-	system, _ := actor.System()
+	system, _ := actor.NewSystem()
 	ping := actor.New("ping", &PingActor{})
 	pong := actor.New("pong", &PongActor{})
 	system.Regist(ping)

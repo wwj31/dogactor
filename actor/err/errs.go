@@ -9,7 +9,6 @@ var (
 	RegisterEventErr = fmt.Errorf("RegistEvent only accept ptr param")
 	CancelEventErr   = fmt.Errorf("CancelEvent only accept ptr param")
 	DispatchEventErr = fmt.Errorf("DispatchEvent only accept ptr param")
-	EventHasNotErr   = fmt.Errorf("system event has not been set")
 
 	//error of actor system
 	ActorSystemOptionErr   = fmt.Errorf("actor system option run failed")

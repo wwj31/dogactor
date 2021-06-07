@@ -14,7 +14,7 @@ import (
 )
 
 func WithRemote(ectd_addr, prefix string) actor.SystemOption {
-	return func(system *actor.ActorSystem) error {
+	return func(system *actor.System) error {
 		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_planc.NewRemoteMgr())
 		actor := actor.New("cluster", cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
 		if e := system.Regist(actor); e != nil {
@@ -49,18 +49,18 @@ type Cluster struct {
 }
 
 func (c *Cluster) Init() {
-	c.ActorSystem().RegistEvent(c.GetID(), (*actor.Ev_newActor)(nil), (*actor.Ev_clusterUpdate)(nil), (*actor.Ev_newSession)(nil))
+	c.System().RegistEvent(c.GetID(), (*actor.Ev_newActor)(nil), (*actor.Ev_clusterUpdate)(nil), (*actor.Ev_newSession)(nil))
 
-	if e := c.remote.Start(c.ActorSystem()); e != nil {
+	if e := c.remote.Start(c.System()); e != nil {
 		logger.KV("err", e).Error("remote start error")
 	}
 
-	if e := c.serviceMesh.Start(c.ActorSystem()); e != nil {
+	if e := c.serviceMesh.Start(c.System()); e != nil {
 		logger.KV("err", e).Error("serviceMesh start error")
 	}
 
 	c.RegistCmd("clusterinfo", c.clusterinfo)
-	c.ready[c.ActorSystem().Address()] = true
+	c.ready[c.System().Address()] = true
 }
 
 func (c *Cluster) Stop() (immediatelyStop bool) {
@@ -90,7 +90,7 @@ func (c *Cluster) HandleMessage(sourceId, targetId string, msg interface{}) {
 			if message == "stop" {
 				c.serviceMesh.Stop()
 				c.remote.Stop()
-				c.LogicStop()
+				c.Stop()
 			}
 		default:
 			logger.KV("t", reflect.TypeOf(message).Name()).Warn("no such case type")
@@ -116,7 +116,7 @@ func (c *Cluster) watchRemote(actorId, host string, add bool) {
 		defer func() {
 			logger.KV("host", host).KV("actorId", actorId).KV("ready", c.ready[host]).Debug("remote actor regist")
 			if c.ready[host] {
-				c.ActorSystem().DispatchEvent(c.GetID(), &actor.Ev_newActor{ActorId: actorId, FromCluster: true})
+				c.System().DispatchEvent(c.GetID(), &actor.Ev_newActor{ActorId: actorId, FromCluster: true})
 			}
 		}()
 
@@ -126,7 +126,7 @@ func (c *Cluster) watchRemote(actorId, host string, add bool) {
 			c.delRemoteActor(actorId)
 		}
 		c.actors[actorId] = host
-		if host >= c.ActorSystem().Address() {
+		if host >= c.System().Address() {
 			return
 		}
 
@@ -148,7 +148,7 @@ func (c *Cluster) delRemoteActor(actorId string) {
 	old := c.actors[actorId]
 	delete(c.actors, actorId)
 
-	c.ActorSystem().DispatchEvent(c.GetID(), &actor.Ev_delActor{ActorId: actorId, FromCluster: true})
+	c.System().DispatchEvent(c.GetID(), &actor.Ev_delActor{ActorId: actorId, FromCluster: true})
 
 	if actors, ok := c.clients[old]; ok {
 		delete(actors, actorId)
@@ -164,7 +164,7 @@ func (c *Cluster) HandleEvent(event interface{}) {
 	switch e := event.(type) {
 	case *actor.Ev_newActor:
 		if e.Publish {
-			c.serviceMesh.RegistService(e.ActorId, c.ActorSystem().Address())
+			c.serviceMesh.RegistService(e.ActorId, c.System().Address())
 		}
 	case *actor.Ev_clusterUpdate:
 		c.watchRemote(e.ActorId, e.Host, e.Add)
@@ -173,14 +173,14 @@ func (c *Cluster) HandleEvent(event interface{}) {
 		logger.KV("host", e.Host).Debug("remote host connect")
 		for actorId, host := range c.actors {
 			if host == e.Host {
-				c.ActorSystem().DispatchEvent(c.GetID(), &actor.Ev_newActor{ActorId: actorId, FromCluster: true})
+				c.System().DispatchEvent(c.GetID(), &actor.Ev_newActor{ActorId: actorId, FromCluster: true})
 			}
 		}
 	case *actor.Ev_delSession:
 		delete(c.ready, e.Host)
 		for actorId, host := range c.actors {
 			if host == e.Host {
-				c.ActorSystem().DispatchEvent(c.GetID(), &actor.Ev_delActor{ActorId: actorId, FromCluster: true})
+				c.System().DispatchEvent(c.GetID(), &actor.Ev_delActor{ActorId: actorId, FromCluster: true})
 			}
 		}
 	}

@@ -6,13 +6,13 @@ import (
 )
 
 type IServiceMeshProvider interface {
-	Start(actorSystem *actor.ActorSystem) error
+	Start(actorSystem *actor.System) error
 	Stop()
 	RegistService(key string, value string) error
 }
 
 type IRemoteProvider interface {
-	Start(actorSystem *actor.ActorSystem) error
+	Start(actorSystem *actor.System) error
 	Stop()
 	NewClient(host string)
 	StopClient(host string)

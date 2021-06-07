@@ -2,7 +2,6 @@ package actor
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"reflect"
 	"sync"
 
@@ -12,18 +11,18 @@ import (
 
 type listener map[string]map[string]bool // map[evType][actorId]bool
 
-type EventDispatcher struct {
+type evDispatcher struct {
 	sync.RWMutex
-	sys       *ActorSystem
+	sys       *System
 	listeners listener
 }
 
-func NewActorEvent(s *ActorSystem) *EventDispatcher {
-	return &EventDispatcher{listeners: make(listener), sys: s}
+func newEvent(s *System) *evDispatcher {
+	return &evDispatcher{listeners: make(listener), sys: s}
 }
 
 // 注册actor事件
-func (ed *EventDispatcher) RegistEvent(actorId string, events ...interface{}) error {
+func (ed *evDispatcher) RegistEvent(actorId string, events ...interface{}) error {
 	for _, event := range events {
 		rtype := reflect.TypeOf(event)
 		if rtype.Kind() != reflect.Ptr {
@@ -46,11 +45,11 @@ func (ed *EventDispatcher) RegistEvent(actorId string, events ...interface{}) er
 }
 
 // 取消actor事件
-func (ed *EventDispatcher) CancelEvent(actorId string, events ...interface{}) error {
+func (ed *evDispatcher) CancelEvent(actorId string, events ...interface{}) error {
 	for _, event := range events {
 		rtype := reflect.TypeOf(event)
 		if rtype.Kind() != reflect.Ptr {
-			return errors.Wrapf(err.CancelEventErr, "actorId:%v,event:%v", actorId, event)
+			return fmt.Errorf(" %w,actorId:%v,event:%v", err.CancelEventErr, actorId, event)
 		}
 	}
 	ed.Lock()
@@ -65,7 +64,7 @@ func (ed *EventDispatcher) CancelEvent(actorId string, events ...interface{}) er
 }
 
 // 取消actor事件
-func (ed *EventDispatcher) CancelAll(actorId string) {
+func (ed *evDispatcher) CancelAll(actorId string) {
 	ed.Lock()
 	defer ed.Unlock()
 
@@ -75,10 +74,10 @@ func (ed *EventDispatcher) CancelAll(actorId string) {
 }
 
 // 事件触发
-func (ed *EventDispatcher) DispatchEvent(sourceId string, event interface{}) error {
+func (ed *evDispatcher) DispatchEvent(sourceId string, event interface{}) error {
 	rtype := reflect.TypeOf(event)
 	if rtype.Kind() != reflect.Ptr {
-		return errors.Wrapf(err.DispatchEventErr, "sourceId:%v,event:%v", sourceId, event)
+		return fmt.Errorf(" %w,actorId:%v,event:%v", err.DispatchEventErr, sourceId, event)
 	}
 
 	etype := rtype.Elem().Name()

@@ -17,8 +17,8 @@ type (
 	IActor interface {
 		//core
 		GetID() string
-		ActorSystem() *ActorSystem
-		LogicStop()
+		System() *System
+		Stop()
 
 		//timer
 		AddTimer(interval time.Duration, trigger_times int32, callback jtimer.FuncCallback) int64
@@ -53,13 +53,13 @@ type (
 	ActorOption func(*actor)
 	// 运行单元
 	actor struct {
-		id          string
-		handler     IActorHandler
-		mailBox     chan actor_msg.IMessage // todo 考虑用无锁队列优化
-		actorSystem *ActorSystem
-		remote      bool  // 是否能被远端发现 默认为true, 如果是本地actor,手动设SetLocalized()后,再注册
-		systemStop  int32 // 用于外部通知结束
-		logicStop   int32 // 用于内部自己结束	(一些actor的关闭是由其他actor调用,防止core退出时重复close(exist)的情况,故特意添加此变量,用于主动调用SuspendStop())
+		id        string
+		handler   IActorHandler
+		mailBox   chan actor_msg.IMessage // todo 考虑用无锁队列优化
+		system    *System
+		remote    bool // 是否能被远端发现 默认为true, 如果是本地actor,手动设SetLocalized()后,再注册
+		asyncStop int32
+		syncStop  int32
 
 		//timer
 		timerMgr      *jtimer.TimerMgr
@@ -111,14 +111,14 @@ func (s *actor) isWaitActor() bool {
 	return ok
 }
 
-// 逻辑层主动关闭actor调用此函数
-func (s *actor) LogicStop() {
-	atomic.CompareAndSwapInt32(&s.logicStop, 0, 1)
+// 业务层触发关闭
+func (s *actor) Stop() {
+	atomic.CompareAndSwapInt32(&s.syncStop, 0, 1)
 }
 
-// 系统层主动关闭actor调用此函数
-func (s *actor) SystemStop() {
-	atomic.CompareAndSwapInt32(&s.systemStop, 0, 1)
+// system触发关闭
+func (s *actor) stop() {
+	atomic.CompareAndSwapInt32(&s.asyncStop, 0, 1)
 }
 
 // 添加计时器,每个actor独立一个计时器
@@ -166,8 +166,8 @@ func (s *actor) run(ok chan struct{}) {
 		ok <- struct{}{}
 	}
 
-	s.actorSystem.DispatchEvent(s.id, &Ev_newActor{ActorId: s.id, Publish: s.remote})
-	defer func() { s.actorSystem.DispatchEvent(s.id, &Ev_delActor{ActorId: s.id, Publish: s.remote}) }()
+	s.system.DispatchEvent(s.id, &Ev_newActor{ActorId: s.id, Publish: s.remote})
+	defer func() { s.system.DispatchEvent(s.id, &Ev_delActor{ActorId: s.id, Publish: s.remote}) }()
 
 	up_timer := time.NewTicker(time.Millisecond * time.Duration(s.timerAccuracy))
 	defer up_timer.Stop()
@@ -179,7 +179,7 @@ func (s *actor) run(ok chan struct{}) {
 
 		select {
 		case <-up_timer.C:
-			if atomic.LoadInt32(&s.systemStop) == 0 {
+			if atomic.LoadInt32(&s.asyncStop) == 0 {
 				tools.Try(func() { s.timerMgr.Update(tools.Now().UnixNano()) }, nil)
 			}
 		case msg := <-s.mailBox:
@@ -236,22 +236,22 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 
 func (s *actor) stopCheck() (immediatelyStop bool) {
 	//逻辑层说停止=>立即停止
-	if atomic.LoadInt32(&s.logicStop) == 1 {
+	if atomic.LoadInt32(&s.syncStop) == 1 {
 		return true
 	}
 
 	//系统层说停止=>通知逻辑,并且返回是否立即停止
-	if atomic.CompareAndSwapInt32(&s.systemStop, 1, 2) {
+	if atomic.CompareAndSwapInt32(&s.asyncStop, 1, 2) {
 		tools.Try(func() { immediatelyStop = s.handler.Stop() }, func(ex interface{}) { immediatelyStop = true })
 	}
 	return
 }
 
 //=========================简化actorSystem调用
-func (s *actor) setSystem(actorSystem *ActorSystem)       { s.actorSystem = actorSystem }
-func (s *actor) ActorSystem() *ActorSystem                { return s.actorSystem }
-func (s *actor) Send(targetId string, msg interface{})    { s.actorSystem.Send(s.id, targetId, "", msg) }
-func (s *actor) RegistCmd(cmd string, fn func(...string)) { s.actorSystem.RegistCmd(s.id, cmd, fn) }
+func (s *actor) setSystem(actorSystem *System)            { s.system = actorSystem }
+func (s *actor) System() *System                          { return s.system }
+func (s *actor) Send(targetId string, msg interface{})    { s.system.Send(s.id, targetId, "", msg) }
+func (s *actor) RegistCmd(cmd string, fn func(...string)) { s.system.RegistCmd(s.id, cmd, fn) }
 
 //=========================
 func SetMailBoxSize(boxSize int) ActorOption {

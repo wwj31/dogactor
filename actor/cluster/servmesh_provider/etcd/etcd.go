@@ -31,7 +31,7 @@ type Etcd struct {
 	registErr error        // 注册错误(当任意注册发生错误，则全部推倒重来)
 
 	localActors sync.Map //
-	actorSystem *actor.ActorSystem
+	actorSystem *actor.System
 	stop        atomic.Int32
 	wg          sync.WaitGroup
 }
@@ -47,7 +47,7 @@ func NewEtcd(endpoints, prefix string) *Etcd {
 
 // 初始化并启动etcd本地服务
 // example: etcd := newEtcd(....).Start()
-func (s *Etcd) Start(actorSystem *actor.ActorSystem) error {
+func (s *Etcd) Start(actorSystem *actor.System) error {
 	s.actorSystem = actorSystem
 
 	logger.KV("endpoints", s.endpoints).KV("prefix", s.prefix).Info("etcd start")

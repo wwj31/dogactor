@@ -21,13 +21,13 @@ func main() {
 	exit := make(chan os.Signal)
 	signal.Notify(exit, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
-	system1, _ := actor.System(
+	system1, _ := actor.NewSystem(
 		actor.Addr("127.0.0.1:1000"),
 		cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX),
 	)
 	system1.Regist(actor.New("demoA1", &DemoA{}))
 
-	system2, _ := actor.System(
+	system2, _ := actor.NewSystem(
 		actor.Addr("127.0.0.1:2000"),
 		cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX),
 	)
