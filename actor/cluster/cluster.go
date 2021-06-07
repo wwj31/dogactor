@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wwj31/godactor/actor"
-	"github.com/wwj31/godactor/actor/cluster/remote_provider/remote_planc"
+	"github.com/wwj31/godactor/actor/cluster/remote_provider/remote_grpc"
 	"github.com/wwj31/godactor/actor/cluster/servmesh_provider/etcd"
 	"github.com/wwj31/godactor/actor/err"
+	"github.com/wwj31/godactor/log"
 	"reflect"
 	"strings"
 
@@ -15,7 +16,7 @@ import (
 
 func WithRemote(ectd_addr, prefix string) actor.SystemOption {
 	return func(system *actor.System) error {
-		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_planc.NewRemoteMgr())
+		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_grpc.NewRemoteMgr())
 		actor := actor.New("cluster", cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
 		if e := system.Regist(actor); e != nil {
 			return fmt.Errorf("%w %w", err.RegistClusterErr, e)
@@ -71,7 +72,7 @@ func (c *Cluster) HandleRequest(sourceId, targetId, requestId string, msg interf
 	_, reqTargetId, _, _ := actor.ParseRequestId(requestId)
 	if c.GetID() != reqTargetId {
 		if err := c.sendRemote(sourceId, targetId, requestId, msg.(proto.Message)); err != nil {
-			logger.KV("targetId", targetId).KV("error", err).Error("remote actor send failed")
+			logger.KVs(log.Fields{"actor": c.GetID(), "targetId": targetId, "err": err}).Error("remote actor send failed")
 			return err
 		}
 		return
@@ -90,7 +91,7 @@ func (c *Cluster) HandleMessage(sourceId, targetId string, msg interface{}) {
 			if message == "stop" {
 				c.serviceMesh.Stop()
 				c.remote.Stop()
-				c.Stop()
+				c.Exit()
 			}
 		default:
 			logger.KV("t", reflect.TypeOf(message).Name()).Warn("no such case type")

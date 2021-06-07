@@ -26,9 +26,3 @@ func (s *ActorHanlerBase) HandleRequest(sourceId, targetId, requestId string, ms
 func (s *ActorHanlerBase) HandleEvent(event interface{}) {
 	logger.KV("actorId", s.GetID()).Warn("not implement HandleEvent")
 }
-func (s *ActorHanlerBase) BResponse(requestId string, msg interface{}) {
-	e := s.IActor.Response(requestId, msg)
-	if e != nil {
-		logger.KV("err", e).ErrorStack(3, "Response error")
-	}
-}

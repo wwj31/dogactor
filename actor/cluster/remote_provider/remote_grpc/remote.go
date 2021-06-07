@@ -1,7 +1,7 @@
 package remote_grpc
 
 import (
-	"errors"
+	"fmt"
 	"github.com/golang/protobuf/proto"
 	cmap "github.com/orcaman/concurrent-map"
 	"go.uber.org/atomic"
@@ -78,7 +78,7 @@ func (s *RemoteMgr) StopClient(host string) {
 func (s *RemoteMgr) Send(addr string, sourceId, targetId, requestId string, actMsg proto.Message) error {
 	session, ok := s.sessions.Get(addr)
 	if !ok {
-		return errors.New("remote addr not found")
+		return fmt.Errorf("remote addr not found %v reqId:%v", addr, requestId)
 	}
 
 	//TODO 开协程处理？

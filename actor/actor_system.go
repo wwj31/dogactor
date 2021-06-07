@@ -22,7 +22,7 @@ type System struct {
 
 	// 本地actor管理
 	actorCache sync.Map    // 所有本地actor
-	waitRun    chan *actor // 等待启动的actor列表
+	newList    chan *actor // 等待启动的actor列表
 
 	//集群管理actorId
 	clusterId string
@@ -33,54 +33,52 @@ type System struct {
 }
 
 func NewSystem(op ...SystemOption) (*System, error) {
-	sys := &System{
+	s := &System{
 		waitStop: &sync.WaitGroup{},
-		waitRun:  make(chan *actor, 100),
+		newList:  make(chan *actor, 100),
 	}
-	sys.evDispatcher = newEvent(sys)
+	s.evDispatcher = newEvent(s)
 
 	for _, f := range op {
-		if e := f(sys); e != nil {
+		if e := f(s); e != nil {
 			return nil, fmt.Errorf("%w %w", err.ActorSystemOptionErr, e.Error())
 		}
 	}
 
-	for len(sys.waitRun) > 0 {
-		cluster := <-sys.waitRun
+	for len(s.newList) > 0 {
+		cluster := <-s.newList
 		wait := make(chan struct{})
-		sys.runActor(cluster, wait)
+		s.runActor(cluster, wait)
 		<-wait
 	}
 
-	tools.GoEngine(func() {
+	go func() {
 		for {
 			select {
-			case actor, ok := <-sys.waitRun:
+			case actor, ok := <-s.newList:
 				if !ok {
 					return
 				}
-				sys.runActor(actor, nil)
+				s.runActor(actor, nil)
 			}
 		}
-	})
+	}()
 	logger.Info("System Start")
-	return sys, nil
+	return s, nil
 }
-func (s *System) waitCluster() {
-	for {
-		continueWait := false
-		s.actorCache.Range(func(key, value interface{}) bool {
-			if continueWait = key != s.clusterId; continueWait {
-				return false
-			}
-			return true
-		})
 
-		if !continueWait {
-			return
-		}
-		runtime.Gosched()
+func (s *System) runActor(actor *actor, ok chan struct{}) {
+	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
+		return
 	}
+
+	go func() {
+		actor.run(ok)
+		// exit
+		logger.KV("actor", actor.GetID()).Info("actor done")
+		s.actorCache.Delete(actor.GetID())
+		s.waitStop.Done()
+	}()
 }
 
 func (s *System) Address() string {
@@ -97,10 +95,19 @@ func (s *System) Stop() {
 			value.(*actor).stop()
 			return true
 		})
-		s.waitCluster()
-		s.Send("", s.clusterId, "", "stop")
+		for c := false; !c; {
+			s.actorCache.Range(func(key, value interface{}) bool {
+				c = key == s.clusterId
+				return c
+			})
+			runtime.Gosched()
+		}
+		e := s.Send("", s.clusterId, "", "stop")
+		if e != nil {
+			logger.KV("err", e).Error("stop error")
+		}
 		s.waitStop.Wait()
-		close(s.waitRun)
+		close(s.newList)
 		logger.Info("System Exit")
 	}
 }
@@ -118,26 +125,12 @@ func (s *System) Regist(actor *actor) error {
 
 	s.waitStop.Add(1)
 	tools.Try(
-		func() { s.waitRun <- actor },
+		func() { s.newList <- actor },
 		func(ex interface{}) {
 			s.waitStop.Done()
 			s.actorCache.Delete(actor.GetID())
 		})
 	return nil
-}
-
-func (s *System) runActor(actor *actor, ok chan struct{}) {
-	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
-		return
-	}
-
-	go func() {
-		actor.run(ok)
-		// exit
-		logger.KV("actor", actor.GetID()).Info("actor done")
-		s.actorCache.Delete(actor.GetID())
-		s.waitStop.Done()
-	}()
 }
 
 // actor之间发送消息,
@@ -164,10 +157,6 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 		return fmt.Errorf("%w s[%v] t[%v],r[%v]", e, sourceId, targetId, requestId)
 	}
 	return nil
-}
-
-func (s *System) ClusterId() string {
-	return s.clusterId
 }
 
 // 设置Actor监听的端口

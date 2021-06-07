@@ -58,7 +58,7 @@ func (s *actor) LAddTimer(l *lua.LState) int {
 	l.Pop(3)
 
 	if count == 0 || interval < 0 {
-		log.KVs(log.Fields{"count": count, "interval": interval}).Error("val error")
+		log.KVs(log.Fields{"count": count, "timeout": interval}).Error("val error")
 		return 0
 	}
 

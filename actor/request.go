@@ -62,39 +62,52 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 //谨慎使用，可能带来死锁问题
 type waitActor struct {
 	ActorHanlerBase
+	targetId string
+	msg      interface{}
+	c        chan *result
+	timeout  int64
+}
+type result struct {
+	result interface{}
+	err    error
 }
 
+func (s *waitActor) Init() {
+	req := s.Request(s.targetId, s.msg, -1)
+	s.AddTimer(time.Duration(s.timeout), 1, func(dt int64) {
+		expect.Nil(s.Response(req.id, &actor_msg.RequestDeadLetter{Err: "RequestWait timeout"}))
+	})
+	//发出请求，并阻塞等待结果
+
+	req.Handle(func(resp interface{}, e error) {
+		s.c <- &result{result: resp, err: e}
+		s.Exit()
+	})
+}
 func (s *waitActor) Stop() bool {
-	return false
+	close(s.c)
+	return true
 }
 
-func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (result interface{}, err error) {
+func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (re interface{}, err error) {
+	if atomic.LoadInt32(&s.asyncStop) == 1 {
+		return
+	}
 	//新起actor等待结果
-	waiter := New(tools.UUID(), &waitActor{}, SetLocalized())
-	expect.Nil(s.System().Regist(waiter))
+	respC := make(chan *result)
 
 	//超时设定
 	interval := DefaultTimeout
 	if len(timeout) > 0 {
 		interval = timeout[0]
 	}
+	waiter := New(tools.UUID(), &waitActor{c: respC, msg: msg, targetId: targetId, timeout: int64(interval)}, SetLocalized())
+	expect.Nil(s.System().Regist(waiter))
 
-	req := waiter.Request(targetId, msg, -1)
-
-	waiter.AddTimer(interval, 1, func(dt int64) {
-		expect.Nil(waiter.Response(req.id, &actor_msg.RequestDeadLetter{Err: "RequestWait timeout"}))
-	})
-
-	//发出请求，并阻塞等待结果
-	respC := make(chan struct{})
-	req.Handle(func(resp interface{}, e error) {
-		result = resp
-		err = e
-		respC <- struct{}{}
-		waiter.Stop()
-	})
-
-	<-respC // 阻塞等待waiter返回结果
+	res := <-respC // 阻塞等待waiter返回结果
+	if res != nil {
+		return res.result, res.err
+	}
 	return
 }
 

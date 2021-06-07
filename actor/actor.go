@@ -18,7 +18,7 @@ type (
 		//core
 		GetID() string
 		System() *System
-		Stop()
+		Exit()
 
 		//timer
 		AddTimer(interval time.Duration, trigger_times int32, callback jtimer.FuncCallback) int64
@@ -112,7 +112,7 @@ func (s *actor) isWaitActor() bool {
 }
 
 // 业务层触发关闭
-func (s *actor) Stop() {
+func (s *actor) Exit() {
 	atomic.CompareAndSwapInt32(&s.syncStop, 0, 1)
 }
 
@@ -122,7 +122,7 @@ func (s *actor) stop() {
 }
 
 // 添加计时器,每个actor独立一个计时器
-// interval 	 单位nanoseconds
+// timeout 	 单位nanoseconds
 // trigger_times 执行次数 -1 无限次
 // callback 	 只能是主线程回调
 func (s *actor) AddTimer(interval time.Duration, trigger_times int32, callback jtimer.FuncCallback) int64 {
