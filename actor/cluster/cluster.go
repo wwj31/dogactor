@@ -39,7 +39,7 @@ func newCluster(cluster IServiceMeshProvider, remote IRemoteProvider) *Cluster {
 }
 
 type Cluster struct {
-	actor.ActorHanlerBase
+	actor.HandlerBase
 
 	serviceMesh IServiceMeshProvider
 	remote      IRemoteProvider
@@ -49,7 +49,7 @@ type Cluster struct {
 	ready   map[string]bool            //host=>true
 }
 
-func (c *Cluster) Init() {
+func (c *Cluster) OnInit() {
 	c.System().RegistEvent(c.GetID(), (*actor.Ev_newActor)(nil), (*actor.Ev_clusterUpdate)(nil), (*actor.Ev_newSession)(nil))
 
 	if e := c.remote.Start(c.System()); e != nil {
@@ -64,11 +64,11 @@ func (c *Cluster) Init() {
 	c.ready[c.System().Address()] = true
 }
 
-func (c *Cluster) Stop() (immediatelyStop bool) {
+func (c *Cluster) OnStop() (immediatelyStop bool) {
 	return false
 }
 
-func (c *Cluster) HandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
+func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
 	_, reqTargetId, _, _ := actor.ParseRequestId(requestId)
 	if c.GetID() != reqTargetId {
 		if err := c.sendRemote(sourceId, targetId, requestId, msg.(proto.Message)); err != nil {
@@ -80,7 +80,7 @@ func (c *Cluster) HandleRequest(sourceId, targetId, requestId string, msg interf
 	return
 }
 
-func (c *Cluster) HandleMessage(sourceId, targetId string, msg interface{}) {
+func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	if targetId != c.GetID() {
 		if err := c.sendRemote(sourceId, targetId, "", msg.(proto.Message)); err != nil {
 			logger.KV("targetId", targetId).KV("error", err).Error("remote actor send failed")
@@ -161,7 +161,7 @@ func (c *Cluster) delRemoteActor(actorId string) {
 	}
 }
 
-func (c *Cluster) HandleEvent(event interface{}) {
+func (c *Cluster) OnHandleEvent(event interface{}) {
 	switch e := event.(type) {
 	case *actor.Ev_newActor:
 		if e.Publish {

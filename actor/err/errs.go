@@ -17,5 +17,5 @@ var (
 	RegisterActorSameIdErr = fmt.Errorf("actor with same id")
 	ActorNotFoundErr       = fmt.Errorf("local actor not found")
 	ActorPushMsgErr        = fmt.Errorf("push a nil msg to actor")
-	ActorUnimplemented     = fmt.Errorf("actor has no implemented HandleRequest")
+	ActorUnimplemented     = fmt.Errorf("actor has no implemented OnHandleRequest")
 )

@@ -2,27 +2,28 @@ package actor
 
 import (
 	"github.com/wwj31/godactor/actor/err"
+	"github.com/wwj31/godactor/log"
 )
 
-type ActorHanlerBase struct {
+type HandlerBase struct {
 	IActor
 }
 
-func (s *ActorHanlerBase) initActor(actor IActor) {
+func (s *HandlerBase) onInitActor(actor IActor) {
 	s.IActor = actor
 }
 
-func (s *ActorHanlerBase) Init()      {}
-func (s *ActorHanlerBase) Stop() bool { return true }
+func (s *HandlerBase) OnInit()      { log.KV("actor", s.GetID()).Warn("actor default init") }
+func (s *HandlerBase) OnStop() bool { return true }
 
-func (s *ActorHanlerBase) HandleMessage(sourceId, targetId string, msg interface{}) {
-	logger.KV("actorId", s.GetID()).Warn("not implement HandleMessage")
+func (s *HandlerBase) OnHandleMessage(sourceId, targetId string, msg interface{}) {
+	logger.KV("actorId", s.GetID()).Warn("not implement OnHandleMessage")
 }
 
-func (s *ActorHanlerBase) HandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
+func (s *HandlerBase) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
 	return err.ActorUnimplemented
 }
 
-func (s *ActorHanlerBase) HandleEvent(event interface{}) {
-	logger.KV("actorId", s.GetID()).Warn("not implement HandleEvent")
+func (s *HandlerBase) OnHandleEvent(event interface{}) {
+	logger.KV("actorId", s.GetID()).Warn("not implement OnHandleEvent")
 }

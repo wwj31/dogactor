@@ -28,8 +28,8 @@ func NewProtoParser() *ProtoParser {
 func (s *ProtoParser) Init(packageName, msgType string) *ProtoParser {
 	enums, err := protoregistry.GlobalTypes.FindEnumByName(protoreflect.FullName(packageName + "." + msgType))
 	if err != nil {
-		log.KV("packageName", packageName).KV("msgType", msgType).Error("Init error")
-		panic(fmt.Errorf("Init error packageName=%v msgType=%v", packageName, msgType))
+		log.KV("packageName", packageName).KV("msgType", msgType).Error("OnInit error")
+		panic(fmt.Errorf("OnInit error packageName=%v msgType=%v", packageName, msgType))
 		return s
 	}
 

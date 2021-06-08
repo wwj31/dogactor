@@ -43,7 +43,7 @@ func main() {
 }
 
 type DemoA struct {
-	actor.ActorHanlerBase
+	actor.HandlerBase
 }
 
 func (s *DemoA) Init() {
@@ -76,11 +76,11 @@ func (s *DemoA) HandleRequest(sourceId, targetId, requestId string, msg interfac
 }
 
 type DemoB struct {
-	actor.ActorHanlerBase
+	actor.HandlerBase
 }
 
 func (s *DemoB) Init() {
-	log.Info("Init DemoB")
+	log.Info("OnInit DemoB")
 	s.AddTimer(time.Second*5, -1, func(dt int64) {
 		resp, err := s.RequestWait("demoA1", &DemoMsg{ModelName: s.GetID()})
 		log.KVs(log.Fields{"resp": resp, "err": err}).Info("demoB recv1")

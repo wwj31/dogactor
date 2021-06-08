@@ -38,15 +38,15 @@ type (
 	}
 
 	// actor 处理接口
-	IActorHandler interface {
-		initActor(actor IActor)
+	_IActorHandler interface {
+		onInitActor(actor IActor)
 
-		Init()
-		Stop() (immediatelyStop bool) // true 立刻停止，false 延迟停止
+		OnInit()
+		OnStop() bool // true 立刻停止，false 延迟停止
 
-		HandleEvent(event interface{})                                                       //事件消息
-		HandleMessage(sourceId, targetId string, msg interface{})                            //普通消息(只管发送)
-		HandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) //请求消息(需要应答)
+		OnHandleEvent(event interface{})                                             //事件消息
+		OnHandleMessage(sourceId, targetId string, msg interface{})                  //普通消息
+		OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) error //请求消息(需要应答)
 	}
 )
 type (
@@ -54,7 +54,7 @@ type (
 	// 运行单元
 	actor struct {
 		id        string
-		handler   IActorHandler
+		handler   _IActorHandler
 		mailBox   chan actor_msg.IMessage // todo 考虑用无锁队列优化
 		system    *System
 		remote    bool // 是否能被远端发现 默认为true, 如果是本地actor,手动设SetLocalized()后,再注册
@@ -69,7 +69,7 @@ type (
 		lua     script.ILua
 		luapath string
 
-		//log
+		//logger
 		logger *log.Logger
 
 		//request
@@ -81,7 +81,7 @@ type (
 // id 		actorId外部定义  @和$为内部符号，其他id尽量不占用
 // handler  消息处理模块
 // op  修改默认属性
-func New(id string, handler IActorHandler, op ...ActorOption) *actor {
+func New(id string, handler _IActorHandler, op ...ActorOption) *actor {
 	a := &actor{
 		id:            id,
 		handler:       handler,
@@ -93,7 +93,7 @@ func New(id string, handler IActorHandler, op ...ActorOption) *actor {
 		requests:      make(map[string]*request),
 	}
 
-	handler.initActor(a)
+	handler.onInitActor(a)
 
 	for _, f := range op {
 		f(a)
@@ -161,7 +161,7 @@ func (s *actor) push(msg actor_msg.IMessage) error {
 func (s *actor) run(ok chan struct{}) {
 	s.logger.Debug("actor startup")
 
-	tools.Try(func() { s.handler.Init() }, nil)
+	tools.Try(func() { s.handler.OnInit() }, nil)
 	if ok != nil {
 		ok <- struct{}{}
 	}
@@ -212,7 +212,7 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 			s.doneRequest(message.RequestId, message.Message())
 		} else {
 			// 收到Request
-			if err := s.handler.HandleRequest(message.SourceId, message.TargetId, message.RequestId, message.Message()); err != nil {
+			if err := s.handler.OnHandleRequest(message.SourceId, message.TargetId, message.RequestId, message.Message()); err != nil {
 				expect.Nil(s.Response(message.RequestId, &actor_msg.RequestDeadLetter{Err: err.Error()}))
 			}
 		}
@@ -221,7 +221,7 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 
 	//事件消息
 	if event, ok := message.Message().(*actor_msg.EventMessage); ok {
-		s.handler.HandleEvent(event.ActEvent())
+		s.handler.OnHandleEvent(event.ActEvent())
 		return
 	}
 
@@ -231,7 +231,7 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 		return
 	}
 
-	s.handler.HandleMessage(message.SourceId, message.TargetId, message.Message())
+	s.handler.OnHandleMessage(message.SourceId, message.TargetId, message.Message())
 }
 
 func (s *actor) stopCheck() (immediatelyStop bool) {
@@ -242,7 +242,7 @@ func (s *actor) stopCheck() (immediatelyStop bool) {
 
 	//系统层说停止=>通知逻辑,并且返回是否立即停止
 	if atomic.CompareAndSwapInt32(&s.asyncStop, 1, 2) {
-		tools.Try(func() { immediatelyStop = s.handler.Stop() }, func(ex interface{}) { immediatelyStop = true })
+		tools.Try(func() { immediatelyStop = s.handler.OnStop() }, func(ex interface{}) { immediatelyStop = true })
 	}
 	return
 }

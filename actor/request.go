@@ -61,7 +61,7 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 
 //谨慎使用，可能带来死锁问题
 type waitActor struct {
-	ActorHanlerBase
+	HandlerBase
 	targetId string
 	msg      interface{}
 	c        chan *result
@@ -72,7 +72,7 @@ type result struct {
 	err    error
 }
 
-func (s *waitActor) Init() {
+func (s *waitActor) OnInit() {
 	req := s.Request(s.targetId, s.msg, -1)
 	s.AddTimer(time.Duration(s.timeout), 1, func(dt int64) {
 		expect.Nil(s.Response(req.id, &actor_msg.RequestDeadLetter{Err: "RequestWait timeout"}))
@@ -84,7 +84,7 @@ func (s *waitActor) Init() {
 		s.Exit()
 	})
 }
-func (s *waitActor) Stop() bool {
+func (s *waitActor) OnStop() bool {
 	close(s.c)
 	return true
 }

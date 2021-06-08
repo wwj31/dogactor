@@ -46,7 +46,7 @@ func NewEtcd(endpoints, prefix string) *Etcd {
 }
 
 // 初始化并启动etcd本地服务
-// example: etcd := newEtcd(....).Start()
+// example1: etcd := newEtcd(....).Start()
 func (s *Etcd) Start(actorSystem *actor.System) error {
 	s.actorSystem = actorSystem
 
