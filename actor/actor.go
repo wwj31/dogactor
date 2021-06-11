@@ -55,7 +55,7 @@ type (
 	actor struct {
 		id        string
 		handler   _IActorHandler
-		mailBox   chan actor_msg.IMessage // todo 考虑用无锁队列优化
+		mailBox   chan actor_msg.IMessage // 这里的chan是 多生产者单消费者模式，不需要close，正常退出即可
 		system    *System
 		remote    bool // 是否能被远端发现 默认为true, 如果是本地actor,手动设SetLocalized()后,再注册
 		asyncStop int32
