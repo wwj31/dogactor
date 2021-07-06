@@ -26,9 +26,9 @@ func (s *Message) Buffer() []byte {
 			return nil
 		}
 		return append(Uint32ToByte4(uint32(s.msgId)), data...)
-	} else {
-		return Uint32ToByte4(uint32(s.msgId))
 	}
+
+	return Uint32ToByte4(uint32(s.msgId))
 }
 
 func (s *Message) MsgId() int32         { return s.msgId }
