@@ -45,10 +45,10 @@ func (s *Message) parse(data []byte, mm *tools.ProtoParser) *Message {
 	pb := mm.UnmarshalPbMsg(s.msgId, data[4:])
 	if nil == pb {
 		return nil
-	} else {
-		s.pb = pb
-		s.bytes = data
 	}
+
+	s.pb = pb
+	s.bytes = data
 	return s
 }
 
