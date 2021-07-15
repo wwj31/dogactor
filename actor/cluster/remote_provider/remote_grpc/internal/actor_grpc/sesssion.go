@@ -12,7 +12,7 @@ import (
 )
 
 type IStream interface {
-	Send(client *actor_msg.ActorMessage) error
+	Send(*actor_msg.ActorMessage) error
 	Recv() (*actor_msg.ActorMessage, error)
 }
 
@@ -41,7 +41,7 @@ func NewSession(stream IStream, handler IHandler) *Session {
 }
 
 type Session struct {
-	sync.Map
+	ext     sync.Map
 	id      int64
 	running atomic.Int32
 	chSend  chan *actor_msg.ActorMessage

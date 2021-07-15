@@ -13,6 +13,10 @@ import (
 	"github.com/wwj31/godactor/tools"
 )
 
+var (
+	NotRunning = errors.New("client has stopped")
+)
+
 func NewClient(host string, newHandler func() IHandler) *Client {
 	c := &Client{
 		host:             host,
@@ -58,7 +62,7 @@ func (g *Client) connect() error {
 	defer g.connMux.Unlock()
 
 	if !g.IsRunning() {
-		return errors.New("client has stopped")
+		return NotRunning
 	}
 
 	//kacp := grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: 15 * time.Second, Timeout: 5 * time.Second, PermitWithoutStream: true})

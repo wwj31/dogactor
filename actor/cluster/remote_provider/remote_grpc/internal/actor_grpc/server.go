@@ -42,8 +42,8 @@ type Server struct {
 }
 
 func (this *Server) Receive(stream actor_msg.ActorService_ReceiveServer) error {
-	session := NewSession(stream, this.newHandler().(IHandler))
-	session.Store("ext", this.ext)
+	session := NewSession(stream, this.newHandler())
+	session.ext.Store("ext", this.ext)
 	session.start(true)
 	return nil
 }
