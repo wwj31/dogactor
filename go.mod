@@ -26,7 +26,7 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
-	github.com/wwj31/jtimer v1.1.0
+	github.com/wwj31/jtimer v1.1.1
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.16.0 // indirect
