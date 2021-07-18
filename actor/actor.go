@@ -136,7 +136,7 @@ func (s *actor) AddTimer(interval time.Duration, trigger_times int32, callback j
 		s.logger.KV("error", e).ErrorStack(3, "AddTimer failed")
 		return -1
 	}
-	return s.timerMgr.AddTimer(newTimer, false)
+	return s.timerMgr.AddTimer(newTimer)
 }
 
 // 删除一个定时器
