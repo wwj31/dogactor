@@ -39,7 +39,7 @@ func newCluster(cluster IServiceMeshProvider, remote IRemoteProvider) *Cluster {
 }
 
 type Cluster struct {
-	actor.HandlerBase
+	actor.Base
 
 	serviceMesh IServiceMeshProvider
 	remote      IRemoteProvider

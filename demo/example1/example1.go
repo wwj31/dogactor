@@ -7,8 +7,8 @@ import (
 	"github.com/wwj31/godactor/actor"
 )
 
-type PingActor struct{ actor.HandlerBase }
-type PongActor struct{ actor.HandlerBase }
+type PingActor struct{ actor.Base }
+type PongActor struct{ actor.Base }
 
 func main() {
 	//log.Init(log.TAG_DEBUG_I, nil, "./_log", "demo", 1)
@@ -17,13 +17,19 @@ func main() {
 	pong := actor.New("pong", &PongActor{})
 	system.Regist(ping)
 	system.Regist(pong)
-	select {}
+
+	<-system.CStop
+	fmt.Println("stop")
 }
 
 // PingActor
 func (s *PingActor) OnInit() {
 	s.AddTimer(2*time.Second, -1, func(dt int64) {
 		s.Send("pong", "this is data")
+	})
+
+	s.AddTimer(10*time.Second, 1, func(dt int64) {
+		s.System().Stop()
 	})
 }
 func (s *PingActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {

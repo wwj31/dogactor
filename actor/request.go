@@ -61,7 +61,7 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 
 //谨慎使用，可能带来死锁问题
 type waitActor struct {
-	HandlerBase
+	Base
 	targetId string
 	msg      interface{}
 	c        chan *result

@@ -16,6 +16,8 @@ import (
 type SystemOption func(*System) error
 
 type System struct {
+	CStop chan struct{}
+
 	actorAddr string          // 远程actor连接端口
 	waitStop  *sync.WaitGroup // stop wait
 	exiting   int32           // 停止标记
@@ -34,6 +36,7 @@ type System struct {
 
 func NewSystem(op ...SystemOption) (*System, error) {
 	s := &System{
+		CStop:    make(chan struct{}, 1),
 		waitStop: &sync.WaitGroup{},
 		newList:  make(chan *actor, 100),
 	}
@@ -90,25 +93,31 @@ func (s *System) SetCluster(id string) {
 
 func (s *System) Stop() {
 	if atomic.CompareAndSwapInt32(&s.exiting, 0, 1) {
-		//shutdown() 通知所有actor执行关闭
-		s.actorCache.Range(func(key, value interface{}) bool {
-			value.(*actor).stop()
-			return true
-		})
-		for c := false; !c; {
+		go func() {
+			//shutdown() 通知所有actor执行关闭
 			s.actorCache.Range(func(key, value interface{}) bool {
-				c = key == s.clusterId
-				return c
+				value.(*actor).stop()
+				return true
 			})
-			runtime.Gosched()
-		}
-		e := s.Send("", s.clusterId, "", "stop")
-		if e != nil {
-			logger.KV("err", e).Error("stop error")
-		}
-		s.waitStop.Wait()
-		close(s.newList)
-		logger.Info("System Exit")
+			if s.clusterId != "" {
+				for c := false; !c; {
+					s.actorCache.Range(func(key, value interface{}) bool {
+						c = key == s.clusterId
+						return c
+					})
+					runtime.Gosched()
+				}
+			}
+
+			e := s.Send("", s.clusterId, "", "stop")
+			if e != nil {
+				logger.KV("err", e).Error("stop error")
+			}
+			s.waitStop.Wait()
+			close(s.newList)
+			logger.Info("System Exit")
+			s.CStop <- struct{}{}
+		}()
 	}
 }
 
