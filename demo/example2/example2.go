@@ -4,6 +4,7 @@ import (
 	"github.com/wwj31/godactor/actor/cluster"
 	"github.com/wwj31/godactor/demo/example2/interval"
 	"github.com/wwj31/godactor/log"
+	"github.com/wwj31/godactor/tools"
 	"net/http"
 	"time"
 
@@ -41,7 +42,7 @@ func main() {
 }
 func (s *Student) OnInit() {
 	if s.Name == "LiLei" {
-		s.AddTimer(2*time.Second, 1, func(dt int64) {
+		s.AddTimer(tools.UUID(), 2*time.Second, func(dt int64) {
 			s.Send("HanMeimei", &interval.LileiSay{Data: "hello, I'm Li Lei"})
 		})
 	}
@@ -70,13 +71,13 @@ func (s *Student) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 			log.Info(resp.(*interval.HanMeimeiSay).Data)
 		})
 
-		s.AddTimer(time.Duration(10)*time.Millisecond, -1, func(dt int64) {
+		s.AddTimer(tools.UUID(), time.Duration(10)*time.Millisecond, func(dt int64) {
 			s.Request(sourceId, &interval.LileiSay{
 				Data: "please~",
 			}).Handle(func(resp interface{}, err error) {
 				log.Info(resp.(*interval.HanMeimeiSay).Data)
 			})
-		})
+		}, -1)
 	}
 }
 func (s *Student) OnHandleRequest(sourceId, targetId string, requestId string, msg interface{}) error {

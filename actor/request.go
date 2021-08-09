@@ -24,7 +24,7 @@ type request struct {
 	result    interface{}
 	err       error
 	fn        func(resp interface{}, err error)
-	timeoutId int64
+	timeoutId string
 }
 
 func (s *request) Handle(fn func(resp interface{}, err error)) {
@@ -52,7 +52,7 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 	}
 
 	if interval > 0 {
-		req.timeoutId = s.AddTimer(interval, 1, func(dt int64) {
+		req.timeoutId = s.AddTimer(tools.UUID(), interval, func(dt int64) {
 			expect.Nil(s.Response(req.id, &actor_msg.RequestDeadLetter{Err: "Request timeout"}))
 		})
 	}
@@ -74,7 +74,7 @@ type result struct {
 
 func (s *waitActor) OnInit() {
 	req := s.Request(s.targetId, s.msg, -1)
-	s.AddTimer(time.Duration(s.timeout), 1, func(dt int64) {
+	s.AddTimer(tools.UUID(), time.Duration(s.timeout), func(dt int64) {
 		expect.Nil(s.Response(req.id, &actor_msg.RequestDeadLetter{Err: "RequestWait timeout"}))
 	})
 	//发出请求，并阻塞等待结果

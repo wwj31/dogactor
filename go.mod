@@ -26,14 +26,13 @@ require (
 	github.com/satori/go.uuid v1.2.0
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/tmc/grpc-websocket-proxy v0.0.0-20201229170055-e5319fda7802 // indirect
-	github.com/wwj31/jtimer v1.1.2
+	github.com/wwj31/jtimer v1.1.3
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da
 	go.uber.org/atomic v1.7.0
 	go.uber.org/zap v1.16.0 // indirect
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba // indirect
 	google.golang.org/grpc v1.33.1
 	google.golang.org/protobuf v1.26.0
-	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
 	sigs.k8s.io/yaml v1.2.0 // indirect
 )

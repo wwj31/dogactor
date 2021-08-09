@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/wwj31/godactor/actor"
+	"github.com/wwj31/godactor/tools"
 )
 
 type PingActor struct{ actor.Base }
@@ -24,13 +25,13 @@ func main() {
 
 // PingActor
 func (s *PingActor) OnInit() {
-	s.AddTimer(2*time.Second, -1, func(dt int64) {
+	s.AddTimer(tools.UUID(), 2*time.Second, func(dt int64) {
 		s.Send("pong", "this is data")
-	})
+	}, -1)
 
-	s.AddTimer(10*time.Second, 1, func(dt int64) {
+	s.AddTimer(tools.UUID(), 10*time.Second, func(dt int64) {
 		s.System().Stop()
-	})
+	}, 1)
 }
 func (s *PingActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	switch msg {

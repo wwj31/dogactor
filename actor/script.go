@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"github.com/wwj31/godactor/tools"
 	lua "github.com/yuin/gopher-lua"
 	"runtime"
 	"time"
@@ -62,20 +63,20 @@ func (s *actor) LAddTimer(l *lua.LState) int {
 		return 0
 	}
 
-	id := s.AddTimer(time.Duration(interval), int32(count), func(dt int64) {
+	id := s.AddTimer(tools.UUID(), time.Duration(interval), func(dt int64) {
 		err := l.CallByParam(lua.P{
 			Fn:      callback,
 			NRet:    0,
 			Protect: true,
 		})
 		expect.Nil(err)
-	})
-	l.Push(lua.LNumber(id))
+	}, int32(count))
+	l.Push(lua.LString(id))
 	return 1
 }
 
 func (s *actor) LCancelTimer(l *lua.LState) int {
-	timerId := l.ToInt64(-1)
+	timerId := l.ToString(-1)
 	l.Pop(1)
 	s.CancelTimer(timerId)
 	return 0
