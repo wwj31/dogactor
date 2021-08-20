@@ -25,10 +25,11 @@ type IMessage interface {
 func NewLocalActorMessage(sourceId, targetId, requestId string, message interface{}) *ActorMessage {
 	msg := _msgPool.Get().(*ActorMessage)
 	atomic.StoreInt32(&msg.free, 1)
+
 	msg.SourceId = sourceId
 	msg.TargetId = targetId
-	msg.message = message
 	msg.RequestId = requestId
+	msg.message = message
 	return msg
 }
 
