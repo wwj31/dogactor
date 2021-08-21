@@ -6,13 +6,17 @@ import (
 	"github.com/wwj31/godactor/expect"
 	"github.com/wwj31/godactor/tools"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/wwj31/godactor/actor/internal/actor_msg"
 )
 
-var _id = time.Now().UnixNano()
+var (
+	_id          = time.Now().UnixNano()
+	request_pool = sync.Pool{New: func() interface{} { return &request{} }}
+)
 
 const DefaultTimeout = time.Second * 30
 
@@ -35,27 +39,34 @@ func (s *request) Handle(fn func(resp interface{}, err error)) {
 	s.fn = fn
 	if s.result != nil || s.err != nil {
 		s.fn(s.result, s.err)
+		request_pool.Put(s)
 	}
 }
 
 func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Duration) (req *request) {
-	req = s.newRequest(targetId)
-	e := s.system.Send(s.id, targetId, req.id, msg)
-	if req.err != nil {
-		req.err = e
+	req = request_pool.Get().(*request)
+	req.id = requestId(s.id, targetId, s.system.Address())
+	req.sourceId = s.GetID()
+	req.targetId = targetId
+	req.result = nil
+	req.err = nil
+	req.fn = nil
+	s.requests[req.id] = req
+
+	err := s.system.Send(s.id, targetId, req.id, msg)
+	if err != nil {
+		req.err = err
 		return req
 	}
 
 	interval := DefaultTimeout
-	if len(timeout) > 0 {
+	if len(timeout) > 0 && timeout[0] > 0 {
 		interval = timeout[0]
 	}
 
-	if interval > 0 {
-		req.timeoutId = s.AddTimer(tools.UUID(), interval, func(dt int64) {
-			expect.Nil(s.Response(req.id, &actor_msg.RequestDeadLetter{Err: "Request timeout"}))
-		})
-	}
+	req.timeoutId = s.AddTimer(tools.UUID(), interval, func(dt int64) {
+		expect.Nil(s.Response(req.id, &actor_msg.RequestDeadLetter{Err: "Request timeout"}))
+	})
 	return req
 }
 
@@ -98,7 +109,7 @@ func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Du
 
 	//超时设定
 	interval := DefaultTimeout
-	if len(timeout) > 0 {
+	if len(timeout) > 0 && timeout[0] > 0 {
 		interval = timeout[0]
 	}
 	waiter := New(tools.UUID(), &waitActor{c: respC, msg: msg, targetId: targetId, timeout: int64(interval)}, SetLocalized())
@@ -117,19 +128,6 @@ func (s *actor) Response(requestId string, msg interface{}) error {
 		return fmt.Errorf("error requestId:%v", requestId)
 	}
 	return s.system.Send(s.id, reqSourceId, requestId, msg)
-}
-
-func (s *actor) newRequest(targetId string) (req *request) {
-	req = &request{
-		id:       requestId(s.id, targetId, s.system.Address()),
-		sourceId: s.GetID(),
-		targetId: targetId,
-		result:   nil,
-		err:      nil,
-		fn:       nil,
-	}
-	s.requests[req.id] = req
-	return req
 }
 
 func (s *actor) doneRequest(requestId string, resp interface{}) {
@@ -153,26 +151,28 @@ func (s *actor) doneRequest(requestId string, resp interface{}) {
 
 	if req.fn != nil {
 		req.fn(req.result, req.err)
+		request_pool.Put(req)
 	}
 }
 
+// actorId-incId-targetId#sourceAddr
 func requestId(actorId, targetId, sourceAddr string) string {
-	return fmt.Sprintf("%s$%d$%s@%s", actorId, atomic.AddInt64(&_id, 1), targetId, sourceAddr)
+	return fmt.Sprintf("%s@%d@%s#%s", actorId, atomic.AddInt64(&_id, 1), targetId, sourceAddr)
 }
 
-func ParseRequestId(requestId string) (source string, target string, addr string, ok bool) {
+func ParseRequestId(requestId string) (sourceId string, targetId string, sourceAddr string, ok bool) {
 	if len(requestId) == 0 {
 		return
 	}
-	strs := strings.Split(requestId, "@")
+	strs := strings.Split(requestId, "#")
 	if len(strs) != 2 {
 		return
 	}
-	addr = strs[1]
-	strs = strings.Split(strs[0], "$")
+	sourceAddr = strs[1]
+	strs = strings.Split(strs[0], "@")
 	if len(strs) != 3 {
 		return
 	}
 	ok = true
-	return strs[0], strs[2], addr, ok
+	return strs[0], strs[2], sourceAddr, ok
 }

@@ -71,7 +71,7 @@ func (s *Student) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 			log.Info(resp.(*interval.HanMeimeiSay).Data)
 		})
 
-		s.AddTimer(tools.UUID(), time.Duration(10)*time.Millisecond, func(dt int64) {
+		s.AddTimer(tools.UUID(), 1*time.Second, func(dt int64) {
 			s.Request(sourceId, &interval.LileiSay{
 				Data: "please~",
 			}).Handle(func(resp interface{}, err error) {
