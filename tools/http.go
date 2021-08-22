@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/wwj31/godactor/log"
+	"github.com/wwj31/dogactor/log"
 )
 
 type HttpHandler struct {

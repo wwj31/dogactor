@@ -6,7 +6,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/wwj31/godactor/log/colorized"
+	"github.com/wwj31/dogactor/log/colorized"
 )
 
 type Fields map[string]interface{}

@@ -3,15 +3,15 @@ package actor
 import (
 	"errors"
 	"fmt"
-	"github.com/wwj31/godactor/expect"
-	"github.com/wwj31/godactor/log"
-	"github.com/wwj31/godactor/tools"
+	"github.com/wwj31/dogactor/expect"
+	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/wwj31/godactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 )
 
 var (

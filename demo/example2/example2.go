@@ -1,14 +1,14 @@
 package main
 
 import (
-	"github.com/wwj31/godactor/actor/cluster"
-	"github.com/wwj31/godactor/demo/example2/interval"
-	"github.com/wwj31/godactor/log"
-	"github.com/wwj31/godactor/tools"
+	"github.com/wwj31/dogactor/actor/cluster"
+	"github.com/wwj31/dogactor/demo/example2/interval"
+	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 	"net/http"
 	"time"
 
-	"github.com/wwj31/godactor/actor"
+	"github.com/wwj31/dogactor/actor"
 	_ "net/http/pprof"
 )
 

@@ -7,9 +7,9 @@ import (
 	"sync/atomic"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/wwj31/godactor/actor/err"
-	"github.com/wwj31/godactor/actor/internal/actor_msg"
-	"github.com/wwj31/godactor/tools"
+	"github.com/wwj31/dogactor/actor/err"
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/tools"
 )
 
 /* 所有actor的驱动器和调度器*/

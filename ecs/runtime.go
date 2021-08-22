@@ -3,7 +3,7 @@ package ecs
 import (
 	"errors"
 	"fmt"
-	"github.com/wwj31/godactor/tools"
+	"github.com/wwj31/dogactor/tools"
 )
 
 type Runtime struct {

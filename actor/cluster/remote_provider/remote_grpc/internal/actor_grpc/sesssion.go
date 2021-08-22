@@ -6,9 +6,9 @@ import (
 	"google.golang.org/grpc"
 	"sync"
 
-	"github.com/wwj31/godactor/actor/internal/actor_msg"
-	"github.com/wwj31/godactor/log"
-	"github.com/wwj31/godactor/tools"
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 )
 
 type IStream interface {

@@ -6,11 +6,11 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 	"go.uber.org/atomic"
 
-	"github.com/wwj31/godactor/actor"
-	"github.com/wwj31/godactor/actor/cluster/remote_provider/remote_grpc/internal/actor_grpc"
-	"github.com/wwj31/godactor/actor/internal/actor_msg"
-	"github.com/wwj31/godactor/log"
-	"github.com/wwj31/godactor/tools"
+	"github.com/wwj31/dogactor/actor"
+	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_grpc/internal/actor_grpc"
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 )
 
 // 管理所有远端的session

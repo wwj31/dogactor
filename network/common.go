@@ -1,7 +1,7 @@
 package network
 
 import (
-	"github.com/wwj31/godactor/tools"
+	"github.com/wwj31/dogactor/tools"
 	"net"
 	"sync/atomic"
 )

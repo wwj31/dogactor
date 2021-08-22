@@ -3,11 +3,11 @@ package cluster
 import (
 	"errors"
 	"fmt"
-	"github.com/wwj31/godactor/actor"
-	"github.com/wwj31/godactor/actor/cluster/remote_provider/remote_grpc"
-	"github.com/wwj31/godactor/actor/cluster/servmesh_provider/etcd"
-	"github.com/wwj31/godactor/actor/err"
-	"github.com/wwj31/godactor/log"
+	"github.com/wwj31/dogactor/actor"
+	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_grpc"
+	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd"
+	"github.com/wwj31/dogactor/actor/err"
+	"github.com/wwj31/dogactor/log"
 	"reflect"
 	"strings"
 

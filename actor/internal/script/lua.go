@@ -4,8 +4,8 @@ import (
 	golua "github.com/yuin/gopher-lua"
 	"path"
 
-	"github.com/wwj31/godactor/expect"
-	"github.com/wwj31/godactor/log"
+	"github.com/wwj31/dogactor/expect"
+	"github.com/wwj31/dogactor/log"
 )
 
 type ILua interface {

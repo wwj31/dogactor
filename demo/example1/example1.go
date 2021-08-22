@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/wwj31/godactor/actor"
-	"github.com/wwj31/godactor/tools"
+	"github.com/wwj31/dogactor/actor"
+	"github.com/wwj31/dogactor/tools"
 )
 
 type PingActor struct{ actor.Base }

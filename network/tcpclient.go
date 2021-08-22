@@ -2,8 +2,8 @@ package network
 
 import (
 	"errors"
-	"github.com/wwj31/godactor/log"
-	"github.com/wwj31/godactor/tools"
+	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 	"net"
 	"sync"
 	"sync/atomic"

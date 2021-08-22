@@ -7,11 +7,11 @@ import (
 	"go.uber.org/atomic"
 	"time"
 
-	"github.com/wwj31/godactor/actor"
-	"github.com/wwj31/godactor/actor/internal/actor_msg"
-	"github.com/wwj31/godactor/log"
-	"github.com/wwj31/godactor/network"
-	"github.com/wwj31/godactor/tools"
+	"github.com/wwj31/dogactor/actor"
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/network"
+	"github.com/wwj31/dogactor/tools"
 )
 
 // 管理所有远端的session

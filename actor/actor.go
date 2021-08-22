@@ -1,12 +1,12 @@
 package actor
 
 import (
-	"github.com/wwj31/godactor/actor/err"
-	"github.com/wwj31/godactor/actor/internal/actor_msg"
-	"github.com/wwj31/godactor/actor/internal/script"
-	"github.com/wwj31/godactor/expect"
-	"github.com/wwj31/godactor/log"
-	"github.com/wwj31/godactor/tools"
+	"github.com/wwj31/dogactor/actor/err"
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/actor/internal/script"
+	"github.com/wwj31/dogactor/expect"
+	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 	"github.com/wwj31/jtimer"
 	lua "github.com/yuin/gopher-lua"
 	"sync/atomic"

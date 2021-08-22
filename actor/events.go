@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/wwj31/godactor/actor/err"
-	"github.com/wwj31/godactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/actor/err"
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 )
 
 type listener map[string]map[string]bool // map[evType][actorId]bool

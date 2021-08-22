@@ -2,7 +2,7 @@ package cluster
 
 import (
 	"github.com/golang/protobuf/proto"
-	"github.com/wwj31/godactor/actor"
+	"github.com/wwj31/dogactor/actor"
 )
 
 type IServiceMeshProvider interface {
