@@ -9,7 +9,7 @@ Getting Started
 # 1.Installing
 #### To start using godactor, install Go and run `go get`:
 ```sh
-$ go get -u github.com/wwj31/godactor
+$ go get -u github.com/wwj31/dogactor
 ```
 
 # 2.Quick Start
@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/wwj31/godactor/actor"
+	"github.com/wwj31/dogactor/actor"
 )
 type PingActor struct{ actor.ActorHanlerBase }
 type PongActor struct{ actor.ActorHanlerBase }
