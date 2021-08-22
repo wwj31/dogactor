@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wwj31/godactor/expect"
+	"github.com/wwj31/godactor/log"
 	"github.com/wwj31/godactor/tools"
 	"strings"
 	"sync"
@@ -70,56 +71,18 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 	return req
 }
 
-//谨慎使用，可能带来死锁问题
-type waitActor struct {
-	Base
-	targetId string
-	msg      interface{}
-	c        chan *result
-	timeout  int64
-}
-type result struct {
-	result interface{}
-	err    error
-}
-
-func (s *waitActor) OnInit() {
-	req := s.Request(s.targetId, s.msg, -1)
-	s.AddTimer(tools.UUID(), time.Duration(s.timeout), func(dt int64) {
-		expect.Nil(s.Response(req.id, &actor_msg.RequestDeadLetter{Err: "RequestWait timeout"}))
-	})
-	//发出请求，并阻塞等待结果
-
-	req.Handle(func(resp interface{}, e error) {
-		s.c <- &result{result: resp, err: e}
-		s.Exit()
-	})
-}
-func (s *waitActor) OnStop() bool {
-	close(s.c)
-	return true
-}
-
-func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (re interface{}, err error) {
+// 同步请求结果
+func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (resp interface{}, err error) {
 	if atomic.LoadInt32(&s.asyncStop) == 1 {
 		return
 	}
-	//新起actor等待结果
-	respC := make(chan *result)
-
-	//超时设定
-	interval := DefaultTimeout
-	if len(timeout) > 0 && timeout[0] > 0 {
-		interval = timeout[0]
-	}
-	waiter := New(tools.UUID(), &waitActor{c: respC, msg: msg, targetId: targetId, timeout: int64(interval)}, SetLocalized())
+	waitRsp := make(chan result)
+	waiter := New(tools.UUID(), &waitActor{c: waitRsp, msg: msg, targetId: targetId}, SetLocalized())
 	expect.Nil(s.System().Regist(waiter))
 
-	res := <-respC // 阻塞等待waiter返回结果
-	if res != nil {
-		return res.result, res.err
-	}
-	return
+	// 阻塞等待waiter返回结果
+	r := <-waitRsp
+	return r.result, r.err
 }
 
 func (s *actor) Response(requestId string, msg interface{}) error {
@@ -130,10 +93,11 @@ func (s *actor) Response(requestId string, msg interface{}) error {
 	return s.system.Send(s.id, reqSourceId, requestId, msg)
 }
 
+// 收到response消息的处理逻辑
 func (s *actor) doneRequest(requestId string, resp interface{}) {
 	req, ok := s.requests[requestId]
 	if !ok {
-		s.logger.KV("requestId", requestId).Warn("can not find request")
+		s.logger.KVs(log.Fields{"requestId": requestId, "actor": s.id}).Warn("can not find request")
 		return
 	}
 
