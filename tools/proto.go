@@ -2,12 +2,12 @@ package tools
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/reflect/protoregistry"
 	"strings"
 
+	"github.com/golang/protobuf/proto"
 	"github.com/wwj31/dogactor/log"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 )
 
 type ProtoParser struct {

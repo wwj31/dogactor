@@ -3,20 +3,20 @@ package actor
 import (
 	"errors"
 	"fmt"
-	"github.com/wwj31/dogactor/expect"
-	"github.com/wwj31/dogactor/log"
-	"github.com/wwj31/dogactor/tools"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/expect"
+	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 )
 
 var (
-	_id          = time.Now().UnixNano()
-	request_pool = sync.Pool{New: func() interface{} { return &request{} }}
+	_id         = time.Now().UnixNano()
+	requestPool = sync.Pool{New: func() interface{} { return &request{} }}
 )
 
 const DefaultTimeout = time.Second * 30
@@ -40,12 +40,12 @@ func (s *request) Handle(fn func(resp interface{}, err error)) {
 	s.fn = fn
 	if s.result != nil || s.err != nil {
 		s.fn(s.result, s.err)
-		request_pool.Put(s)
+		requestPool.Put(s)
 	}
 }
 
 func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Duration) (req *request) {
-	req = request_pool.Get().(*request)
+	req = requestPool.Get().(*request)
 	req.id = requestId(s.id, targetId, s.system.Address())
 	req.sourceId = s.GetID()
 	req.targetId = targetId
@@ -115,7 +115,7 @@ func (s *actor) doneRequest(requestId string, resp interface{}) {
 
 	if req.fn != nil {
 		req.fn(req.result, req.err)
-		request_pool.Put(req)
+		requestPool.Put(req)
 	}
 }
 
