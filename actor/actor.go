@@ -174,8 +174,8 @@ func (s *actor) run(ok chan struct{}) {
 	s.system.DispatchEvent(s.id, &Ev_newActor{ActorId: s.id, Publish: s.remote})
 	defer func() { s.system.DispatchEvent(s.id, &Ev_delActor{ActorId: s.id, Publish: s.remote}) }()
 
-	up_timer := time.NewTicker(time.Millisecond * time.Duration(s.timerAccuracy))
-	defer up_timer.Stop()
+	upTimer := time.NewTicker(time.Millisecond * time.Duration(s.timerAccuracy))
+	defer upTimer.Stop()
 
 	for {
 		if s.stopCheck() {
@@ -183,7 +183,7 @@ func (s *actor) run(ok chan struct{}) {
 		}
 
 		select {
-		case <-up_timer.C:
+		case <-upTimer.C:
 			if atomic.LoadInt32(&s.asyncStop) == 0 {
 				tools.Try(func() { s.timerMgr.Update(tools.Now().UnixNano()) }, nil)
 			}
