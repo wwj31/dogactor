@@ -17,11 +17,11 @@ import (
 func WithRemote(ectd_addr, prefix string) actor.SystemOption {
 	return func(system *actor.System) error {
 		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_grpc.NewRemoteMgr())
-		actor := actor.New("cluster", cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
-		if e := system.Regist(actor); e != nil {
+		clusterActor := actor.New("cluster", cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
+		if e := system.Regist(clusterActor); e != nil {
 			return fmt.Errorf("%w %w", err.RegistClusterErr, e)
 		}
-		system.SetCluster(actor.GetID())
+		system.SetCluster(clusterActor.GetID())
 		return nil
 	}
 }
@@ -81,21 +81,20 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg inte
 }
 
 func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
+	// cluster 只特殊处理 stop 消息，其余消息全部转发remote
 	if targetId != c.GetID() {
-		if err := c.sendRemote(sourceId, targetId, "", msg.(proto.Message)); err != nil {
-			logger.KV("targetId", targetId).KV("error", err).Error("remote actor send failed")
+		if e := c.sendRemote(sourceId, targetId, "", msg.(proto.Message)); e != nil {
+			logger.KV("targetId", targetId).KV("error", e).Error("remote actor send failed")
 		}
+		return
+	}
+
+	if str, ok := msg.(string); ok && str == "stop" {
+		c.serviceMesh.Stop()
+		c.remote.Stop()
+		c.Exit()
 	} else {
-		switch message := msg.(type) {
-		case string:
-			if message == "stop" {
-				c.serviceMesh.Stop()
-				c.remote.Stop()
-				c.Exit()
-			}
-		default:
-			logger.KV("t", reflect.TypeOf(message).Name()).Warn("no such case type")
-		}
+		logger.KVs(log.Fields{"t": reflect.TypeOf(msg).Name(), "str": str}).Warn("no such case type")
 	}
 }
 

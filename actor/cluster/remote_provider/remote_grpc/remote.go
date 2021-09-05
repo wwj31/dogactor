@@ -43,10 +43,6 @@ func (s *RemoteMgr) Start(actorSystem *actor.System) error {
 	}
 
 	s.regist = actor_msg.NewNetActorMessage("", "", "", "$regist", []byte(s.actorSystem.Address()))
-	if err != nil {
-		return err
-	}
-
 	s.listener = listener
 
 	s.actorSystem.RegistCmd("", "remoteinfo", s.remoteinfo)
@@ -65,7 +61,7 @@ func (s *RemoteMgr) Stop() {
 func (s *RemoteMgr) NewClient(host string) {
 	c := actor_grpc.NewClient(host, func() actor_grpc.IHandler { return &remoteHandler{remote: s, peerHost: host} })
 	s.clients.Set(host, c)
-	c.Start(true)
+	_ = c.Start(true)
 }
 
 func (s *RemoteMgr) StopClient(host string) {
@@ -102,13 +98,13 @@ type remoteHandler struct {
 
 func (s *remoteHandler) OnSessionCreated() {
 	s.logger = log.NewWithDefaultAndLogger(logger, map[string]interface{}{"session": s.Id()})
-	s.Send(s.remote.regist)
+	_ = s.Send(s.remote.regist)
 }
 
 func (s *remoteHandler) OnSessionClosed() {
 	if len(s.peerHost) > 0 {
 		s.remote.sessions.Remove(s.peerHost)
-		s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_delSession{Host: s.peerHost})
+		_ = s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_delSession{Host: s.peerHost})
 	}
 }
 
@@ -121,7 +117,7 @@ func (s *remoteHandler) OnRecv(msg *actor_msg.ActorMessage) {
 	if msg.MsgName == "$regist" {
 		s.peerHost = string(msg.Data)
 		s.remote.sessions.Set(s.peerHost, s)
-		s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_newSession{Host: s.peerHost})
+		_ = s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_newSession{Host: s.peerHost})
 	} else {
 		if s.peerHost == "" {
 			s.logger.KV("msg", msg.MsgName).Error("has not regist")
@@ -139,6 +135,6 @@ func (s *remoteHandler) OnRecv(msg *actor_msg.ActorMessage) {
 			s.logger.KV("msgName", msg.MsgName).KV("err", err).Error("Unmarshal failed")
 			return
 		}
-		s.remote.actorSystem.Send(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
+		_ = s.remote.actorSystem.Send(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
 	}
 }
