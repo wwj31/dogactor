@@ -1,5 +1,5 @@
 package servmesh_provider
 
-type EtcdHander interface {
-	OnEtcdNew(k, v string)
+type ServMeshHander interface {
+	OnNewServ(k, v string)
 }

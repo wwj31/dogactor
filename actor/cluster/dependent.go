@@ -7,7 +7,7 @@ import (
 )
 
 type IServiceMeshProvider interface {
-	Start(servmesh_provider.EtcdHander) error
+	Start(servmesh_provider.ServMeshHander) error
 	Stop()
 	RegistService(key string, value string) error
 }

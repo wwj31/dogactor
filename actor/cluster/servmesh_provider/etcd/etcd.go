@@ -31,7 +31,7 @@ type Etcd struct {
 	registErr error        // 注册错误(当任意注册发生错误，则全部推倒重来)
 
 	localActors sync.Map //
-	hander      servmesh_provider.EtcdHander
+	hander      servmesh_provider.ServMeshHander
 	stop        atomic.Int32
 	wg          sync.WaitGroup
 }
@@ -46,7 +46,7 @@ func NewEtcd(endpoints, prefix string) *Etcd {
 }
 
 // 初始化并启动etcd本地服务
-func (s *Etcd) Start(h servmesh_provider.EtcdHander) error {
+func (s *Etcd) Start(h servmesh_provider.ServMeshHander) error {
 	s.hander = h
 
 	logger.KV("endpoints", s.endpoints).KV("prefix", s.prefix).Info("etcd start")
@@ -159,7 +159,7 @@ func (s *Etcd) initAlreadyInEtcd() {
 	}
 	for _, kv := range resp.Kvs {
 		key, val := s.shiftStruct(kv)
-		s.hander.OnEtcdNew(key, val)
+		s.hander.OnNewServ(key, val)
 	}
 }
 
@@ -219,7 +219,7 @@ func (s *Etcd) run() {
 				key, val := s.shiftStruct(e.Kv)
 				log.KV("actorId", key).KV("revision", revision).KV("put", e.Type == clientv3.EventTypePut).Debug("watch etcd")
 				//s.actorSystem.DispatchEvent("", &actor.Ev_clusterUpdate{ActorId: key, Host: val, Add: e.Type == clientv3.EventTypePut})
-				s.hander.OnEtcdNew(key, val)
+				s.hander.OnNewServ(key, val)
 			}
 		}
 	}

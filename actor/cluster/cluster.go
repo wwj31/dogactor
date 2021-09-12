@@ -103,8 +103,8 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	}
 }
 
-// 处理etcd新对象
-func (c *Cluster) OnEtcdNew(k, v string) {
+// 处理新服务
+func (c *Cluster) OnNewServ(k, v string) {
 	e := c.System().DispatchEvent("", &actor.Ev_clusterUpdate{ActorId: k, Host: v, Add: true})
 	if e != nil {
 		logger.KVs(log.Fields{"ActorId": k, "Host": v, "Add": true, "err": e}).Error("system dispatch event error")
