@@ -2,6 +2,7 @@ package remote_grpc
 
 import (
 	"fmt"
+	//"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/proto"
 	cmap "github.com/orcaman/concurrent-map"
 	"go.uber.org/atomic"
@@ -82,7 +83,6 @@ func (s *RemoteMgr) SendMsg(addr string, sourceId, targetId, requestId string, m
 	if err != nil {
 		return err
 	}
-
 	netMsg := actor_msg.NewNetActorMessage(sourceId, targetId, requestId, tools.MsgName(msg), data)
 	return session.(*remoteHandler).Send(netMsg)
 }
