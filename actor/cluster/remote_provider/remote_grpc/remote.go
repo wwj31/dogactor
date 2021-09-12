@@ -118,7 +118,6 @@ func (s *remoteHandler) OnRecv(msg *actor_msg.ActorMessage) {
 		s.peerHost = string(msg.Data)
 		s.remote.sessions.Set(s.peerHost, s)
 		s.remote.remoteHandler.OnSessionOpened(s.peerHost)
-		//_ = s.remote.remoteHandler.DispatchEvent("$remoteHandler", &actor.Ev_newSession{Host: s.peerHost})
 	} else {
 		if s.peerHost == "" {
 			s.logger.KV("msg", msg.MsgName).Error("has not regist")
@@ -137,6 +136,5 @@ func (s *remoteHandler) OnRecv(msg *actor_msg.ActorMessage) {
 			return
 		}
 		s.remote.remoteHandler.OnSessionRecv(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
-		//_ = s.remote.remoteHandler.Send(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
 	}
 }

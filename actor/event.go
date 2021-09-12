@@ -17,3 +17,10 @@ type Ev_clusterUpdate struct {
 	Host    string
 	Add     bool
 }
+
+type Ev_sessionClosed struct {
+	PeerHost string
+}
+type Ev_sessionOpened struct {
+	PeerHost string
+}

@@ -4,10 +4,10 @@ import (
 	"errors"
 	"github.com/golang/protobuf/proto"
 	cmap "github.com/orcaman/concurrent-map"
+	"github.com/wwj31/dogactor/actor/cluster/remote_provider"
 	"go.uber.org/atomic"
 	"time"
 
-	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/network"
@@ -16,8 +16,8 @@ import (
 
 // 管理所有远端的session
 type RemoteMgr struct {
-	actorSystem *actor.System
-	listener    network.INetListener
+	remoteHandler remote_provider.RemoteHandler
+	listener      network.INetListener
 
 	stop     atomic.Int32
 	sessions cmap.ConcurrentMap //host=>session
@@ -35,10 +35,10 @@ func NewRemoteMgr() *RemoteMgr {
 	return mgr
 }
 
-func (s *RemoteMgr) Start(actorSystem *actor.System) error {
-	s.actorSystem = actorSystem
+func (s *RemoteMgr) Start(h remote_provider.RemoteHandler) error {
+	s.remoteHandler = h
 
-	listener := network.StartTcpListen(s.actorSystem.Address(), func() network.ICodec { return &network.StreamCodec{} }, func() network.INetHandler { return &remoteHandler{remote: s} })
+	listener := network.StartTcpListen(s.remoteHandler.Address(), func() network.ICodec { return &network.StreamCodec{} }, func() network.INetHandler { return &remoteHandler{remote: s} })
 	err := listener.Start()
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func (s *RemoteMgr) Start(actorSystem *actor.System) error {
 		return err
 	}
 
-	s.regist, err = actor_msg.NewNetActorMessage("", "", "", "$regist", []byte(s.actorSystem.Address())).Marshal()
+	s.regist, err = actor_msg.NewNetActorMessage("", "", "", "$regist", []byte(s.remoteHandler.Address())).Marshal()
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (s *RemoteMgr) Start(actorSystem *actor.System) error {
 	s.listener = listener
 	tools.GoEngine(s.keepAlive)
 
-	s.actorSystem.RegistCmd("", "remoteinfo", s.remoteinfo)
+	// s.remoteHandler.RegistCmd("", "remoteinfo", s.remoteinfo)
 	return err
 }
 
@@ -139,10 +139,7 @@ func (s *remoteHandler) OnSessionCreated(sess network.INetSession) {
 func (s *remoteHandler) OnSessionClosed() {
 	if len(s.peerHost) > 0 {
 		s.remote.sessions.Remove(s.peerHost)
-		err := s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_delSession{Host: s.peerHost})
-		if err != nil {
-			log.KV("err", err).Error("dispatch event error")
-		}
+		s.remote.remoteHandler.OnSessionClosed(s.peerHost)
 	}
 }
 
@@ -162,10 +159,7 @@ func (s *remoteHandler) OnRecv(data []byte) {
 	if msg.MsgName == "$regist" {
 		s.peerHost = string(msg.Data)
 		s.remote.sessions.Set(s.peerHost, s)
-		err := s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_newSession{Host: s.peerHost})
-		if err != nil {
-			log.KV("err", err).Error("dispatch event error")
-		}
+		s.remote.remoteHandler.OnSessionOpened(s.peerHost)
 	} else if msg.MsgName == "$ping" {
 		//do nothing
 		//s.logger.Debug("recv ping")
@@ -186,9 +180,6 @@ func (s *remoteHandler) OnRecv(data []byte) {
 			s.logger.KV("MsgName", msg.MsgName).KV("err", err).Error("Unmarshal failed")
 			return
 		}
-		err = s.remote.actorSystem.Send(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
-		if err != nil {
-			log.KV("err", err).Error("actor send error")
-		}
+		s.remote.remoteHandler.OnSessionRecv(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
 	}
 }
