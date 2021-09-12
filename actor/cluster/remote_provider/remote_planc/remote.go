@@ -99,20 +99,20 @@ func (s *RemoteMgr) keepAlive() {
 }
 
 // 远端actor发送消息
-func (s *RemoteMgr) Send(addr string, sourceId, targetId, requestId string, actMsg proto.Message) error {
+func (s *RemoteMgr) SendMsg(addr string, sourceId, targetId, requestId string, msg proto.Message) error {
 	session, ok := s.sessions.Get(addr)
 	if !ok {
 		return errors.New("remote addr not found")
 	}
 
 	//TODO 开协程处理？
-	data, err := proto.Marshal(actMsg)
+	data, err := proto.Marshal(msg)
 	if err != nil {
 		return err
 	}
 
-	msg := actor_msg.NewNetActorMessage(sourceId, targetId, requestId, tools.MsgName(actMsg), data)
-	data, err = msg.Marshal()
+	netMsg := actor_msg.NewNetActorMessage(sourceId, targetId, requestId, tools.MsgName(msg), data)
+	data, err = netMsg.Marshal()
 	if err != nil {
 		return err
 	}

@@ -3,15 +3,15 @@ package cluster
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
+
+	"github.com/golang/protobuf/proto"
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_grpc"
 	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd"
 	"github.com/wwj31/dogactor/actor/err"
 	"github.com/wwj31/dogactor/log"
-	"reflect"
-	"strings"
-
-	"github.com/gogo/protobuf/proto"
 )
 
 func WithRemote(ectd_addr, prefix string) actor.SystemOption {
@@ -50,13 +50,13 @@ type Cluster struct {
 }
 
 func (c *Cluster) OnInit() {
-	c.System().RegistEvent(c.GetID(), (*actor.Ev_newActor)(nil), (*actor.Ev_clusterUpdate)(nil), (*actor.Ev_newSession)(nil))
+	c.System().RegistEvent(c.GetID(), (*actor.Ev_newActor)(nil), (*actor.Ev_clusterUpdate)(nil))
 
-	if e := c.remote.Start(c.System()); e != nil {
+	if e := c.remote.Start(c); e != nil {
 		logger.KV("err", e).Error("remote start error")
 	}
 
-	if e := c.serviceMesh.Start(c.System()); e != nil {
+	if e := c.serviceMesh.Start(c); e != nil {
 		logger.KV("err", e).Error("serviceMesh start error")
 	}
 
@@ -98,6 +98,44 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	}
 }
 
+// 处理etcd新对象
+func (c *Cluster) OnEtcdNew(k, v string) {
+	e := c.System().DispatchEvent("", &actor.Ev_clusterUpdate{ActorId: k, Host: v, Add: true})
+	if e != nil {
+		logger.KVs(log.Fields{"ActorId": k, "Host": v, "Add": true, "err": e}).Error("system dispatch event error")
+	}
+}
+
+////////////////////////////////////// RemoteHandler /////////////////////////////////////////////////////////////////
+func (c *Cluster) Address() string {
+	return c.System().Address()
+}
+func (c *Cluster) OnSessionClosed(peerHost string) {
+	delete(c.ready, peerHost)
+	for actorId, host := range c.actors {
+		if host == peerHost {
+			c.System().DispatchEvent(c.GetID(), &actor.Ev_delActor{ActorId: actorId, FromCluster: true})
+		}
+	}
+}
+func (c *Cluster) OnSessionOpened(peerHost string) {
+	c.ready[peerHost] = true
+	logger.KV("host", peerHost).Debug("remote host connect")
+	for actorId, host := range c.actors {
+		if host == peerHost {
+			c.System().DispatchEvent(c.GetID(), &actor.Ev_newActor{ActorId: actorId, FromCluster: true})
+		}
+	}
+}
+func (c *Cluster) OnSessionRecv(sourceId, targetId, requestId string, msg proto.Message) {
+	e := c.System().Send(sourceId, targetId, requestId, msg)
+	if e != nil {
+		logger.KVs(log.Fields{"sourceId": sourceId, "targetId": targetId, "requestId": requestId, "err": e}).Debug("cluster OnSessionRecv send error")
+	}
+}
+
+////////////////////////////////////// RemoteHandler /////////////////////////////////////////////////////////////////
+
 func (c *Cluster) sendRemote(sourceId, targetId, requestId string, actMsg proto.Message) error {
 	//Response的时候地址由requestId解析提供
 	var addr string
@@ -106,7 +144,7 @@ func (c *Cluster) sendRemote(sourceId, targetId, requestId string, actMsg proto.
 	} else if addr = c.actors[targetId]; addr == "" {
 		return errors.New("target actor not find")
 	}
-	return c.remote.Send(addr, sourceId, targetId, requestId, actMsg)
+	return c.remote.SendMsg(addr, sourceId, targetId, requestId, actMsg)
 
 }
 
@@ -168,21 +206,6 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 		}
 	case *actor.Ev_clusterUpdate:
 		c.watchRemote(e.ActorId, e.Host, e.Add)
-	case *actor.Ev_newSession:
-		c.ready[e.Host] = true
-		logger.KV("host", e.Host).Debug("remote host connect")
-		for actorId, host := range c.actors {
-			if host == e.Host {
-				c.System().DispatchEvent(c.GetID(), &actor.Ev_newActor{ActorId: actorId, FromCluster: true})
-			}
-		}
-	case *actor.Ev_delSession:
-		delete(c.ready, e.Host)
-		for actorId, host := range c.actors {
-			if host == e.Host {
-				c.System().DispatchEvent(c.GetID(), &actor.Ev_delActor{ActorId: actorId, FromCluster: true})
-			}
-		}
 	}
 }
 

@@ -3,16 +3,16 @@ package etcd
 import (
 	"context"
 	"errors"
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/mvcc/mvccpb"
-	"go.uber.org/atomic"
+	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/wwj31/dogactor/actor"
+	"github.com/coreos/etcd/clientv3"
+	"github.com/coreos/etcd/mvcc/mvccpb"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
+	"go.uber.org/atomic"
 )
 
 const (
@@ -31,7 +31,7 @@ type Etcd struct {
 	registErr error        // 注册错误(当任意注册发生错误，则全部推倒重来)
 
 	localActors sync.Map //
-	actorSystem *actor.System
+	hander      servmesh_provider.EtcdHander
 	stop        atomic.Int32
 	wg          sync.WaitGroup
 }
@@ -46,9 +46,8 @@ func NewEtcd(endpoints, prefix string) *Etcd {
 }
 
 // 初始化并启动etcd本地服务
-// example1: etcd := newEtcd(....).Start()
-func (s *Etcd) Start(actorSystem *actor.System) error {
-	s.actorSystem = actorSystem
+func (s *Etcd) Start(h servmesh_provider.EtcdHander) error {
+	s.hander = h
 
 	logger.KV("endpoints", s.endpoints).KV("prefix", s.prefix).Info("etcd start")
 
@@ -160,7 +159,7 @@ func (s *Etcd) initAlreadyInEtcd() {
 	}
 	for _, kv := range resp.Kvs {
 		key, val := s.shiftStruct(kv)
-		s.actorSystem.DispatchEvent("$etcd", &actor.Ev_clusterUpdate{ActorId: key, Host: val, Add: true})
+		s.hander.OnEtcdNew(key, val)
 	}
 }
 
@@ -219,7 +218,8 @@ func (s *Etcd) run() {
 			for _, e := range watchResp.Events {
 				key, val := s.shiftStruct(e.Kv)
 				log.KV("actorId", key).KV("revision", revision).KV("put", e.Type == clientv3.EventTypePut).Debug("watch etcd")
-				s.actorSystem.DispatchEvent("$etcd", &actor.Ev_clusterUpdate{ActorId: key, Host: val, Add: e.Type == clientv3.EventTypePut})
+				//s.actorSystem.DispatchEvent("", &actor.Ev_clusterUpdate{ActorId: key, Host: val, Add: e.Type == clientv3.EventTypePut})
+				s.hander.OnEtcdNew(key, val)
 			}
 		}
 	}

@@ -6,8 +6,8 @@ import (
 	cmap "github.com/orcaman/concurrent-map"
 	"go.uber.org/atomic"
 
-	"github.com/wwj31/dogactor/actor"
-	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_grpc/internal/actor_grpc"
+	"github.com/wwj31/dogactor/actor/cluster/remote_provider"
+	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_grpc/internal"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
@@ -15,8 +15,8 @@ import (
 
 // 管理所有远端的session
 type RemoteMgr struct {
-	actorSystem *actor.System
-	listener    *actor_grpc.Server
+	remoteHandler remote_provider.RemoteHandler
+	listener      *internal.Server
 
 	stop     atomic.Int32
 	sessions cmap.ConcurrentMap //host=>session
@@ -34,18 +34,18 @@ func NewRemoteMgr() *RemoteMgr {
 	return mgr
 }
 
-func (s *RemoteMgr) Start(actorSystem *actor.System) error {
-	s.actorSystem = actorSystem
+func (s *RemoteMgr) Start(actorSystem remote_provider.RemoteHandler) error {
+	s.remoteHandler = actorSystem
 
-	listener, err := actor_grpc.NewServer(s.actorSystem.Address(), func() actor_grpc.IHandler { return &remoteHandler{remote: s} }, s)
+	listener, err := internal.NewServer(s.remoteHandler.Address(), func() internal.IHandler { return &remoteHandler{remote: s} }, s)
 	if err != nil {
 		return err
 	}
 
-	s.regist = actor_msg.NewNetActorMessage("", "", "", "$regist", []byte(s.actorSystem.Address()))
+	s.regist = actor_msg.NewNetActorMessage("", "", "", "$regist", []byte(s.remoteHandler.Address()))
 	s.listener = listener
 
-	s.actorSystem.RegistCmd("", "remoteinfo", s.remoteinfo)
+	//s.remoteHandler.RegistCmd("", "remoteinfo", s.remoteinfo)
 	return err
 }
 
@@ -54,42 +54,42 @@ func (s *RemoteMgr) Stop() {
 		if s.listener != nil {
 			s.listener.Stop()
 		}
-		s.clients.IterCb(func(key string, v interface{}) { v.(*actor_grpc.Client).Stop() })
+		s.clients.IterCb(func(key string, v interface{}) { v.(*internal.Client).Stop() })
 	}
 }
 
 func (s *RemoteMgr) NewClient(host string) {
-	c := actor_grpc.NewClient(host, func() actor_grpc.IHandler { return &remoteHandler{remote: s, peerHost: host} })
+	c := internal.NewClient(host, func() internal.IHandler { return &remoteHandler{remote: s, peerHost: host} })
 	s.clients.Set(host, c)
 	_ = c.Start(true)
 }
 
 func (s *RemoteMgr) StopClient(host string) {
 	if c, ok := s.clients.Pop(host); ok {
-		c.(*actor_grpc.Client).Stop()
+		c.(*internal.Client).Stop()
 	}
 }
 
 // 远端actor发送消息
-func (s *RemoteMgr) Send(addr string, sourceId, targetId, requestId string, actMsg proto.Message) error {
+func (s *RemoteMgr) SendMsg(addr string, sourceId, targetId, requestId string, msg proto.Message) error {
 	session, ok := s.sessions.Get(addr)
 	if !ok {
 		return fmt.Errorf("remote addr not found %v reqId:%v", addr, requestId)
 	}
 
 	//TODO 开协程处理？
-	data, err := proto.Marshal(actMsg)
+	data, err := proto.Marshal(msg)
 	if err != nil {
 		return err
 	}
 
-	msg := actor_msg.NewNetActorMessage(sourceId, targetId, requestId, tools.MsgName(actMsg), data)
-	return session.(*remoteHandler).Send(msg)
+	netMsg := actor_msg.NewNetActorMessage(sourceId, targetId, requestId, tools.MsgName(msg), data)
+	return session.(*remoteHandler).Send(netMsg)
 }
 
 ///////////////////////////////////////// remoteHandler /////////////////////////////////////////////
 type remoteHandler struct {
-	actor_grpc.BaseHandler
+	internal.BaseHandler
 
 	remote   *RemoteMgr
 	peerHost string
@@ -104,7 +104,7 @@ func (s *remoteHandler) OnSessionCreated() {
 func (s *remoteHandler) OnSessionClosed() {
 	if len(s.peerHost) > 0 {
 		s.remote.sessions.Remove(s.peerHost)
-		_ = s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_delSession{Host: s.peerHost})
+		s.remote.remoteHandler.OnSessionClosed(s.peerHost)
 	}
 }
 
@@ -117,7 +117,8 @@ func (s *remoteHandler) OnRecv(msg *actor_msg.ActorMessage) {
 	if msg.MsgName == "$regist" {
 		s.peerHost = string(msg.Data)
 		s.remote.sessions.Set(s.peerHost, s)
-		_ = s.remote.actorSystem.DispatchEvent("$remoteHandler", &actor.Ev_newSession{Host: s.peerHost})
+		s.remote.remoteHandler.OnSessionOpened(s.peerHost)
+		//_ = s.remote.remoteHandler.DispatchEvent("$remoteHandler", &actor.Ev_newSession{Host: s.peerHost})
 	} else {
 		if s.peerHost == "" {
 			s.logger.KV("msg", msg.MsgName).Error("has not regist")
@@ -135,6 +136,7 @@ func (s *remoteHandler) OnRecv(msg *actor_msg.ActorMessage) {
 			s.logger.KV("msgName", msg.MsgName).KV("err", err).Error("Unmarshal failed")
 			return
 		}
-		_ = s.remote.actorSystem.Send(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
+		s.remote.remoteHandler.OnSessionRecv(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
+		//_ = s.remote.remoteHandler.Send(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
 	}
 }

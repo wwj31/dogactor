@@ -12,14 +12,6 @@ type Ev_delActor struct {
 	FromCluster bool
 }
 
-type Ev_newSession struct {
-	Host string
-}
-
-type Ev_delSession struct {
-	Host string
-}
-
 type Ev_clusterUpdate struct {
 	ActorId string
 	Host    string

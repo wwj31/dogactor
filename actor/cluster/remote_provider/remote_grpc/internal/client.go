@@ -1,4 +1,4 @@
-package actor_grpc
+package internal
 
 import (
 	"context"
