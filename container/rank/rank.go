@@ -54,6 +54,10 @@ func (s *Rank) Add(key string, scores []num) {
 	return
 }
 
+func (s *Rank)Len() int {
+	return s.skiplist.Len()
+}
+
 // need top >= 1
 func (s *Rank) Get(top int, bottom ...int) []Member {
 	members := make([]Member, 0)
