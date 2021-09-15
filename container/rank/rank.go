@@ -1,6 +1,7 @@
 package rank
 
 import (
+	"encoding/json"
 	"github.com/wwj31/dogactor/container/skiplist"
 	"reflect"
 )
@@ -81,4 +82,21 @@ func (s *Rank) Del(key string) {
 	}
 	delete(s.members, key)
 	s.skiplist.Delete(member)
+}
+
+func (s *Rank) JsonMarshal() string{
+	str,_ := json.Marshal(s.members)
+	return string(str)
+}
+
+func (s *Rank) JsonUnMarshal(str string) error{
+	err := json.Unmarshal(([]byte)(str),&s.members)
+	if err != nil{
+		return err
+	}
+
+	for _,member := range s.members{
+		s.skiplist.Insert(member)
+	}
+	return nil
 }

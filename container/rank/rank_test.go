@@ -23,4 +23,12 @@ func TestRank(t *testing.T) {
 
 	mem1 := rank.Get(5)
 	fmt.Println(mem1[0].Key)
+
+
+	data := rank.JsonMarshal()
+	fmt.Println(data)
+
+	rank2 := New()
+	_=rank2.JsonUnMarshal(data)
+	fmt.Println(rank2.Get(1, 100))
 }
