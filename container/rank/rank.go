@@ -2,6 +2,7 @@ package rank
 
 import (
 	"github.com/wwj31/dogactor/container/skiplist"
+	"reflect"
 )
 
 type (
@@ -26,35 +27,21 @@ func (s *Rank)Len() int {
 }
 
 func (s *Rank) Add(key string, scores []num) {
-	oldm, ok := s.members[key]
+	m, ok := s.members[key]
 
 	// Fast path
-	if len(oldm.Scores) == len(scores) {
-		c := true
-		for i := 0; i < len(oldm.Scores); i++ {
-			if oldm.Scores[i] != scores[i] {
-				c = false
-				break
-			}
-		}
-		if c {
-			return
-		}
-	}
-
-	// Slow path
-	newm := Member{
-		Key:    key,
-		Scores: scores,
-	}
-	s.members[key] = newm
-	if !ok {
-		s.skiplist.Insert(newm)
+	if reflect.DeepEqual(m.Scores,scores){
 		return
 	}
 
-	s.skiplist.Delete(oldm)
-	s.skiplist.Insert(newm)
+	// Slow path
+	if ok{
+		s.skiplist.Delete(m)
+	}
+	m.Scores = scores
+	m.Key = key
+	s.members[key] = m
+	s.skiplist.Insert(m)
 	return
 }
 
