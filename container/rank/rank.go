@@ -21,14 +21,18 @@ func New() *Rank {
 	}
 }
 
+func (s *Rank)Len() int {
+	return s.skiplist.Len()
+}
+
 func (s *Rank) Add(key string, scores []num) {
-	old, ok := s.members[key]
+	oldm, ok := s.members[key]
 
 	// Fast path
-	if len(old.Scores) == len(scores) {
+	if len(oldm.Scores) == len(scores) {
 		c := true
-		for i := 0; i < len(old.Scores); i++ {
-			if old.Scores[i] != scores[i] {
+		for i := 0; i < len(oldm.Scores); i++ {
+			if oldm.Scores[i] != scores[i] {
 				c = false
 				break
 			}
@@ -39,24 +43,21 @@ func (s *Rank) Add(key string, scores []num) {
 	}
 
 	// Slow path
-	new := Member{
+	newm := Member{
 		Key:    key,
 		Scores: scores,
 	}
-	s.members[key] = new
+	s.members[key] = newm
 	if !ok {
-		s.skiplist.Insert(new)
+		s.skiplist.Insert(newm)
 		return
 	}
 
-	s.skiplist.Delete(old)
-	s.skiplist.Insert(new)
+	s.skiplist.Delete(oldm)
+	s.skiplist.Insert(newm)
 	return
 }
 
-func (s *Rank)Len() int {
-	return s.skiplist.Len()
-}
 
 // need top >= 1
 func (s *Rank) Get(top int, bottom ...int) []Member {
