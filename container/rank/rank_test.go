@@ -7,14 +7,14 @@ import (
 
 func TestRank(t *testing.T) {
 	rank := New()
-	rank.Add("张三", Score(43, 1))
+	rank.Add("张三", Score(43))
 	rank.Add("李四", Score(12))
 	rank.Add("王五", Score(678))
-	rank.Add("赵六", Score(1, 3))
-	rank.Add("孙七", Score(1, 2))
-	rank.Add("周八", Score(12))
-	rank.Add("吴九", Score(43))
-	rank.Add("郑十", Score(67))
+	rank.Add("赵六", Score(54, 1000))
+	rank.Add("孙七", Score(54, 2000))
+	rank.Add("周八", Score(67,1111))
+	rank.Add("吴九", Score(67,2222))
+	rank.Add("郑十", Score(67,1000))
 	rank.Add("郑十", Score(68))
 	fmt.Println(rank.Get(1, 100))
 
@@ -25,10 +25,10 @@ func TestRank(t *testing.T) {
 	fmt.Println(mem1[0].Key)
 
 
-	data := rank.JsonMarshal()
+	data := rank.Marshal()
 	fmt.Println(data)
 
 	rank2 := New()
-	_=rank2.JsonUnMarshal(data)
+	_=rank2.UnMarshal(data)
 	fmt.Println(rank2.Get(1, 100))
 }

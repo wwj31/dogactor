@@ -1,9 +1,10 @@
 package rank
 
 import (
-	"encoding/json"
+	"bytes"
 	"github.com/wwj31/dogactor/container/skiplist"
 	"reflect"
+	"unsafe"
 )
 
 type (
@@ -84,19 +85,53 @@ func (s *Rank) Del(key string) {
 	s.skiplist.Delete(member)
 }
 
-func (s *Rank) JsonMarshal() string{
-	str,_ := json.Marshal(s.members)
-	return string(str)
+func (s *Rank) Marshal() []byte{
+	buffer := bytes.NewBuffer([]byte{})
+	l:=int32(len(s.members))
+	buffer.Write((*(*[4]byte)(unsafe.Pointer(&l)))[:])
+
+	for key,member := range s.members{
+		keylen := int32(len(key))
+		nlen := int32(len(member.Scores))
+		buffer.Write((*(*[4]byte)(unsafe.Pointer(&keylen)))[:])
+		buffer.Write((*(*[4]byte)(unsafe.Pointer(&nlen)))[:])
+
+		buffer.WriteString(key)
+		for _,n := range member.Scores{
+			buffer.Write(((*[8]byte)(unsafe.Pointer(&n)))[:])
+		}
+	}
+	return buffer.Bytes()
 }
 
-func (s *Rank) JsonUnMarshal(str string) error{
-	err := json.Unmarshal(([]byte)(str),&s.members)
-	if err != nil{
-		return err
-	}
+func (s *Rank) UnMarshal(data []byte) error{
+	buffer := bytes.NewBuffer(data)
+	l := [4]byte{}
+	buffer.Read(l[:])
 
-	for _,member := range s.members{
+	ml := *(*int32)(unsafe.Pointer(&l))
+	for i:=int32(0);i<ml;i++{
+		k := [4]byte{}
+		n := [4]byte{}
+		buffer.Read(k[:])
+		buffer.Read(n[:])
+		keylen := *(*int32)(unsafe.Pointer(&k))
+		nlen := *(*int32)(unsafe.Pointer(&n))
+
+		key := make([]byte,keylen)
+		buffer.Read(key)
+		member := Member{
+			Key: string(key),
+			Scores:make([]num,0),
+		}
+		for i:=int32(0);i < nlen;i++{
+			number := [8]byte{}
+			buffer.Read(number[:])
+			member.Scores = append(member.Scores,*(*num)(unsafe.Pointer(&number)))
+		}
+		s.members[string(key)] = member
 		s.skiplist.Insert(member)
 	}
+
 	return nil
 }

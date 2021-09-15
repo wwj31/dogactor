@@ -28,11 +28,11 @@ func (s Member) Less(other interface{}) bool {
 	return len(omember.Scores) < len(s.Scores)
 }
 
-var inc int64
+var _inc int64
 
 // score相同,排名依次对比scores大小
 func Score(scores ...num) []num {
-	scores = append(scores, math.MaxInt64-(int64(time.Now().Nanosecond())+inc))
-	inc++
+	scores = append(scores, math.MaxInt64-(int64(time.Now().Nanosecond())+_inc))
+	_inc++
 	return scores
 }
