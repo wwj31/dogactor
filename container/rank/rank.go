@@ -53,7 +53,7 @@ func (s *Rank) Get(top int, bottom ...int) []Member {
 		return members
 	}
 	ele := s.skiplist.GetElementByRank(top)
-	if ele.Value == nil {
+	if ele == nil || ele.Value == nil {
 		return members
 	}
 
