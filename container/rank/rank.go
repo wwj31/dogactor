@@ -112,9 +112,7 @@ func (r *Rank) Get(rankSection ...int) []Member {
 
 // GetByScore scoreSection 分数区间
 // 例子：
-// Rank.GetByScore() 获得全部名次
-// Rank.GetByScore(999) 获得分数为999的集合
-// Rank.GetByScore(100~999) 获得分数为100~999区间的集合
+// Rank.GetByScore([]int64{100},[]int64{900}) 获得分数为100~999区间的集合
 func (r *Rank) GetByScore(floorScores, roofScores []int64) []Member {
 	members := make([]Member, 0)
 	if roofScores == nil || floorScores == nil {
