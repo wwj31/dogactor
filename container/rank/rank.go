@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"time"
 	"unsafe"
 
 	"github.com/wwj31/dogactor/container/skiplist"
@@ -17,8 +18,6 @@ type (
 		members  map[string]Member
 	}
 
-	// 分数类型
-	num int64
 )
 
 func New() *Rank {
@@ -32,16 +31,30 @@ func (r *Rank)Len() int {
 	return r.skiplist.Len()
 }
 
+
+var _inc int64
+
+// Score 作为 Rank.Add 第二参数，传入分数依次作为排名权重
+func Score(scores ...int64) []num {
+	nums := []num{}
+	for _, i64 := range scores{
+		nums = append(nums, num(i64))
+	}
+
+	nums = append(nums, num(math.MaxInt64-(int64(time.Now().Nanosecond())+_inc)))
+	_inc++
+	return nums
+}
+
 // Add 例子：
-// Rank.Add("xxxx",rank.Score(999)) 单积分排行
-// Rank.Add("xxxx",rank.Score(999，123)) 双积分排行
-// Rank.Add("xxxx",rank.Score(999，123，456)) 多积分排行
-func (r *Rank) Add(key string, scores []num) {
+// Rank.Add("xxxx",rank.Score(999)) 单分排行
+// Rank.Add("xxxx",rank.Score(999,123,456)) 多分排行
+func (r *Rank) Add(key string, scores []num) *Rank{
 	m, ok := r.members[key]
 
 	// Fast path
 	if reflect.DeepEqual(m.Scores,scores){
-		return
+		return r
 	}
 
 	// Slow path
@@ -52,7 +65,7 @@ func (r *Rank) Add(key string, scores []num) {
 	m.Key = key
 	r.members[key] = m
 	r.skiplist.Insert(m)
-	return
+	return r
 }
 
 // Get rankSection 名次区间
@@ -62,15 +75,15 @@ func (r *Rank) Add(key string, scores []num) {
 // members := Rank.Get(3) 获得3名
 // members := Rank.Get(1,100) 获得1～100名
 func (r *Rank) Get(rankSection ...int) []Member {
-	members := make([]Member, 0)
-	if len(r.members) == 0 {
-		return members
-	}
-
 	var (
 		top int
 		bottom int
+		members = make([]Member, 0)
 	)
+
+	if len(r.members) == 0 {
+		return members
+	}
 	if len(rankSection) > 0{
 		top = rankSection[0]
 	}
@@ -99,13 +112,40 @@ func (r *Rank) Get(rankSection ...int) []Member {
 	return members
 }
 
-func (r *Rank) Del(key string) {
+// GetByScore scoreSection 分数区间
+// 例子：
+// Rank.GetByScore() 获得全部名次
+// Rank.GetByScore(999) 获得分数为999的集合
+// Rank.GetByScore(100~999) 获得分数为100~999区间的集合
+func (r *Rank) GetByScore(floorScores, roofScores []int64) []Member{
+	members := make([]Member,0)
+	if roofScores == nil || floorScores == nil {
+		return members
+	}
+
+	for k,v := range roofScores{
+		roofScores[k] = v+1
+	}
+	floor := Member{Scores: *((*[]num)(unsafe.Pointer(&floorScores)))}
+	roof := Member{Scores: *((*[]num)(unsafe.Pointer(&roofScores)))}
+
+
+	for rf := r.skiplist.Find(roof);rf != nil;rf = rf.Next(){
+		if rf.Value.Less(floor){
+			members = append(members,rf.Value.(Member))
+		}
+	}
+	return members
+}
+
+func (r *Rank) Del(key string) *Rank{
 	member, ok := r.members[key]
 	if !ok {
-		return
+		return r
 	}
 	delete(r.members, key)
 	r.skiplist.Delete(member)
+	return r
 }
 
 func (r *Rank) Marshal() []byte{

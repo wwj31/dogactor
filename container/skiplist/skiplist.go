@@ -162,11 +162,11 @@ func (sl *SkipList) Delete(v Interface) interface{} {
 // Find finds an element e that e.Value == v, and returns e or nil.
 func (sl *SkipList) Find(v Interface) *Element {
 	x := sl.find(v)                   // x.Value >= v
-	if x != nil && !v.Less(x.Value) { // v >= x.Value
-		return x
-	}
+	//if x != nil && !v.Less(x.Value) { // v >= x.Value
+	//	return x
+	//}
 
-	return nil
+	return x
 }
 
 // find finds the first element e that e.Value >= v, and returns e or nil.

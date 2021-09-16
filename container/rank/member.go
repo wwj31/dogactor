@@ -1,16 +1,12 @@
 package rank
 
-import (
-	"math"
-	"time"
-)
-
-type Key string
+type num int64 // 分数类型
 
 type Member struct {
 	Key    string
 	Scores []num
 }
+
 
 func (s Member) Less(other interface{}) bool {
 	min := len(s.Scores)
@@ -28,16 +24,3 @@ func (s Member) Less(other interface{}) bool {
 	return len(omember.Scores) < len(s.Scores)
 }
 
-var _inc int64
-
-// score相同,排名依次对比scores大小
-func Score(scores ...int64) []num {
-	nums := []num{}
-	for _, i64 := range scores{
-		nums = append(nums, num(i64))
-	}
-
-	nums = append(nums, num(math.MaxInt64-(int64(time.Now().Nanosecond())+_inc)))
-	_inc++
-	return nums
-}

@@ -41,7 +41,7 @@ func TestRank(t *testing.T) {
 
 func Test100000Rank(t *testing.T) {
 	rank := New()
-	for i:=0;i < 1000;i++{
+	for i:=0;i < 100;i++{
 		rank.Add(uuid.New().String(), Score(rand.Int63n(1000),rand.Int63n(1000)))
 	}
 	data := rank.Marshal()
@@ -53,4 +53,11 @@ func Test100000Rank(t *testing.T) {
 	for _,v := range r{
 		fmt.Println(v)
 	}
+
+	fmt.Println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<100 ~ 500>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+	section := rank2.GetByScore([]int64{113,570},[]int64{200})
+	for _,v := range section{
+		fmt.Println(v)
+	}
+
 }
