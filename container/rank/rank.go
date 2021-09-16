@@ -2,8 +2,6 @@ package rank
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"math"
 	"reflect"
 	"time"
@@ -11,6 +9,8 @@ import (
 
 	"github.com/wwj31/dogactor/container/skiplist"
 )
+
+var ()
 
 type (
 	Rank struct {
@@ -170,25 +170,25 @@ func (r *Rank) UnMarshal(data []byte) error {
 
 	allLenByte8 := [8]byte{}
 	if n, err := buffer.Read(allLenByte8[:]); n != 8 || err != nil {
-		return errors.New(fmt.Sprintf("read allLenByte8 err n:%v err:%v", n, err))
+		return ErrorUnMarshalRead{err: err, n: n}
 	}
 	allLen := *(*int64)(unsafe.Pointer(&allLenByte8))
 
 	for i := int64(0); i < allLen; i++ {
 		keyLenBytes4 := [4]byte{}
 		if n, err := buffer.Read(keyLenBytes4[:]); n != 4 || err != nil {
-			return errors.New(fmt.Sprintf("read keyLenBytes4 err n:%v err:%v", n, err))
+			return ErrorUnMarshalRead{err: err, n: n}
 		}
 		nLenBytes4 := [4]byte{}
 		if n, err := buffer.Read(nLenBytes4[:]); n != 4 || err != nil {
-			return errors.New(fmt.Sprintf("read nLenBytes4 err n:%v err:%v", n, err))
+			return ErrorUnMarshalRead{err: err, n: n}
 		}
 		keylen := *(*int32)(unsafe.Pointer(&keyLenBytes4))
 		nlen := *(*int32)(unsafe.Pointer(&nLenBytes4))
 
 		key := make([]byte, keylen)
 		if n, err := buffer.Read(key); n != int(keylen) || err != nil {
-			return errors.New(fmt.Sprintf("read key err n:%v int(keylen):%v err:%v", n, int(keylen), err))
+			return ErrorUnMarshalRead{err: err, n: n}
 		}
 		member := Member{
 			Key:    string(key),
@@ -197,7 +197,7 @@ func (r *Rank) UnMarshal(data []byte) error {
 		for i := int32(0); i < nlen; i++ {
 			number := [8]byte{}
 			if n, err := buffer.Read(number[:]); n != 8 || err != nil {
-				return errors.New(fmt.Sprintf("read number err n:%v err:%v", n, err))
+				return ErrorUnMarshalRead{err: err, n: n}
 			}
 			member.Scores = append(member.Scores, *(*num)(unsafe.Pointer(&number)))
 		}
