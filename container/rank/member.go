@@ -31,8 +31,13 @@ func (s Member) Less(other interface{}) bool {
 var _inc int64
 
 // score相同,排名依次对比scores大小
-func Score(scores ...num) []num {
-	scores = append(scores, math.MaxInt64-(int64(time.Now().Nanosecond())+_inc))
+func Score(scores ...int64) []num {
+	nums := []num{}
+	for _, i64 := range scores{
+		nums = append(nums, num(i64))
+	}
+
+	nums = append(nums, num(math.MaxInt64-(int64(time.Now().Nanosecond())+_inc)))
 	_inc++
-	return scores
+	return nums
 }

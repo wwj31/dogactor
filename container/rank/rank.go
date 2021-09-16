@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/wwj31/dogactor/container/skiplist"
 	"math"
 	"reflect"
 	"unsafe"
+
+	"github.com/wwj31/dogactor/container/skiplist"
 )
 
 type (
@@ -17,7 +18,7 @@ type (
 	}
 
 	// 分数类型
-	num = int64
+	num int64
 )
 
 func New() *Rank {
