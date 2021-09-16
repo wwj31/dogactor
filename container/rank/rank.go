@@ -2,6 +2,8 @@ package rank
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"github.com/wwj31/dogactor/container/skiplist"
 	"reflect"
 	"unsafe"
@@ -87,8 +89,8 @@ func (s *Rank) Del(key string) {
 
 func (s *Rank) Marshal() []byte{
 	buffer := bytes.NewBuffer([]byte{})
-	l:=int32(len(s.members))
-	buffer.Write((*(*[4]byte)(unsafe.Pointer(&l)))[:])
+	allLen :=int64(len(s.members))
+	buffer.Write((*(*[8]byte)(unsafe.Pointer(&allLen)))[:])
 
 	for key,member := range s.members{
 		keylen := int32(len(key))
@@ -106,27 +108,38 @@ func (s *Rank) Marshal() []byte{
 
 func (s *Rank) UnMarshal(data []byte) error{
 	buffer := bytes.NewBuffer(data)
-	l := [4]byte{}
-	buffer.Read(l[:])
 
-	ml := *(*int32)(unsafe.Pointer(&l))
-	for i:=int32(0);i<ml;i++{
-		k := [4]byte{}
-		n := [4]byte{}
-		buffer.Read(k[:])
-		buffer.Read(n[:])
-		keylen := *(*int32)(unsafe.Pointer(&k))
-		nlen := *(*int32)(unsafe.Pointer(&n))
+	allLenByte8 := [8]byte{}
+	if n,err := buffer.Read(allLenByte8[:]);n != 8 || err != nil{
+		return errors.New(fmt.Sprintf("read allLenByte8 err n:%v err:%v",n,err))
+	}
+	allLen := *(*int64)(unsafe.Pointer(&allLenByte8))
+
+	for i:=int64(0);i< allLen;i++{
+		keyLenBytes4 := [4]byte{}
+		if n,err := buffer.Read(keyLenBytes4[:]);n != 4 || err != nil{
+			return errors.New(fmt.Sprintf("read keyLenBytes4 err n:%v err:%v",n,err))
+		}
+		nLenBytes4 := [4]byte{}
+		if n,err := buffer.Read(nLenBytes4[:]);n != 4 || err != nil{
+			return errors.New(fmt.Sprintf("read nLenBytes4 err n:%v err:%v",n,err))
+		}
+		keylen := *(*int32)(unsafe.Pointer(&keyLenBytes4))
+		nlen := *(*int32)(unsafe.Pointer(&nLenBytes4))
 
 		key := make([]byte,keylen)
-		buffer.Read(key)
+		if n,err := buffer.Read(key);n != int(keylen) || err != nil{
+			return errors.New(fmt.Sprintf("read key err n:%v int(keylen):%v err:%v",n,int(keylen),err))
+		}
 		member := Member{
 			Key: string(key),
-			Scores:make([]num,0),
+			Scores:make([]num,0,nlen),
 		}
 		for i:=int32(0);i < nlen;i++{
 			number := [8]byte{}
-			buffer.Read(number[:])
+			if n,err := buffer.Read(number[:]);n != 8 || err != nil{
+				return errors.New(fmt.Sprintf("read number err n:%v err:%v",n,err))
+			}
 			member.Scores = append(member.Scores,*(*num)(unsafe.Pointer(&number)))
 		}
 		s.members[string(key)] = member
