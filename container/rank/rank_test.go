@@ -20,19 +20,23 @@ func TestRank(t *testing.T) {
 
 	rank.Add("郑十", Score(68,1000))
 	rank.Add("孙七", Score(1, 5))
-	fmt.Println(rank.Get(1, 100))
+	fmt.Println("全排名:",rank.Get())
 
-	mem1 := rank.Get(5)
-	fmt.Println(mem1[0].Key)
+	one := rank.Get(1)
+	two := rank.Get(2)
+	three := rank.Get(3)
+	fmt.Println("第1名:",one[0].Key," score:",one[0].Scores)
+	fmt.Println("第3名:",two[0].Key," score:",two[0].Scores)
+	fmt.Println("第5名:",three[0].Key," score:",three[0].Scores)
 
 
 	data := rank.Marshal()
-	fmt.Println(data)
-	fmt.Println(len(data))
+	fmt.Println("marshal:",data)
+	fmt.Println("marshal len:",len(data))
 
 	rank2 := New()
 	_=rank2.UnMarshal(data)
-	fmt.Println(rank2.Get(1, 100))
+	fmt.Println("全排名:",rank2.Get())
 }
 
 func Test100000Rank(t *testing.T) {
@@ -45,7 +49,7 @@ func Test100000Rank(t *testing.T) {
 
 	rank2 := New()
 	_ = rank2.UnMarshal(data)
-	r := rank2.Get(1,100000)
+	r := rank2.Get()
 	for _,v := range r{
 		fmt.Println(v)
 	}
