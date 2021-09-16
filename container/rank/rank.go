@@ -129,6 +129,8 @@ func (r *Rank) GetByScore(floorScores, roofScores []int64) []Member {
 	for rf := r.skiplist.Find(roof); rf != nil; rf = rf.Next() {
 		if rf.Value.Less(floor) {
 			members = append(members, rf.Value.(Member))
+		} else {
+			break
 		}
 	}
 	return members
