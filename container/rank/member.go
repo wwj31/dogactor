@@ -7,7 +7,6 @@ type Member struct {
 	Scores []num
 }
 
-
 func (s Member) Less(other interface{}) bool {
 	min := len(s.Scores)
 	omember := other.(Member)
@@ -23,4 +22,3 @@ func (s Member) Less(other interface{}) bool {
 	}
 	return len(omember.Scores) < len(s.Scores)
 }
-

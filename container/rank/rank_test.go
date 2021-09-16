@@ -4,60 +4,68 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"math/rand"
+	"reflect"
 	"testing"
 )
 
-func TestRank(t *testing.T) {
+// 重复key替换测试
+func TestAdd(t *testing.T) {
 	rank := New()
 	rank.Add("张三", Score(43))
 	rank.Add("李四", Score(12))
 	rank.Add("王五", Score(678))
 	rank.Add("赵六", Score(54, 1000))
 	rank.Add("孙七", Score(54, 2000))
-	rank.Add("周八", Score(67,1111))
-	rank.Add("吴九", Score(67,2222))
-	rank.Add("郑十", Score(67,1000))
+	rank.Add("周八", Score(67, 1111))
+	rank.Add("吴九", Score(67, 2222))
+	rank.Add("郑十", Score(67, 1000))
 
-	rank.Add("郑十", Score(68,1000))
+	rank.Add("郑十", Score(68, 1000))
 	rank.Add("孙七", Score(1, 5))
-	fmt.Println("全排名:",rank.Get())
-
-	one := rank.Get(1)
-	two := rank.Get(2)
-	three := rank.Get(3)
-	fmt.Println("第1名:",one[0].Key," score:",one[0].Scores)
-	fmt.Println("第3名:",two[0].Key," score:",two[0].Scores)
-	fmt.Println("第5名:",three[0].Key," score:",three[0].Scores)
-
-
-	data := rank.Marshal()
-	fmt.Println("marshal:",data)
-	fmt.Println("marshal len:",len(data))
-
-	rank2 := New()
-	_=rank2.UnMarshal(data)
-	fmt.Println("全排名:",rank2.Get())
+	fmt.Println("全排名:", rank.Get())
 }
 
-func Test100000Rank(t *testing.T) {
+// 积分区间测试
+func TestGetByScore(t *testing.T) {
 	rank := New()
-	for i:=0;i < 100;i++{
-		rank.Add(uuid.New().String(), Score(rand.Int63n(1000),rand.Int63n(1000)))
+	for i := 0; i < 100; i++ {
+		rank.Add(fmt.Sprintf("number:%v ", i), Score(rand.Int63n(1000), rand.Int63n(1000)))
 	}
-	data := rank.Marshal()
-	fmt.Println(len(data))
-
-	rank2 := New()
-	_ = rank2.UnMarshal(data)
-	r := rank2.Get()
-	for _,v := range r{
+	r := rank.Get()
+	for _, v := range r {
 		fmt.Println(v)
 	}
 
 	fmt.Println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<100 ~ 500>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	section := rank2.GetByScore([]int64{113,570},[]int64{200})
-	for _,v := range section{
+	section := rank.GetByScore([]int64{100, 570}, []int64{200})
+	for _, v := range section {
 		fmt.Println(v)
 	}
+}
 
+// 序列化测试
+func TestMarshal(t *testing.T) {
+	rank := New()
+	for i := 0; i < 1000000; i++ {
+		rank.Add(fmt.Sprintf(uuid.New().String()), Score(rand.Int63n(10000), rand.Int63n(10000), rand.Int63n(10000)))
+	}
+	data := rank.Marshal()
+	fmt.Println(fmt.Sprintf("bytes size:%.3f MB", float64(len(data))/(1024*1024)))
+
+	rank2 := New()
+	_ = rank2.UnMarshal(data)
+	v := rank.skiplist.Front()
+	v2 := rank2.skiplist.Front()
+	for v != nil {
+		if v.Value.(Member).Key != v2.Value.(Member).Key || !reflect.DeepEqual(v.Value.(Member).Scores, v2.Value.(Member).Scores) {
+			panic("error")
+		}
+
+		v = v.Next()
+		v2 = v2.Next()
+	}
+	if v2 != nil {
+		panic("error")
+	}
+	fmt.Println("it's ok!")
 }
