@@ -23,6 +23,9 @@ func TestAdd(t *testing.T) {
 	rank.Add("郑十", Score(68, 1000))
 	rank.Add("孙七", Score(1, 5))
 	fmt.Println("全排名:", rank.Get())
+
+	fmt.Println(rank.GetByKey("周八"))
+	fmt.Println(rank.GetByKey("张三"))
 }
 
 // 积分区间测试
@@ -37,7 +40,7 @@ func TestGetByScore(t *testing.T) {
 	}
 
 	fmt.Println("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<100 ~ 500>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-	section := rank.GetByScore([]int64{100, 570}, []int64{200})
+	section := rank.GetByScore([]int64{100}, []int64{200})
 	for _, v := range section {
 		fmt.Println(v)
 	}

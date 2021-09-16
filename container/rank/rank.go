@@ -110,6 +110,15 @@ func (r *Rank) Get(rankSection ...int) []Member {
 	return members
 }
 
+// GetByKey 查找key的名次、分数，找不到返回0
+func (r *Rank) GetByKey(key string) (int, Member) {
+	member, ok := r.members[key]
+	if !ok {
+		return 0, member
+	}
+	return r.skiplist.GetRank(member), member
+}
+
 // GetByScore scoreSection 分数区间
 // 例子：
 // Rank.GetByScore([]int64{100},[]int64{900}) 获得分数为100~999区间的集合
