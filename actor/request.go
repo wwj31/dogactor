@@ -73,7 +73,7 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 
 // 同步请求结果
 func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (resp interface{}, err error) {
-	if atomic.LoadInt32(&s.asyncStop) == 1 {
+	if s.asyncStop.Load() {
 		return
 	}
 	waitRsp := make(chan result)

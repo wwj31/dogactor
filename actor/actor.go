@@ -1,6 +1,8 @@
 package actor
 
 import (
+	"time"
+
 	"github.com/wwj31/dogactor/actor/err"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/actor/internal/script"
@@ -9,8 +11,7 @@ import (
 	"github.com/wwj31/dogactor/tools"
 	"github.com/wwj31/jtimer"
 	lua "github.com/yuin/gopher-lua"
-	"sync/atomic"
-	"time"
+	"go.uber.org/atomic"
 )
 
 type (
@@ -58,8 +59,8 @@ type (
 		mailBox   chan actor_msg.IMessage // 这里的chan是 多生产者单消费者模式，不需要close，正常退出即可
 		system    *System
 		remote    bool // 是否能被远端发现 默认为true, 如果是本地actor,手动设SetLocalized()后,再注册
-		asyncStop int32
-		syncStop  int32
+		asyncStop atomic.Bool
+		syncStop  atomic.Bool
 
 		//timer
 		timerMgr      *jtimer.TimerMgr
@@ -113,12 +114,12 @@ func (s *actor) isWaitActor() bool {
 
 // 业务层触发关闭
 func (s *actor) Exit() {
-	atomic.CompareAndSwapInt32(&s.syncStop, 0, 1)
+	s.syncStop.Swap(true)
 }
 
 // system触发关闭
 func (s *actor) stop() {
-	atomic.CompareAndSwapInt32(&s.asyncStop, 0, 1)
+	s.asyncStop.Swap(true)
 }
 
 // 添加计时器,每个actor独立一个计时器
@@ -184,7 +185,7 @@ func (s *actor) run(ok chan struct{}) {
 
 		select {
 		case <-upTimer.C:
-			if atomic.LoadInt32(&s.asyncStop) == 0 {
+			if !s.asyncStop.Load() {
 				tools.Try(func() { s.timerMgr.Update(tools.Now().UnixNano()) }, nil)
 			}
 		case msg := <-s.mailBox:
@@ -241,12 +242,12 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 
 func (s *actor) stopCheck() (immediatelyStop bool) {
 	//逻辑层说停止=>立即停止
-	if atomic.LoadInt32(&s.syncStop) == 1 {
+	if s.syncStop.Load() {
 		return true
 	}
 
 	//系统层说停止=>通知逻辑,并且返回是否立即停止
-	if atomic.CompareAndSwapInt32(&s.asyncStop, 1, 2) {
+	if s.asyncStop.Load() {
 		tools.Try(func() { immediatelyStop = s.handler.OnStop() }, func(ex interface{}) { immediatelyStop = true })
 	}
 	return
