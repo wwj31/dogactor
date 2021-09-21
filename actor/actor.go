@@ -22,7 +22,7 @@ type (
 		Exit()
 
 		//timer
-		AddTimer(timeId string, interval time.Duration, callback jtimer.FuncCallback, trigger_times ...int32) string
+		AddTimer(timeId string, interval time.Duration, callback func(dt int64), count ...int32) string
 		CancelTimer(timerId string)
 
 		//lua
@@ -125,24 +125,35 @@ func (s *actor) stop() {
 // 添加计时器,每个actor独立一个计时器
 // timeId        计时器id,一般传UUID
 // interval 	 单位nanoseconds
-// trigger_times 执行次数 -1 无限次
+// count         执行次数 -1 无限次
 // callback 	 只能是主线程回调
-func (s *actor) AddTimer(timeId string, interval time.Duration, callback jtimer.FuncCallback, trigger_times ...int32) string {
+func (s *actor) AddTimer(timeId string, interval time.Duration, callback func(dt int64), count ...int32) string {
+	var (
+		now   = tools.Now().UnixNano()
+		endAt = now + interval.Nanoseconds()
+		times = int32(0)
+	)
+
 	if int64(interval) < s.timerAccuracy {
 		interval = time.Duration(s.timerAccuracy)
 	}
 
-	now := tools.Now().UnixNano()
-	times := int32(1)
-	if len(trigger_times) > 0 {
-		times = trigger_times[0]
+	upErr := s.timerMgr.UpdateTimer(timeId, endAt)
+
+	if jtimer.ErrorUpdateTimer == upErr {
+		times = int32(1)
+		if len(count) > 0 {
+			times = count[0]
+		}
+
+		newTimer, e := jtimer.NewTimer(now, endAt, times, callback, timeId)
+		if e != nil {
+			s.logger.KV("error", e).ErrorStack(3, "AddTimer failed")
+			return ""
+		}
+		s.timerMgr.AddTimer(newTimer)
 	}
-	newTimer, e := jtimer.NewTimer(now, now+interval.Nanoseconds(), times, callback, timeId)
-	if e != nil {
-		s.logger.KV("error", e).ErrorStack(3, "AddTimer failed")
-		return ""
-	}
-	return s.timerMgr.AddTimer(newTimer)
+	return timeId
 }
 
 // 删除一个定时器
