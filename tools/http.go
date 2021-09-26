@@ -123,7 +123,7 @@ func HttpTransmit(w http.ResponseWriter, r *http.Request, remote string) {
 
 	remoter, err := http.NewRequest(r.Method, fmt.Sprintf("http://%v%v", remote, r.URL.Path), r.Body)
 	if err != nil {
-		log.KV("error", err).Error("HttpTransmit err")
+		log.KV("error", err).Error("HttpTransmit actorerr")
 		return
 	}
 
@@ -145,13 +145,13 @@ func HttpUnmarshalBody(r *http.Request, data interface{}) (body []byte, ok bool)
 	defer r.Body.Close()
 	content, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.KV("err", err).WarnStack(2, "http body read err")
+		log.KV("actorerr", err).WarnStack(2, "http body read actorerr")
 		return
 	}
 
 	err = json.Unmarshal(content, data)
 	if err != nil {
-		log.KV("err", err).KV("content", string(content)).WarnStack(2, "http body json unmarshal err")
+		log.KV("actorerr", err).KV("content", string(content)).WarnStack(2, "http body json unmarshal actorerr")
 		return content, false
 	}
 	return content, true

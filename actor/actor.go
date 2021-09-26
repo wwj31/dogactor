@@ -3,7 +3,7 @@ package actor
 import (
 	"time"
 
-	"github.com/wwj31/dogactor/actor/err"
+	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/actor/internal/script"
 	"github.com/wwj31/dogactor/expect"
@@ -15,7 +15,7 @@ import (
 )
 
 type (
-	IActor interface {
+	Actor interface {
 		//core
 		GetID() string
 		System() *System
@@ -39,8 +39,8 @@ type (
 	}
 
 	// actor 处理接口
-	_IActorHandler interface {
-		onInitActor(actor IActor)
+	actorHandler interface {
+		onInitActor(actor Actor)
 
 		OnInit()
 		OnStop() bool // true 立刻停止，false 延迟停止
@@ -55,7 +55,7 @@ type (
 	// 运行单元
 	actor struct {
 		id        string
-		handler   _IActorHandler
+		handler   actorHandler
 		mailBox   chan actor_msg.IMessage // 这里的chan是 多生产者单消费者模式，不需要close，正常退出即可
 		system    *System
 		remote    bool // 是否能被远端发现 默认为true, 如果是本地actor,手动设SetLocalized()后,再注册
@@ -82,7 +82,7 @@ type (
 // id 		actorId外部定义  @和$为内部符号，其他id尽量不占用
 // handler  消息处理模块
 // op  修改默认属性
-func New(id string, handler _IActorHandler, op ...ActorOption) *actor {
+func New(id string, handler actorHandler, op ...ActorOption) *actor {
 	a := &actor{
 		id:            id,
 		handler:       handler,
@@ -164,7 +164,7 @@ func (s *actor) CancelTimer(timerId string) {
 // Push一个消息
 func (s *actor) push(msg actor_msg.IMessage) error {
 	if msg == nil {
-		return err.ActorPushMsgErr
+		return actorerr.ActorPushMsgErr
 	}
 
 	if l, c := len(s.mailBox), cap(s.mailBox); l > c*2/3 {

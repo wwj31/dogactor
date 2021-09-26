@@ -50,7 +50,7 @@ func Init(level int32, hook LogHook, dir, app string, appid int32) {
 	log.SetOutput(io.MultiWriter(os.Stdout, outfile))
 	buff = bufio.NewWriter(log.Writer())
 	if err != nil {
-		KV("err", errors.WithStack(err)).Error("config local file system logger error.")
+		KV("actorerr", errors.WithStack(err)).Error("config local file system logger error.")
 	}
 }
 

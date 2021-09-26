@@ -8,9 +8,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/wwj31/dogactor/actor"
+	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_grpc"
 	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd"
-	"github.com/wwj31/dogactor/actor/err"
 	"github.com/wwj31/dogactor/log"
 )
 
@@ -19,7 +19,7 @@ func WithRemote(ectd_addr, prefix string) actor.SystemOption {
 		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_grpc.NewRemoteMgr())
 		clusterActor := actor.New("cluster", cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
 		if e := system.Regist(clusterActor); e != nil {
-			return fmt.Errorf("%w %w", err.RegistClusterErr, e)
+			return fmt.Errorf("%w %w", actorerr.RegistClusterErr, e)
 		}
 		system.SetCluster(clusterActor.GetID())
 		return nil
@@ -58,11 +58,11 @@ func (c *Cluster) OnInit() {
 	)
 
 	if e := c.remote.Start(c); e != nil {
-		logger.KV("err", e).Error("remote start error")
+		logger.KV("actorerr", e).Error("remote start error")
 	}
 
 	if e := c.serviceMesh.Start(c); e != nil {
-		logger.KV("err", e).Error("serviceMesh start error")
+		logger.KV("actorerr", e).Error("serviceMesh start error")
 	}
 
 	c.RegistCmd("clusterinfo", c.clusterinfo)
@@ -77,7 +77,7 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg inte
 	_, reqTargetId, _, _ := actor.ParseRequestId(requestId)
 	if c.GetID() != reqTargetId {
 		if err := c.sendRemote(sourceId, targetId, requestId, msg.(proto.Message)); err != nil {
-			logger.KVs(log.Fields{"actor": c.GetID(), "targetId": targetId, "err": err}).Error("remote actor send failed")
+			logger.KVs(log.Fields{"actor": c.GetID(), "targetId": targetId, "actorerr": err}).Error("remote actor send failed")
 			return err
 		}
 		return
@@ -107,7 +107,7 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 func (c *Cluster) OnNewServ(k, v string) {
 	e := c.System().DispatchEvent("", &actor.Ev_clusterUpdate{ActorId: k, Host: v, Add: true})
 	if e != nil {
-		logger.KVs(log.Fields{"ActorId": k, "Host": v, "Add": true, "err": e}).Error("system dispatch event error")
+		logger.KVs(log.Fields{"ActorId": k, "Host": v, "Add": true, "actorerr": e}).Error("system dispatch event error")
 	}
 }
 
@@ -124,7 +124,7 @@ func (c *Cluster) OnSessionOpened(peerHost string) {
 func (c *Cluster) OnSessionRecv(sourceId, targetId, requestId string, msg proto.Message) {
 	e := c.System().Send(sourceId, targetId, requestId, msg)
 	if e != nil {
-		logger.KVs(log.Fields{"sourceId": sourceId, "targetId": targetId, "requestId": requestId, "err": e}).Debug("cluster OnSessionRecv send error")
+		logger.KVs(log.Fields{"sourceId": sourceId, "targetId": targetId, "requestId": requestId, "actorerr": e}).Debug("cluster OnSessionRecv send error")
 	}
 }
 

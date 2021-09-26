@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"sync"
 
-	"github.com/wwj31/dogactor/actor/err"
+	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 )
 
@@ -26,7 +26,7 @@ func (ed *evDispatcher) RegistEvent(actorId string, events ...interface{}) error
 	for _, event := range events {
 		rtype := reflect.TypeOf(event)
 		if rtype.Kind() != reflect.Ptr {
-			return fmt.Errorf("%w actorId:%v,event:%v", err.RegisterEventErr, actorId, event)
+			return fmt.Errorf("%w actorId:%v,event:%v", actorerr.RegisterEventErr, actorId, event)
 		}
 	}
 
@@ -49,7 +49,7 @@ func (ed *evDispatcher) CancelEvent(actorId string, events ...interface{}) error
 	for _, event := range events {
 		rtype := reflect.TypeOf(event)
 		if rtype.Kind() != reflect.Ptr {
-			return fmt.Errorf(" %w,actorId:%v,event:%v", err.CancelEventErr, actorId, event)
+			return fmt.Errorf(" %w,actorId:%v,event:%v", actorerr.CancelEventErr, actorId, event)
 		}
 	}
 	ed.Lock()
@@ -77,7 +77,7 @@ func (ed *evDispatcher) CancelAll(actorId string) {
 func (ed *evDispatcher) DispatchEvent(sourceId string, event interface{}) error {
 	rtype := reflect.TypeOf(event)
 	if rtype.Kind() != reflect.Ptr {
-		return fmt.Errorf(" %w,actorId:%v,event:%v", err.DispatchEventErr, sourceId, event)
+		return fmt.Errorf(" %w,actorId:%v,event:%v", actorerr.DispatchEventErr, sourceId, event)
 	}
 
 	etype := rtype.Elem().Name()
