@@ -1,7 +1,7 @@
 package actor
 
 import (
-	err "github.com/wwj31/dogactor/actor/actorerr"
+	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/log"
 )
 
@@ -23,7 +23,7 @@ func (s *Base) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 }
 
 func (s *Base) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
-	return err.ActorUnimplemented
+	return actorerr.ActorUnimplemented
 }
 
 func (s *Base) OnHandleEvent(event interface{}) {

@@ -4,7 +4,7 @@ import (
 	"github.com/wwj31/jtimer"
 	"time"
 
-	err "github.com/wwj31/dogactor/actor/actorerr"
+	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/actor/internal/script"
 	"github.com/wwj31/dogactor/expect"
@@ -122,7 +122,7 @@ func (s *actor) CancelTimer(timerId string) {
 // Push一个消息
 func (s *actor) push(msg actor_msg.IMessage) error {
 	if msg == nil {
-		return err.ActorPushMsgErr
+		return actorerr.ActorPushMsgErr
 	}
 
 	if l, c := len(s.mailBox), cap(s.mailBox); l > c*2/3 {
