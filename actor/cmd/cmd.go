@@ -67,7 +67,7 @@ func (c *Commands) loop() {
 				if cmd.actorId == "" {
 					cmd.fn(param...)
 				} else {
-					c.actorSystem.Send("", cmd.actorId, "Cmd", func() { cmd.fn(param...) })
+					_ = c.actorSystem.Send("", cmd.actorId, "Cmd", func() { cmd.fn(param...) })
 				}
 			}
 		}, nil)

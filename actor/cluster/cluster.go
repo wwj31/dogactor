@@ -77,7 +77,7 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg inte
 	_, reqTargetId, _, _ := actor.ParseRequestId(requestId)
 	if c.GetID() != reqTargetId {
 		if err := c.sendRemote(sourceId, targetId, requestId, msg.(proto.Message)); err != nil {
-			logger.KVs(log.Fields{"actor": c.GetID(), "targetId": targetId, "err": err}).Error("remote actor send failed")
+			logger.KVs(log.Fields{"id": c.GetID(), "targetId": targetId, "err": err}).Error("remote actor send failed")
 			return err
 		}
 		return

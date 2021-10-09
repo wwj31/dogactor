@@ -1,21 +1,23 @@
 package err
 
-import "fmt"
+import (
+	"errors"
+)
 
 //errors
 
 var (
 	//error of event
-	RegisterEventErr = fmt.Errorf("RegistEvent only accept ptr param")
-	CancelEventErr   = fmt.Errorf("CancelEvent only accept ptr param")
-	DispatchEventErr = fmt.Errorf("DispatchEvent only accept ptr param")
+	RegisterEventErr = errors.New("RegistEvent only accept ptr param")
+	CancelEventErr   = errors.New("CancelEvent only accept ptr param")
+	DispatchEventErr = errors.New("DispatchEvent only accept ptr param")
 
 	//error of actor system
-	ActorSystemOptionErr   = fmt.Errorf("actor system option run failed")
-	RegistClusterErr       = fmt.Errorf("regist cluster error")
-	RegisterActorSystemErr = fmt.Errorf("actor system has stopped")
-	RegisterActorSameIdErr = fmt.Errorf("actor with same id")
-	ActorNotFoundErr       = fmt.Errorf("local actor not found")
-	ActorPushMsgErr        = fmt.Errorf("push a nil msg to actor")
-	ActorUnimplemented     = fmt.Errorf("actor has no implemented OnHandleRequest")
+	ActorSystemOptionErr   = errors.New("actor system option run failed")
+	RegistClusterErr       = errors.New("regist cluster error")
+	RegisterActorSystemErr = errors.New("actor system has stopped")
+	RegisterActorSameIdErr = errors.New("actor with same id")
+	ActorNotFoundErr       = errors.New("local actor not found")
+	ActorPushMsgErr        = errors.New("push a nil msg to actor")
+	ActorUnimplemented     = errors.New("actor has no implemented OnHandleRequest")
 )

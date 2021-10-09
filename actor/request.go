@@ -76,8 +76,14 @@ func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Du
 	if s.asyncStop.Load() {
 		return
 	}
+
+	t := time.Duration(0)
+	if len(timeout) > 0 && timeout[0] > 0 {
+		t = timeout[0]
+	}
+
 	waitRsp := make(chan result)
-	waiter := New(tools.UUID(), &waitActor{c: waitRsp, msg: msg, targetId: targetId}, SetLocalized())
+	waiter := New(tools.UUID(), &waitActor{c: waitRsp, msg: msg, targetId: targetId, timeout: t}, SetLocalized())
 	expect.Nil(s.System().Regist(waiter))
 
 	// 阻塞等待waiter返回结果

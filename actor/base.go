@@ -5,14 +5,16 @@ import (
 	"github.com/wwj31/dogactor/log"
 )
 
+// Base 创建Actor统一通过Base继承
 type Base struct {
-	IActor
+	Actor
 }
 
-func (s *Base) onInitActor(actor IActor) {
-	s.IActor = actor
+func (s *Base) initActor(actor Actor) {
+	s.Actor = actor
 }
 
+// 默认方法，需要的子类重写
 func (s *Base) OnInit()      { log.KV("actor", s.GetID()).Warn("actor default init") }
 func (s *Base) OnStop() bool { return true }
 

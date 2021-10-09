@@ -10,61 +10,30 @@ import (
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 	"github.com/wwj31/jtimer"
-	lua "github.com/yuin/gopher-lua"
 	"go.uber.org/atomic"
 )
 
 type (
-	IActor interface {
-		//core
-		GetID() string
-		System() *System
-		Exit()
-
-		//timer
-		AddTimer(timeId string, interval time.Duration, callback jtimer.FuncCallback, trigger_times ...int32) string
-		CancelTimer(timerId string)
-
-		//lua
-		CallLua(name string, ret int, args ...lua.LValue) []lua.LValue
-
-		// Send 不保证消息发送可靠性，如果需要超时处理用 Request
-		Send(targetId string, msg interface{})
-		Request(targetId string, msg interface{}, timeout ...time.Duration) (req *request)
-		RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (result interface{}, err error)
-		Response(requestId string, msg interface{}) error
-
-		//cmd
-		RegistCmd(cmd string, fn func(...string))
-	}
-
-	// actor 处理接口
-	_IActorHandler interface {
-		onInitActor(actor IActor)
-
-		OnInit()
-		OnStop() bool // true 立刻停止，false 延迟停止
-
-		OnHandleEvent(event interface{})                                             //事件消息
-		OnHandleMessage(sourceId, targetId string, msg interface{})                  //普通消息
-		OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) error //请求消息(需要应答)
-	}
-)
-type (
 	ActorOption func(*actor)
 	// 运行单元
 	actor struct {
-		id        string
-		handler   _IActorHandler
-		mailBox   chan actor_msg.IMessage // 这里的chan是 多生产者单消费者模式，不需要close，正常退出即可
-		system    *System
-		remote    bool // 是否能被远端发现 默认为true, 如果是本地actor,手动设SetLocalized()后,再注册
+		id      string
+		handler actorHandler
+		mailBox chan actor_msg.IMessage
+		system  *System
+
+		// 是否能被远端发现 默认为true, 如果是本地actor,
+		// 手动设SetLocalized()后,再注册
+		remote bool
+
+		// asyncStop 表示actor外部触发 stop,
+		// syncStop 表示actor主动执行 Exit
 		asyncStop atomic.Bool
 		syncStop  atomic.Bool
 
-		//timer
+		//timerAccuracy 决定计时器更新精度
 		timerMgr      *jtimer.TimerMgr
-		timerAccuracy int64 // 计时器精度
+		timerAccuracy int64
 
 		//lua
 		lua     script.ILua
@@ -73,16 +42,16 @@ type (
 		//logger
 		logger *log.Logger
 
-		//request
+		//request记录发送出去的所有请求，收到返回后，从map删掉
 		requests map[string]*request
 	}
 )
 
-// 创建actor
+// New 创建actor
 // id 		actorId外部定义  @和$为内部符号，其他id尽量不占用
 // handler  消息处理模块
 // op  修改默认属性
-func New(id string, handler _IActorHandler, op ...ActorOption) *actor {
+func New(id string, handler spawnActor, op ...ActorOption) *actor {
 	a := &actor{
 		id:            id,
 		handler:       handler,
@@ -94,7 +63,7 @@ func New(id string, handler _IActorHandler, op ...ActorOption) *actor {
 		requests:      make(map[string]*request),
 	}
 
-	handler.onInitActor(a)
+	handler.initActor(a)
 
 	for _, f := range op {
 		f(a)
@@ -122,7 +91,7 @@ func (s *actor) stop() {
 	s.asyncStop.Swap(true)
 }
 
-// 添加计时器,每个actor独立一个计时器
+// AddTimer 添加计时器,每个actor独立一个计时器
 // timeId        计时器id,一般传UUID
 // interval 	 单位nanoseconds
 // trigger_times 执行次数 -1 无限次
@@ -172,8 +141,8 @@ func (s *actor) run(ok chan struct{}) {
 		ok <- struct{}{}
 	}
 
-	s.system.DispatchEvent(s.id, &Ev_newActor{ActorId: s.id, Publish: s.remote})
-	defer func() { s.system.DispatchEvent(s.id, &Ev_delActor{ActorId: s.id, Publish: s.remote}) }()
+	_ = s.system.DispatchEvent(s.id, &Ev_newActor{ActorId: s.id, Publish: s.remote})
+	defer func() { _ = s.system.DispatchEvent(s.id, &Ev_delActor{ActorId: s.id, Publish: s.remote}) }()
 
 	upTimer := time.NewTicker(time.Millisecond * time.Duration(s.timerAccuracy))
 	defer upTimer.Stop()
@@ -218,8 +187,8 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 			s.doneRequest(message.RequestId, message.Message())
 		} else {
 			// 收到Request
-			if err := s.handler.OnHandleRequest(message.SourceId, message.TargetId, message.RequestId, message.Message()); err != nil {
-				expect.Nil(s.Response(message.RequestId, &actor_msg.RequestDeadLetter{Err: err.Error()}))
+			if e := s.handler.OnHandleRequest(message.SourceId, message.TargetId, message.RequestId, message.Message()); e != nil {
+				expect.Nil(s.Response(message.RequestId, &actor_msg.RequestDeadLetter{Err: e.Error()}))
 			}
 		}
 		return
@@ -254,9 +223,13 @@ func (s *actor) stopCheck() (immediatelyStop bool) {
 }
 
 //=========================简化actorSystem调用
-func (s *actor) setSystem(actorSystem *System)            { s.system = actorSystem }
-func (s *actor) System() *System                          { return s.system }
-func (s *actor) Send(targetId string, msg interface{})    { s.system.Send(s.id, targetId, "", msg) }
+func (s *actor) setSystem(actorSystem *System) { s.system = actorSystem }
+
+func (s *actor) System() *System { return s.system }
+
+func (s *actor) Send(targetId string, msg interface{}) error {
+	return s.system.Send(s.id, targetId, "", msg)
+}
 func (s *actor) RegistCmd(cmd string, fn func(...string)) { s.system.RegistCmd(s.id, cmd, fn) }
 
 //=========================
