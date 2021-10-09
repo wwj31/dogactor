@@ -38,7 +38,7 @@ func (s *TcpListener) Start() error {
 		log.KV("addr", s.addr).Info("tcp listen success")
 		return nil
 	}
-	log.KV("addr", s.addr).KV("err", err).Error("tcp listen failed")
+	log.KV("addr", s.addr).KV("actorerr", err).Error("tcp listen failed")
 	return err
 }
 
@@ -55,7 +55,7 @@ func (s *TcpListener) listen() error {
 				if strings.Contains(err.Error(), "use of closed network connection") {
 					break
 				}
-				log.KV("addr", s.addr).KV("err", err).Warn("tcp accept error")
+				log.KV("addr", s.addr).KV("actorerr", err).Warn("tcp accept error")
 			} else {
 				newTcpSession(conn, s.newCodec(), s.newHanlder()).start()
 			}

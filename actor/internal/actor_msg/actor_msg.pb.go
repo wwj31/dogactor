@@ -15,7 +15,7 @@ import (
 	math_bits "math/bits"
 )
 
-// Reference imports to suppress err if they are not otherwise used.
+// Reference imports to suppress actorerr if they are not otherwise used.
 var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
@@ -95,7 +95,7 @@ func (m *ActorMessage) GetData() []byte {
 }
 
 type RequestDeadLetter struct {
-	Err                  string   `protobuf:"bytes,1,opt,name=Err,json=err,proto3" json:"Err,omitempty"`
+	Err                  string   `protobuf:"bytes,1,opt,name=Err,json=actorerr,proto3" json:"Err,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -168,7 +168,7 @@ var fileDescriptor_b5bf8dd4e82efef3 = []byte{
 	0xa2, 0x50, 0x43, 0x01, 0x00, 0x00,
 }
 
-// Reference imports to suppress err if they are not otherwise used.
+// Reference imports to suppress actorerr if they are not otherwise used.
 var _ context.Context
 var _ grpc.ClientConn
 

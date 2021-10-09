@@ -80,7 +80,7 @@ func (s *TcpSession) Stop() {
 		close(s.sendQue)
 		err := s.conn.Close()
 		if err != nil {
-			log.KV("err", err).Error("stop error")
+			log.KV("actorerr", err).Error("stop error")
 		}
 		for _, v := range s.handler {
 			tools.Try(v.OnSessionClosed, nil)
@@ -102,7 +102,7 @@ func (s *TcpSession) read() {
 
 	for {
 		if err := s.conn.SetReadDeadline(tools.Now().Add(time.Second * 30)); err != nil {
-			log.KVs(log.Fields{"sessionId": s.Id(), "err": err}).Info("tcp read SetReadDeadline")
+			log.KVs(log.Fields{"sessionId": s.Id(), "actorerr": err}).Info("tcp read SetReadDeadline")
 			break
 		}
 
@@ -111,7 +111,7 @@ func (s *TcpSession) read() {
 			if operr, ok := err.(*net.OpError); ok && (operr.Err == syscall.EAGAIN || operr.Err == syscall.EWOULDBLOCK) { //没数据了
 				continue
 			}
-			log.KVs(log.Fields{"sessionId": s.Id(), "err": err}).Info("tcp read buff failed")
+			log.KVs(log.Fields{"sessionId": s.Id(), "actorerr": err}).Info("tcp read buff failed")
 			break
 		}
 
@@ -121,7 +121,7 @@ func (s *TcpSession) read() {
 
 		datas, err := s.coder.Decode(buffer[:n])
 		if err != nil {
-			log.KVs(log.Fields{"sessionId": s.Id(), "err": err}).Info("tcp decode failed")
+			log.KVs(log.Fields{"sessionId": s.Id(), "actorerr": err}).Info("tcp decode failed")
 			break
 		}
 
@@ -137,12 +137,12 @@ func (s *TcpSession) read() {
 func (s *TcpSession) write() {
 	for data := range s.sendQue {
 		if err := s.conn.SetWriteDeadline(tools.Now().Add(time.Second * 5)); err != nil {
-			log.KVs(log.Fields{"sessionId": s.Id(), "err": err}).Info("tcp read SetWriteDeadline")
+			log.KVs(log.Fields{"sessionId": s.Id(), "actorerr": err}).Info("tcp read SetWriteDeadline")
 			break
 		}
 
 		if _, err := s.conn.Write(s.coder.Encode(data)); err != nil {
-			log.KVs(log.Fields{"sessionId": s.Id(), "err": err}).Info("tcp session write error")
+			log.KVs(log.Fields{"sessionId": s.Id(), "actorerr": err}).Info("tcp session write error")
 			break
 		}
 	}

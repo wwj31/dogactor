@@ -1,7 +1,7 @@
 package actor
 
 import (
-	"github.com/wwj31/dogactor/actor/err"
+	err "github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/log"
 )
 

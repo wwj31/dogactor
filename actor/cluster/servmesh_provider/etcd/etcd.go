@@ -3,13 +3,13 @@ package etcd
 import (
 	"context"
 	"errors"
-	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/coreos/etcd/clientv3"
 	"github.com/coreos/etcd/mvcc/mvccpb"
+	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 	"go.uber.org/atomic"
@@ -53,7 +53,7 @@ func (s *Etcd) Start(h servmesh_provider.ServMeshHander) error {
 
 	client, err := clientv3.New(clientv3.Config{Endpoints: strings.Split(s.endpoints, "_"), DialTimeout: ETCD_TIMEOUT})
 	if err != nil {
-		log.KV("err", err).Error("new etcd client failed")
+		log.KV("actorerr", err).Error("new etcd client failed")
 		return err
 	}
 
@@ -117,14 +117,14 @@ func (s *Etcd) keepAlive() (<-chan *clientv3.LeaseKeepAliveResponse, context.Can
 	ctx, _ := context.WithTimeout(context.TODO(), ETCD_TIMEOUT)
 	lease, err := s.etcdCliet.Grant(ctx, ETCD_GRANT_TTL)
 	if err != nil {
-		logger.KV("err", err).Error("etcd keepAlive create lease failed")
+		logger.KV("actorerr", err).Error("etcd keepAlive create lease failed")
 		return nil, nil, nil, nil, false
 	}
 
 	ctx, cancelAlive := context.WithCancel(context.TODO())
 	alive, err := s.etcdCliet.KeepAlive(ctx, lease.ID)
 	if err != nil {
-		logger.KV("err", err).Error("etcd keepAlive failed")
+		logger.KV("actorerr", err).Error("etcd keepAlive failed")
 		return alive, cancelAlive, nil, nil, false
 	}
 
@@ -132,7 +132,7 @@ func (s *Etcd) keepAlive() (<-chan *clientv3.LeaseKeepAliveResponse, context.Can
 
 	s.registErr = nil
 	if err := s.syncLocalToEtcd(); err != nil {
-		logger.KV("err", err).Error("etcd syncLocalToEtcd failed")
+		logger.KV("actorerr", err).Error("etcd syncLocalToEtcd failed")
 		return alive, cancelAlive, nil, nil, false
 	}
 

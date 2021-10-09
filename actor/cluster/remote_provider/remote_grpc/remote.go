@@ -126,13 +126,13 @@ func (s *remoteHandler) OnRecv(msg *actor_msg.ActorMessage) {
 
 		tp, err := tools.FindMsgByName(msg.MsgName)
 		if err != nil {
-			s.logger.KV("msgName", msg.MsgName).KV("err", err).Error("msg name not find")
+			s.logger.KV("msgName", msg.MsgName).KV("actorerr", err).Error("msg name not find")
 			return
 		}
 
 		actMsg := tp.New().Interface().(proto.Message)
 		if err = proto.Unmarshal(msg.Data, actMsg); err != nil {
-			s.logger.KV("msgName", msg.MsgName).KV("err", err).Error("Unmarshal failed")
+			s.logger.KV("msgName", msg.MsgName).KV("actorerr", err).Error("Unmarshal failed")
 			return
 		}
 		s.remote.remoteHandler.OnSessionRecv(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)

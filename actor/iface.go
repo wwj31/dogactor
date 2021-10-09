@@ -1,7 +1,6 @@
 package actor
 
 import (
-	"github.com/wwj31/jtimer"
 	lua "github.com/yuin/gopher-lua"
 	"time"
 )
@@ -14,7 +13,7 @@ type (
 		Exit()
 
 		//timer
-		AddTimer(timeId string, interval time.Duration, callback jtimer.FuncCallback, trigger_times ...int32) string
+		AddTimer(timeId string, interval time.Duration, callback func(dt int64), trigger_times ...int32) string
 		CancelTimer(timerId string)
 
 		//lua

@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 
 	"github.com/gogo/protobuf/proto"
-	"github.com/wwj31/dogactor/actor/err"
+	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/tools"
 )
@@ -44,7 +44,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 
 	for _, f := range op {
 		if e := f(s); e != nil {
-			return nil, fmt.Errorf("%w %w", err.ActorSystemOptionErr, e.Error())
+			return nil, fmt.Errorf("%w %w", actorerr.ActorSystemOptionErr, e.Error())
 		}
 	}
 
@@ -111,7 +111,7 @@ func (s *System) Stop() {
 
 			e := s.Send("", s.clusterId, "", "stop")
 			if e != nil {
-				logger.KV("err", e).Error("stop error")
+				logger.KV("actorerr", e).Error("stop error")
 			}
 			s.waitStop.Wait()
 			close(s.newList)
@@ -124,12 +124,12 @@ func (s *System) Stop() {
 // 注册actor，外部创建对象，保证ActorId唯一性
 func (s *System) Regist(actor *actor) error {
 	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
-		return fmt.Errorf("%w actor:%v", err.RegisterActorSystemErr, actor.GetID())
+		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSystemErr, actor.GetID())
 	}
 
 	actor.setSystem(s)
 	if _, has := s.actorCache.LoadOrStore(actor.GetID(), actor); has {
-		return fmt.Errorf("%w actor:%v", err.RegisterActorSameIdErr, actor.GetID())
+		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSameIdErr, actor.GetID())
 	}
 
 	s.waitStop.Add(1)
@@ -159,7 +159,7 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 	}
 
 	if atr == nil {
-		return fmt.Errorf("%w s[%v] t[%v],r[%v]", err.ActorNotFoundErr, sourceId, targetId, requestId)
+		return fmt.Errorf("%w s[%v] t[%v],r[%v]", actorerr.ActorNotFoundErr, sourceId, targetId, requestId)
 	}
 
 	if e := atr.push(actor_msg.NewLocalActorMessage(sourceId, targetId, requestId, msg)); e != nil {

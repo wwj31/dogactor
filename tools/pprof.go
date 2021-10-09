@@ -22,7 +22,7 @@ func PProfInit(port int32) {
 		log.KV("addr", addr).Info("pprof start")
 		err := s.ListenAndServe()
 		if err != nil {
-			log.KV("err", err).Error("pprof start")
+			log.KV("actorerr", err).Error("pprof start")
 			Exit(1)
 		}
 	})

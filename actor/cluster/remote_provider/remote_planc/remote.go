@@ -132,7 +132,7 @@ func (s *remoteHandler) OnSessionCreated(sess network.INetSession) {
 	s.logger = log.NewWithDefaultAndLogger(logger, map[string]interface{}{"local": sess.LocalAddr(), "remote": sess.RemoteAddr(), "session": sess.Id()})
 	err := sess.SendMsg(s.remote.regist)
 	if err != nil {
-		log.KV("err", err).Error("sendmsg error")
+		log.KV("actorerr", err).Error("sendmsg error")
 	}
 }
 
@@ -171,13 +171,13 @@ func (s *remoteHandler) OnRecv(data []byte) {
 
 		tp, err := tools.FindMsgByName(msg.MsgName)
 		if err != nil {
-			s.logger.KV("MsgName", msg.MsgName).KV("err", err).Error("msg name not find")
+			s.logger.KV("MsgName", msg.MsgName).KV("actorerr", err).Error("msg name not find")
 			return
 		}
 
 		actMsg := tp.New().Interface().(proto.Message)
 		if err = proto.Unmarshal(msg.Data, actMsg); err != nil {
-			s.logger.KV("MsgName", msg.MsgName).KV("err", err).Error("Unmarshal failed")
+			s.logger.KV("MsgName", msg.MsgName).KV("actorerr", err).Error("Unmarshal failed")
 			return
 		}
 		s.remote.remoteHandler.OnSessionRecv(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)

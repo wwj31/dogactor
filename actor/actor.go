@@ -1,15 +1,15 @@
 package actor
 
 import (
+	"github.com/wwj31/jtimer"
 	"time"
 
-	"github.com/wwj31/dogactor/actor/err"
+	err "github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/actor/internal/script"
 	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
-	"github.com/wwj31/jtimer"
 	"go.uber.org/atomic"
 )
 
@@ -96,7 +96,7 @@ func (s *actor) stop() {
 // interval 	 单位nanoseconds
 // trigger_times 执行次数 -1 无限次
 // callback 	 只能是主线程回调
-func (s *actor) AddTimer(timeId string, interval time.Duration, callback jtimer.FuncCallback, trigger_times ...int32) string {
+func (s *actor) AddTimer(timeId string, interval time.Duration, callback func(dt int64), trigger_times ...int32) string {
 	if int64(interval) < s.timerAccuracy {
 		interval = time.Duration(s.timerAccuracy)
 	}
