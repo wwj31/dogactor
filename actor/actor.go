@@ -55,10 +55,9 @@ func New(id string, handler spawnActor, op ...ActorOption) *actor {
 	a := &actor{
 		id:            id,
 		handler:       handler,
-		mailBox:       make(chan actor_msg.IMessage, 1000),
+		mailBox:       make(chan actor_msg.IMessage, 100),
 		remote:        true, // 默认都能被远端发现
-		timerMgr:      jtimer.NewTimerMgr(),
-		timerAccuracy: 500,
+		timerAccuracy: 1000,
 		logger:        log.NewWithDefaultAndLogger(logger, map[string]interface{}{"actorId": id}),
 		requests:      make(map[string]*request),
 	}
@@ -97,6 +96,9 @@ func (s *actor) stop() {
 // trigger_times 执行次数 -1 无限次
 // callback 	 只能是主线程回调
 func (s *actor) AddTimer(timeId string, interval time.Duration, callback func(dt int64), trigger_times ...int32) string {
+	if s.timerMgr == nil {
+		s.timerMgr = jtimer.NewTimerMgr()
+	}
 	if int64(interval) < s.timerAccuracy {
 		interval = time.Duration(s.timerAccuracy)
 	}
@@ -116,6 +118,9 @@ func (s *actor) AddTimer(timeId string, interval time.Duration, callback func(dt
 
 // 删除一个定时器
 func (s *actor) CancelTimer(timerId string) {
+	if s.timerMgr == nil {
+		return
+	}
 	s.timerMgr.CancelTimer(timerId)
 }
 
@@ -126,12 +131,14 @@ func (s *actor) push(msg actor_msg.IMessage) error {
 	}
 
 	if l, c := len(s.mailBox), cap(s.mailBox); l > c*2/3 {
-		s.logger.KVs(log.Fields{"len": l, "cap": c, "actor": s.id}).Warn("mail box will quickly full")
+		s.logger.KVs(log.Fields{"len": l, "cap": c, "actor": s.id}).WarnStack(2, "mail box will quickly full")
 	}
 
 	s.mailBox <- msg
 	return nil
 }
+
+var tickMsg = &actor_msg.ActorMessage{}
 
 func (s *actor) run(ok chan struct{}) {
 	s.logger.Debug("actor startup")
@@ -155,10 +162,15 @@ func (s *actor) run(ok chan struct{}) {
 		select {
 		case <-upTimer.C:
 			if !s.asyncStop.Load() {
-				tools.Try(func() { s.timerMgr.Update(tools.Now().UnixNano()) }, nil)
+				_ = s.push(tickMsg)
 			}
 		case msg := <-s.mailBox:
-			tools.Try(func() { s.handleMsg(msg) }, nil)
+			tools.Try(func() {
+				s.handleMsg(msg)
+				if s.timerMgr != nil {
+					s.timerMgr.Update(tools.Now().UnixNano())
+				}
+			}, nil)
 			msg.Free()
 		}
 	}
@@ -171,25 +183,30 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 		s.logger.KVs(log.Fields{"message": message}).Red().Warn("unkown actor message type")
 		return
 	}
+	if message.Message() == nil {
+		return
+	}
 
+	// 慢日志记录
 	beginTime := tools.Milliseconds()
 	defer func() {
 		endTime := tools.Milliseconds()
 		dur := endTime - beginTime
-		if dur > int64(5*time.Millisecond) {
+		if dur > int64(200*time.Millisecond) {
 			s.logger.KV("message", msg).KV("dur", dur).Warn("handle too long")
 		}
 	}()
 
+	// 处理Req消息
 	reqSourceId, _, _, reqOK := ParseRequestId(message.RequestId)
 	if reqOK {
 		if s.id == reqSourceId { //收到Respone
 			s.doneRequest(message.RequestId, message.Message())
-		} else {
-			// 收到Request
-			if e := s.handler.OnHandleRequest(message.SourceId, message.TargetId, message.RequestId, message.Message()); e != nil {
-				expect.Nil(s.Response(message.RequestId, &actor_msg.RequestDeadLetter{Err: e.Error()}))
-			}
+			return
+		}
+		// 收到Request
+		if e := s.handler.OnHandleRequest(message.SourceId, message.TargetId, message.RequestId, message.Message()); e != nil {
+			expect.Nil(s.Response(message.RequestId, &actor_msg.RequestDeadLetter{Err: e.Error()}))
 		}
 		return
 	}

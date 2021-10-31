@@ -8,9 +8,9 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/wwj31/dogactor/actor"
+	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_grpc"
 	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd"
-	"github.com/wwj31/dogactor/actor/err"
 	"github.com/wwj31/dogactor/log"
 )
 
@@ -19,7 +19,7 @@ func WithRemote(ectd_addr, prefix string) actor.SystemOption {
 		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_grpc.NewRemoteMgr())
 		clusterActor := actor.New("cluster", cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
 		if e := system.Regist(clusterActor); e != nil {
-			return fmt.Errorf("%w %w", err.RegistClusterErr, e)
+			return fmt.Errorf("%w %w", actorerr.RegistClusterErr, e)
 		}
 		system.SetCluster(clusterActor.GetID())
 		return nil
@@ -50,7 +50,7 @@ type Cluster struct {
 }
 
 func (c *Cluster) OnInit() {
-	c.System().RegistEvent(
+	_ = c.System().RegistEvent(
 		c.GetID(),
 		(*actor.Ev_newActor)(nil),
 		(*actor.Ev_clusterUpdate)(nil),
