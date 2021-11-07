@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/wwj31/dogactor/actor"
-	_ "net/http/pprof"
 )
 
 var (
