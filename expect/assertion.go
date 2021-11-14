@@ -16,7 +16,7 @@ func Nil(v interface{}, elseLog ...log.Fields) {
 		} else {
 			log.ErrorStack(3, msg)
 		}
-		panic(v)
+		panic(nil)
 	}
 }
 func True(b bool, elseLog ...log.Fields) {
