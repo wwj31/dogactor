@@ -38,7 +38,7 @@ func (s *System) actorInfo(param ...string) {
  %s
 --------------------------------- local actor ---------------------------------
 `
-	logger.Info(fmt.Sprintf(format, strings.Join(actors, "\n")))
+	fmt.Println(fmt.Sprintf(format, strings.Join(actors, "\n")))
 }
 
 func (s *System) loadlua(param ...string) {
