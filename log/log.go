@@ -118,7 +118,7 @@ var Levels = map[string]int32{
 var msgs = make(chan *Builder, 10000)
 var msgPool = &sync.Pool{
 	New: func() interface{} {
-		return &Builder{buf: make([]byte, 0, 128), kv: make(Fields, 0)}
+		return &Builder{buf: make([]byte, 0, 128), kv: make(Fields, 2)}
 	},
 }
 
@@ -156,9 +156,15 @@ func init() {
 
 func write(sb *Builder, stack int, tag string, fm string, v ...interface{}) {
 	if Levels[tag] < logLevel {
+		if sb != nil {
+			sb.Reset()
+			msgPool.Put(sb)
+		}
 		return
 	}
 	if sb != nil && Levels[tag] < sb.level {
+		sb.Reset()
+		msgPool.Put(sb)
 		return
 	}
 

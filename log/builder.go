@@ -33,7 +33,6 @@ func (b *Builder) String() string       { return *(*string)(unsafe.Pointer(&b.bu
 func (b *Builder) Len() int             { return len(b.buf) }
 func (b *Builder) Cap() int             { return cap(b.buf) }
 func (b *Builder) WriteString(s string) { b.buf = append(b.buf, s...) }
-func (b *Builder) WriteBytes(s []byte)  { b.buf = append(b.buf, s...) }
 func (b *Builder) Reset() {
 	b.buf = b.buf[0:0]
 	b.kv = make(Fields, 0)
@@ -44,7 +43,7 @@ func (b *Builder) Reset() {
 }
 func (b *Builder) Bytes() []byte {
 	time := time.Now().UTC().Format("2006-01-02 15:04:05")
-	str := " [" + b.tag + "] " + ShortPath(b.file, 3) + ":" + strconv.Itoa(b.line)
+	str := " [" + b.tag + "] " + ShortPath(b.file, 2) + ":" + strconv.Itoa(b.line)
 	switch b.tag {
 	case TAG_DEBUG:
 		str = colorized.Blue(str)
