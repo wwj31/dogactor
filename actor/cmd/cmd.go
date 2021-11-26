@@ -14,6 +14,7 @@ import (
 
 type Cmd struct {
 	actorId string
+	usage   string
 	fn      func(...string)
 }
 
@@ -25,9 +26,12 @@ type Commands struct {
 func New() *Commands {
 	cmd := &Commands{}
 	cmd.RegistCmd("", "h", func(i ...string) {
-		info := fmt.Sprintf("\ninstructions:\n")
+		info := fmt.Sprintf("\ncommand-line 介绍:\n")
 		cmd.cmds.Range(func(cmdName, cmd interface{}) bool {
-			info += fmt.Sprintf("%v \n", cmdName)
+			if cmdName == "h" {
+				return true
+			}
+			info += fmt.Sprintf("%-12v usage: %v \n", cmdName, cmd.(Cmd).usage)
 			return true
 		})
 		log.Info(info)
@@ -74,6 +78,10 @@ func (c *Commands) loop() {
 	}
 }
 
-func (c *Commands) RegistCmd(actorId, cmd string, fn func(...string)) {
-	c.cmds.LoadOrStore(cmd, Cmd{actorId: actorId, fn: fn})
+func (c *Commands) RegistCmd(actorId, cmd string, fn func(...string), usage ...string) {
+	var u string
+	if len(usage) == 1 {
+		u = usage[0]
+	}
+	c.cmds.LoadOrStore(cmd, Cmd{actorId: actorId, usage: u, fn: fn})
 }

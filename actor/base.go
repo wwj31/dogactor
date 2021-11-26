@@ -15,11 +15,12 @@ func (s *Base) initActor(actor Actor) {
 }
 
 // 默认方法，需要的子类重写
-func (s *Base) OnInit()      { log.KV("actor", s.GetID()).Warn("actor default init") }
+
+func (s *Base) OnInit()      { log.KV("actor", s.ID()).Warn("actor default init") }
 func (s *Base) OnStop() bool { return true }
 
 func (s *Base) OnHandleMessage(sourceId, targetId string, msg interface{}) {
-	logger.KV("actorId", s.GetID()).Warn("not implement OnHandleMessage")
+	logger.KV("actorId", s.ID()).Warn("not implement OnHandleMessage")
 }
 
 func (s *Base) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
@@ -27,5 +28,5 @@ func (s *Base) OnHandleRequest(sourceId, targetId, requestId string, msg interfa
 }
 
 func (s *Base) OnHandleEvent(event interface{}) {
-	logger.KV("actorId", s.GetID()).Warn("not implement OnHandleEvent")
+	logger.KV("actorId", s.ID()).Warn("not implement OnHandleEvent")
 }

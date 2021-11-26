@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/wwj31/dogactor/actor/cmd"
+	"github.com/wwj31/dogactor/log"
 	"time"
 
 	"github.com/wwj31/dogactor/actor"
@@ -12,14 +14,15 @@ type PingActor struct{ actor.Base }
 type PongActor struct{ actor.Base }
 
 func main() {
-	//log.Init(log.TAG_DEBUG_I, nil, "./_log", "demo", 1)
-	system, _ := actor.NewSystem()
+	log.Init(log.TAG_DEBUG_I, nil, "./_log", "demo", 1)
+	system, _ := actor.NewSystem(actor.WithCMD(cmd.New()))
 	ping := actor.New("ping", &PingActor{})
 	pong := actor.New("pong", &PongActor{})
 	system.Regist(ping)
 	system.Regist(pong)
 
 	<-system.CStop
+	log.Stop()
 	fmt.Println("stop")
 }
 

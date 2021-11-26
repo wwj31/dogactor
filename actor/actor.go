@@ -71,7 +71,7 @@ func New(id string, handler spawnActor, op ...ActorOption) *actor {
 }
 
 // 获取actorID
-func (s *actor) GetID() string {
+func (s *actor) ID() string {
 	return s.id
 }
 
@@ -148,8 +148,8 @@ func (s *actor) run(ok chan struct{}) {
 		ok <- struct{}{}
 	}
 
-	_ = s.system.DispatchEvent(s.id, &Ev_newActor{ActorId: s.id, Publish: s.remote})
-	defer func() { _ = s.system.DispatchEvent(s.id, &Ev_delActor{ActorId: s.id, Publish: s.remote}) }()
+	_ = s.system.DispatchEvent(s.id, &EvNewactor{ActorId: s.id, Publish: s.remote})
+	defer func() { _ = s.system.DispatchEvent(s.id, &EvDelactor{ActorId: s.id, Publish: s.remote}) }()
 
 	upTimer := time.NewTicker(time.Millisecond * time.Duration(s.timerAccuracy))
 	defer upTimer.Stop()
@@ -240,14 +240,16 @@ func (s *actor) stopCheck() (immediatelyStop bool) {
 }
 
 //=========================简化actorSystem调用
-func (s *actor) setSystem(actorSystem *System) { s.system = actorSystem }
-
 func (s *actor) System() *System { return s.system }
 
 func (s *actor) Send(targetId string, msg interface{}) error {
 	return s.system.Send(s.id, targetId, "", msg)
 }
-func (s *actor) RegistCmd(cmd string, fn func(...string)) { s.system.RegistCmd(s.id, cmd, fn) }
+func (s *actor) RegistCmd(cmd string, fn func(...string), usage ...string) {
+	if s.system.cmd != nil {
+		s.system.cmd.RegistCmd(s.id, cmd, fn, usage...)
+	}
+}
 
 //=========================
 func SetMailBoxSize(boxSize int) ActorOption {
@@ -275,6 +277,9 @@ func SetLua(path string) ActorOption {
 		a.register2Lua()
 		a.luapath = path
 		a.lua.Load(a.luapath)
+		a.RegistCmd("loadlua", func(s ...string) {
+			a.lua.Load(path)
+		}, "加载lua脚本")
 	}
 }
 

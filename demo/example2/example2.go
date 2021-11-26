@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/wwj31/dogactor/actor/cluster"
+	"github.com/wwj31/dogactor/actor/cmd"
 	"github.com/wwj31/dogactor/demo/example2/interval"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
@@ -24,7 +25,7 @@ type Student struct {
 
 func main() {
 	log.Init(log.TAG_DEBUG_I, nil, "./_log", "demo", 1)
-	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:1000"), cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX))
+	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:1000"), cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.WithCMD(cmd.New()))
 	lilei := actor.New("LiLei", &Student{Name: "LiLei", Age: 19})
 	system1.Regist(lilei)
 

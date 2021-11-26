@@ -1,26 +1,26 @@
 package actor
 
-type Ev_newActor struct {
+type EvNewactor struct {
 	ActorId     string
 	Publish     bool
 	FromCluster bool
 }
 
-type Ev_delActor struct {
+type EvDelactor struct {
 	ActorId     string
 	Publish     bool
 	FromCluster bool
 }
 
-type Ev_clusterUpdate struct {
+type EvClusterupdate struct {
 	ActorId string
 	Host    string
 	Add     bool
 }
 
-type Ev_sessionClosed struct {
+type EvSessionclosed struct {
 	PeerHost string
 }
-type Ev_sessionOpened struct {
+type EvSessionopened struct {
 	PeerHost string
 }

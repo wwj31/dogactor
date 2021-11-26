@@ -47,7 +47,7 @@ func (s *request) Handle(fn func(resp interface{}, err error)) {
 func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Duration) (req *request) {
 	req = requestPool.Get().(*request)
 	req.id = requestId(s.id, targetId, s.system.Address())
-	req.sourceId = s.GetID()
+	req.sourceId = s.ID()
 	req.targetId = targetId
 	req.result = nil
 	req.err = nil

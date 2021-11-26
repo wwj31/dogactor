@@ -7,23 +7,16 @@ import (
 
 type ICmd interface {
 	Start(actorSystem *System)
-	RegistCmd(actorId, cmd string, f func(...string))
+	RegistCmd(actorId, cmd string, f func(...string), usage ...string)
 }
 
 // 设置Actor监听的端口
 func WithCMD(cmd ICmd) SystemOption {
 	return func(system *System) error {
 		system.cmd = cmd
-		cmd.RegistCmd("", "actorinfo", system.actorInfo)
-		cmd.RegistCmd("", "loadlua", system.loadlua)
+		cmd.RegistCmd("", "actorinfo", system.actorInfo, "本地actor信息")
 		cmd.Start(system)
 		return nil
-	}
-}
-
-func (as *System) RegistCmd(actorId, cmd string, fn func(...string)) {
-	if as.cmd != nil {
-		as.cmd.RegistCmd(actorId, cmd, fn)
 	}
 }
 
@@ -35,18 +28,8 @@ func (s *System) actorInfo(param ...string) {
 	})
 	format := `
 --------------------------------- local actor ---------------------------------
- %s
+%s
 --------------------------------- local actor ---------------------------------
 `
 	fmt.Println(fmt.Sprintf(format, strings.Join(actors, "\n")))
-}
-
-func (s *System) loadlua(param ...string) {
-	s.actorCache.Range(func(key, value interface{}) bool {
-		a := value.(*actor)
-		if a.lua != nil {
-			s.Send("", a.id, "LOAD LUA", func() { a.lua.Load(a.luapath) })
-		}
-		return true
-	})
 }

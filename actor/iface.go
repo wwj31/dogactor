@@ -8,7 +8,7 @@ import (
 type (
 	Actor interface {
 		//core
-		GetID() string
+		ID() string
 		System() *System
 		Exit()
 
@@ -26,7 +26,7 @@ type (
 		Response(requestId string, msg interface{}) error
 
 		//cmd
-		RegistCmd(cmd string, fn func(...string))
+		RegistCmd(cmd string, fn func(...string), usage ...string)
 	}
 
 	// spawnActor 基于携带匿名 Base 的结构

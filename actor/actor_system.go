@@ -12,7 +12,10 @@ import (
 	"github.com/wwj31/dogactor/tools"
 )
 
-/* 所有actor的驱动器和调度器*/
+/*
+所有actor的驱动器和调度器
+*/
+
 type SystemOption func(*System) error
 
 type System struct {
@@ -78,8 +81,8 @@ func (s *System) runActor(actor *actor, ok chan struct{}) {
 	go func() {
 		actor.run(ok)
 		// exit
-		logger.KV("actor", actor.GetID()).Info("actor done")
-		s.actorCache.Delete(actor.GetID())
+		logger.KV("actor", actor.ID()).Info("actor done")
+		s.actorCache.Delete(actor.ID())
 		s.waitStop.Done()
 	}()
 }
@@ -121,15 +124,16 @@ func (s *System) Stop() {
 	}
 }
 
-// 注册actor，外部创建对象，保证ActorId唯一性
+// Regist 注册actor，外部创建对象，保证ActorId唯一性
 func (s *System) Regist(actor *actor) error {
 	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
-		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSystemErr, actor.GetID())
+		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSystemErr, actor.ID())
 	}
 
-	actor.setSystem(s)
-	if _, has := s.actorCache.LoadOrStore(actor.GetID(), actor); has {
-		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSameIdErr, actor.GetID())
+	actor.system = s
+
+	if _, has := s.actorCache.LoadOrStore(actor.ID(), actor); has {
+		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSameIdErr, actor.ID())
 	}
 
 	s.waitStop.Add(1)
@@ -137,12 +141,12 @@ func (s *System) Regist(actor *actor) error {
 		func() { s.newList <- actor },
 		func(ex interface{}) {
 			s.waitStop.Done()
-			s.actorCache.Delete(actor.GetID())
+			s.actorCache.Delete(actor.ID())
 		})
 	return nil
 }
 
-// actor之间发送消息,
+// Send actor之间发送消息,
 // sourceid 发送源actor
 // targetid 目标actor
 // message 消息内容
@@ -168,7 +172,7 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 	return nil
 }
 
-// 设置Actor监听的端口
+// Addr 设置Actor监听的端口
 func Addr(addr string) SystemOption {
 	return func(system *System) error {
 		system.actorAddr = addr
