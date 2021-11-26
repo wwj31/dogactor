@@ -8,7 +8,7 @@ import (
 
 type Runtime struct {
 	// all systems
-	systems []ISystem
+	systems []System
 	// all entities
 	entities *EntityCollection
 	// all Singleton Component
@@ -17,7 +17,7 @@ type Runtime struct {
 
 func NewRuntime() *Runtime {
 	rt := &Runtime{
-		systems:          make([]ISystem, 0),
+		systems:          make([]System, 0),
 		entities:         newEntityCollection(),
 		singleComponents: make(map[ComponentType]IComponent),
 	}
@@ -89,7 +89,7 @@ func (s *Runtime) GetEntity(eid string) *Entity {
 	return s.entities.get(eid)
 }
 
-func (s *Runtime) AddSystem(news ...ISystem) error {
+func (s *Runtime) AddSystem(news ...System) error {
 	for _, n := range news {
 		for _, sys := range s.systems {
 			if sys.base().Type() == n.base().Type() {
@@ -101,7 +101,7 @@ func (s *Runtime) AddSystem(news ...ISystem) error {
 	return nil
 }
 
-func (s *Runtime) RangeSystem(f func(ISystem) bool) {
+func (s *Runtime) RangeSystem(f func(System) bool) {
 	for _, sys := range s.systems {
 		if !f(sys) {
 			return

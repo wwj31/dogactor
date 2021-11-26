@@ -2,16 +2,16 @@ package ecs
 
 import "reflect"
 
-type ISystem interface {
+type System interface {
 	UpdateFrame(dt float64)
 	EssentialComp() uint64
 	base() *SystemBase
 }
 
 type SystemBase struct {
-	typ     string
-	runtime *Runtime
-	compTuples map[string]ITuple	// EID=>ITuple
+	typ        string
+	runtime    *Runtime
+	compTuples map[string]ITuple // EID=>ITuple
 	tupleType  reflect.Type
 }
 
