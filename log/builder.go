@@ -11,10 +11,6 @@ import (
 
 type Fields map[string]interface{}
 
-func (field Fields) AddFiled(key string, data interface{}) {
-	field[key] = data
-}
-
 type Builder struct {
 	file  string
 	line  int
@@ -42,19 +38,19 @@ func (b *Builder) Reset() {
 	b.level = TAG_DEBUG_I
 }
 func (b *Builder) Bytes() []byte {
-	time := time.Now().UTC().Format("2006-01-02 15:04:05")
-	str := " [" + b.tag + "] " + ShortPath(b.file, 2) + ":" + strconv.Itoa(b.line)
+	timeFormat := time.Now().UTC().Format("2006-01-02 15:04:05")
+	baseInfo := " [" + b.tag + "] " + ShortPath(b.file, 2) + ":" + strconv.Itoa(b.line)
 	switch b.tag {
 	case TAG_DEBUG:
-		str = colorized.Blue(str)
+		baseInfo = colorized.Blue(baseInfo)
 	case TAG_INFO:
-		str = colorized.Cyan(str)
+		baseInfo = colorized.Cyan(baseInfo)
 	case TAG_WARN:
-		str = colorized.Yellow(str)
+		baseInfo = colorized.Yellow(baseInfo)
 	case TAG_ERROR:
-		str = colorized.Red(str)
+		baseInfo = colorized.Red(baseInfo)
 	case TAG_FATAL:
-		str = colorized.Red(str)
+		baseInfo = colorized.Red(baseInfo)
 	}
 	if b.colorfun != nil {
 		b.msg = b.colorfun(b.msg)
@@ -62,10 +58,11 @@ func (b *Builder) Bytes() []byte {
 	if len(b.msg) < 2 || b.msg[:2] != "\x1b[" {
 		b.msg = colorized.White(b.msg)
 	}
-	str += " " + b.msg
-	b.WriteString(fmt.Sprintf("%-120v", time+str))
+	baseInfo += " " + b.msg
+	b.WriteString(fmt.Sprintf("%-120v", timeFormat+baseInfo))
 	if len(b.param) > 0 {
-		b.WriteString(fmt.Sprintf("param=%v", colorized.Green(string(b.param))))
+		b.WriteString("param=")
+		b.WriteString(colorized.Green(string(b.param)))
 	}
 	b.WriteString("\n")
 	b.WriteString(b.stack)
