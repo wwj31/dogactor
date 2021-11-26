@@ -2,6 +2,7 @@ package actor
 
 import (
 	"fmt"
+	"github.com/wwj31/dogactor/log"
 	"reflect"
 	"sync"
 
@@ -88,7 +89,8 @@ func (ed *evDispatcher) DispatchEvent(sourceId string, event interface{}) error 
 
 	if listeners := ed.listeners[etype]; listeners != nil {
 		for actorId, _ := range listeners {
-			ed.sys.Send(sourceId, actorId, "", wrap)
+			err := ed.sys.Send(sourceId, actorId, "", wrap)
+			log.KVs(log.Fields{"actorId": actorId, "err": err}).Error("DispatchEvent send to actor")
 		}
 	}
 	return nil

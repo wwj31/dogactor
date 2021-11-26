@@ -138,7 +138,8 @@ func (s *actor) push(msg actor_msg.IMessage) error {
 	return nil
 }
 
-var tickMsg = &actor_msg.ActorMessage{}
+// 定期tick，执行定时器
+var timerTickMsg = &actor_msg.ActorMessage{}
 
 func (s *actor) run(ok chan struct{}) {
 	s.logger.Debug("actor startup")
@@ -162,7 +163,7 @@ func (s *actor) run(ok chan struct{}) {
 		select {
 		case <-upTimer.C:
 			if !s.asyncStop.Load() {
-				_ = s.push(tickMsg)
+				_ = s.push(timerTickMsg)
 			}
 		case msg := <-s.mailBox:
 			tools.Try(func() {

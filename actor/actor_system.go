@@ -51,6 +51,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 		}
 	}
 
+	// SystemOption maybe regist actor
 	for len(s.newList) > 0 {
 		cluster := <-s.newList
 		wait := make(chan struct{})
@@ -166,8 +167,8 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 		return fmt.Errorf("%w s[%v] t[%v],r[%v]", actorerr.ActorNotFoundErr, sourceId, targetId, requestId)
 	}
 
-	if e := atr.push(actor_msg.NewLocalActorMessage(sourceId, targetId, requestId, msg)); e != nil {
-		return fmt.Errorf("%w s[%v] t[%v],r[%v]", e, sourceId, targetId, requestId)
+	if err := atr.push(actor_msg.NewLocalActorMessage(sourceId, targetId, requestId, msg)); err != nil {
+		return fmt.Errorf("%w s[%v] t[%v],r[%v]", err, sourceId, targetId, requestId)
 	}
 	return nil
 }
