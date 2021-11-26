@@ -17,19 +17,19 @@ var (
 	NotRunning = errors.New("client has stopped")
 )
 
-func NewClient(host string, newHandler func() IHandler) *Client {
+func NewClient(host string, newHandler func() Handler) *Client {
 	c := &Client{
 		host:             host,
 		sessionReconnect: make(chan struct{}, 1),
 	}
-	c.newHandler = func() IHandler { return &ClientHander{client: c, handler: newHandler()} }
+	c.newHandler = func() Handler { return &ClientHander{client: c, handler: newHandler()} }
 	return c
 }
 
 type Client struct {
 	host             string
 	conn             *grpc.ClientConn
-	newHandler       func() IHandler
+	newHandler       func() Handler
 	reconnectTimes   int
 	running          atomic.Int32
 	sessionReconnect chan struct{}
@@ -107,7 +107,7 @@ func (g *Client) reconnect() {
 type ClientHander struct {
 	BaseHandler
 	client  *Client
-	handler IHandler
+	handler Handler
 }
 
 func (s *ClientHander) OnSessionCreated() {

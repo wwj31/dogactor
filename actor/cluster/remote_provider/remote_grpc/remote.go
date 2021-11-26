@@ -38,7 +38,7 @@ func NewRemoteMgr() *RemoteMgr {
 func (s *RemoteMgr) Start(actorSystem remote_provider.RemoteHandler) error {
 	s.remoteHandler = actorSystem
 
-	listener, err := internal.NewServer(s.remoteHandler.Address(), func() internal.IHandler { return &remoteHandler{remote: s} }, s)
+	listener, err := internal.NewServer(s.remoteHandler.Address(), func() internal.Handler { return &remoteHandler{remote: s} }, s)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (s *RemoteMgr) Stop() {
 }
 
 func (s *RemoteMgr) NewClient(host string) {
-	c := internal.NewClient(host, func() internal.IHandler { return &remoteHandler{remote: s, peerHost: host} })
+	c := internal.NewClient(host, func() internal.Handler { return &remoteHandler{remote: s, peerHost: host} })
 	s.clients.Set(host, c)
 	_ = c.Start(true)
 }

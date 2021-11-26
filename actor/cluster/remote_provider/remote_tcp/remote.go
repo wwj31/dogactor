@@ -5,6 +5,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider"
+	"github.com/wwj31/dogactor/expect"
 	"go.uber.org/atomic"
 	"time"
 
@@ -74,7 +75,7 @@ func (s *RemoteMgr) NewClient(host string) {
 	c := network.NewTcpClient(host, func() network.ICodec { return &network.StreamCodec{} })
 	c.AddLast(func() network.INetHandler { return &remoteHandler{remote: s, peerHost: host} })
 	s.clients.Set(host, c)
-	c.Start(true)
+	expect.Nil(c.Start(true))
 }
 
 func (s *RemoteMgr) StopClient(host string) {
@@ -112,6 +113,7 @@ func (s *RemoteMgr) SendMsg(addr string, sourceId, targetId, requestId string, m
 	}
 
 	netMsg := actor_msg.NewNetActorMessage(sourceId, targetId, requestId, tools.MsgName(msg), data)
+	defer netMsg.Free()
 	data, err = netMsg.Marshal()
 	if err != nil {
 		return err

@@ -34,13 +34,14 @@ func NewLocalActorMessage(sourceId, targetId, requestId string, message interfac
 }
 
 func NewNetActorMessage(sourceId, targetId, requestId string, msgName string, data []byte) *ActorMessage {
-	msg := &ActorMessage{
-		SourceId:  sourceId,
-		TargetId:  targetId,
-		MsgName:   msgName,
-		Data:      data,
-		RequestId: requestId,
-	}
+	msg := _msgPool.Get().(*ActorMessage)
+	atomic.StoreInt32(&msg.free, 1)
+
+	msg.SourceId = sourceId
+	msg.TargetId = targetId
+	msg.MsgName = msgName
+	msg.Data = data
+	msg.RequestId = requestId
 	return msg
 }
 

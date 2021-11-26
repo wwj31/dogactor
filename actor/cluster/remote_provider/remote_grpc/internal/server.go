@@ -11,7 +11,7 @@ import (
 	"github.com/wwj31/dogactor/tools"
 )
 
-func NewServer(host string, newHandler func() IHandler, ext interface{}) (*Server, error) {
+func NewServer(host string, newHandler func() Handler, ext interface{}) (*Server, error) {
 	ln, err := net.Listen("tcp", host)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func NewServer(host string, newHandler func() IHandler, ext interface{}) (*Serve
 
 type Server struct {
 	*grpc.Server
-	newHandler func() IHandler
+	newHandler func() Handler
 	ext        interface{}
 }
 

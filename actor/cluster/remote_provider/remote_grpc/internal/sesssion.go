@@ -11,12 +11,12 @@ import (
 	"github.com/wwj31/dogactor/tools"
 )
 
-type IStream interface {
+type Stream interface {
 	Send(*actor_msg.ActorMessage) error
 	Recv() (*actor_msg.ActorMessage, error)
 }
 
-type IHandler interface {
+type Handler interface {
 	OnRecv(*actor_msg.ActorMessage)
 	OnSessionCreated()
 	OnSessionClosed()
@@ -29,7 +29,7 @@ type BaseHandler struct {
 
 func (h *BaseHandler) setSession(session *Session) { h.Session = session }
 
-func NewSession(stream IStream, handler IHandler) *Session {
+func NewSession(stream Stream, handler Handler) *Session {
 	session := &Session{
 		id:      SessionId(),
 		chSend:  make(chan *actor_msg.ActorMessage, 1024),
@@ -46,8 +46,8 @@ type Session struct {
 	running atomic.Int32
 	chSend  chan *actor_msg.ActorMessage
 
-	handler IHandler
-	stream  IStream
+	handler Handler
+	stream  Stream
 }
 
 func (s *Session) Id() int64 { return s.id }
@@ -99,6 +99,7 @@ func (s *Session) write() {
 			log.KV("id", s.id).KV("error", err).Error("send msg error")
 			break
 		}
+		msg.Free()
 	}
 	s.Stop()
 	//必须与stream.Send同线程
