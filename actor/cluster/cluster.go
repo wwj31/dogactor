@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_tcp"
+	"github.com/wwj31/dogactor/tools"
 	"reflect"
 	"strings"
 
@@ -17,7 +18,7 @@ import (
 func WithRemote(ectd_addr, prefix string) actor.SystemOption {
 	return func(system *actor.System) error {
 		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_tcp.NewRemoteMgr())
-		clusterActor := actor.New("cluster", cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
+		clusterActor := actor.New("cluster_"+tools.UUID(), cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
 		if e := system.Regist(clusterActor); e != nil {
 			return fmt.Errorf("%w %w", actorerr.RegistClusterErr, e)
 		}
@@ -53,7 +54,7 @@ func (c *Cluster) OnInit() {
 	_ = c.System().RegistEvent(
 		c.ID(),
 		(*actor.EvNewactor)(nil),
-		(*actor.EvClusterupdate)(nil),
+		(*actor.EvClusterUpdate)(nil),
 		(*actor.EvSessionclosed)(nil),
 	)
 
@@ -105,7 +106,7 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 
 // 处理新服务
 func (c *Cluster) OnNewServ(k, v string) {
-	e := c.System().DispatchEvent("", &actor.EvClusterupdate{ActorId: k, Host: v, Add: true})
+	e := c.System().DispatchEvent("", &actor.EvClusterUpdate{ActorId: k, Host: v, Add: true})
 	if e != nil {
 		logger.KVs(log.Fields{"ActorId": k, "Host": v, "Add": true, "err": e}).Error("system dispatch event error")
 	}
@@ -198,7 +199,7 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 		if e.Publish {
 			_ = c.serviceMesh.RegistService(e.ActorId, c.System().Address())
 		}
-	case *actor.EvClusterupdate:
+	case *actor.EvClusterUpdate:
 		c.watchRemote(e.ActorId, e.Host, e.Add)
 	case *actor.EvSessionclosed:
 		delete(c.ready, e.PeerHost)

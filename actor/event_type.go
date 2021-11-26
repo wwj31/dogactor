@@ -12,7 +12,7 @@ type EvDelactor struct {
 	FromCluster bool
 }
 
-type EvClusterupdate struct {
+type EvClusterUpdate struct {
 	ActorId string
 	Host    string
 	Add     bool
