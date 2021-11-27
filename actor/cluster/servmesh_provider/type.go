@@ -1,5 +1,5 @@
 package servmesh_provider
 
 type ServMeshHander interface {
-	OnNewServ(k, v string)
+	OnNewServ(actorId, host string, add bool)
 }

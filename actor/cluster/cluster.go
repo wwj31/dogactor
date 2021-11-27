@@ -105,10 +105,10 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 }
 
 // 处理新服务
-func (c *Cluster) OnNewServ(k, v string) {
-	e := c.System().DispatchEvent("", &actor.EvClusterUpdate{ActorId: k, Host: v, Add: true})
+func (c *Cluster) OnNewServ(actorId, host string, add bool) {
+	e := c.System().DispatchEvent("", &actor.EvClusterUpdate{ActorId: actorId, Host: host, Add: add})
 	if e != nil {
-		logger.KVs(log.Fields{"ActorId": k, "Host": v, "Add": true, "err": e}).Error("system dispatch event error")
+		logger.KVs(log.Fields{"ActorId": actorId, "Host": host, "Add": true, "err": e}).Error("system dispatch event error")
 	}
 }
 

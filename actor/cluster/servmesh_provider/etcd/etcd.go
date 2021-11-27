@@ -160,7 +160,7 @@ func (s *Etcd) initAlreadyInEtcd() {
 	}
 	for _, kv := range resp.Kvs {
 		key, val := s.shiftStruct(kv)
-		s.hander.OnNewServ(key, val)
+		s.hander.OnNewServ(key, val, true)
 	}
 }
 
@@ -220,7 +220,7 @@ func (s *Etcd) run() {
 				key, val := s.shiftStruct(e.Kv)
 				log.KV("actorId", key).KV("revision", revision).KV("put", e.Type == etcd.EventTypePut).Debug("watch etcd")
 				//s.actorSystem.DispatchEvent("", &actor.Ev_clusterUpdate{ActorId: key, Host: val, Add: e.Type == etcd.EventTypePut})
-				s.hander.OnNewServ(key, val)
+				s.hander.OnNewServ(key, val, e.Type == etcd.EventTypePut)
 			}
 		}
 	}
