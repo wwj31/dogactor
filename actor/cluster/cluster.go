@@ -222,12 +222,14 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 func (c *Cluster) clusterinfo(params ...string) {
 	actors := []string{}
 	for id, host := range c.actors {
-		actors = append(actors, fmt.Sprintf("[actorId=%v host=%v]", id, host))
+		actors = append(actors, fmt.Sprintf("┃%-47v┃%15v%2v", id, host, "┃"))
 	}
 	format := `
---------------------------------- remote actor ---------------------------------
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━remote actor━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
+┃                   actorId                     ┃     host       ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━┫
 %s
---------------------------------- remote actor ---------------------------------
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━remote actor━━━━━━━━━┻━━━━━━━━━━━━━━━━┛
 `
-	logger.Info(fmt.Sprintf(format, strings.Join(actors, "\n")))
+	fmt.Println(fmt.Sprintf(format, strings.Join(actors, "\n")))
 }

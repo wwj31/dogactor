@@ -23,13 +23,15 @@ func WithCMD(cmd ICmd) SystemOption {
 func (s *System) actorInfo(param ...string) {
 	actors := []string{}
 	s.actorCache.Range(func(key, value interface{}) bool {
-		actors = append(actors, fmt.Sprintf("[actorId=%v mail-box=%v]", key, len(value.(*actor).mailBox)))
+		actors = append(actors, fmt.Sprintf("┃%-46v┃%10v%6v", key, len(value.(*actor).mailBox), "┃"))
 		return true
 	})
 	format := `
---------------------------------- local actor ---------------------------------
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━local actor━━━━━━━━━┳━━━━━━━━━━━━━━━┓
+┃                   actorId                    ┃ mail-box size ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━┫
 %s
---------------------------------- local actor ---------------------------------
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━local actor━━━━━━━━━┻━━━━━━━━━━━━━━━┛
 `
 	fmt.Println(fmt.Sprintf(format, strings.Join(actors, "\n")))
 }
