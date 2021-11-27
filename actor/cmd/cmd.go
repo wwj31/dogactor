@@ -34,7 +34,7 @@ func New() *Commands {
 			info += fmt.Sprintf("%-12v usage: %v \n", cmdName, cmd.(Cmd).usage)
 			return true
 		})
-		log.Info(info)
+		fmt.Println(info)
 	})
 
 	return cmd
