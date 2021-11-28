@@ -12,21 +12,28 @@ type (
 		System() *System
 		Exit()
 
-		//timer
-		AddTimer(timeId string, interval time.Duration, callback func(dt int64), trigger_times ...int32) string
-		CancelTimer(timerId string)
+		//Timer 计时器
+		Timer
+
+		// Sender 不保证消息发送可靠性
+		Sender
 
 		//lua
 		CallLua(name string, ret int, args ...lua.LValue) []lua.LValue
+		//cmd
+		RegistCmd(cmd string, fn func(...string), usage ...string)
+	}
 
-		// Send 不保证消息发送可靠性
+	Timer interface {
+		AddTimer(timeId string, interval time.Duration, callback func(dt int64), trigger_times ...int32) string
+		CancelTimer(timerId string)
+	}
+
+	Sender interface {
 		Send(targetId string, msg interface{}) error
 		Request(targetId string, msg interface{}, timeout ...time.Duration) (req *request)
 		RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (result interface{}, err error)
 		Response(requestId string, msg interface{}) error
-
-		//cmd
-		RegistCmd(cmd string, fn func(...string), usage ...string)
 	}
 
 	// spawnActor 基于携带匿名 Base 的结构

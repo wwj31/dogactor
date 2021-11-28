@@ -34,7 +34,7 @@ type System struct {
 
 	// 辅助模块
 	cmd ICmd
-	*evDispatcher
+	ev  *evDispatcher
 }
 
 func NewSystem(op ...SystemOption) (*System, error) {
@@ -43,7 +43,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 		waitStop: &sync.WaitGroup{},
 		newList:  make(chan *actor, 100),
 	}
-	s.evDispatcher = newEvent(s)
+	s.ev = newEvent(s)
 
 	for _, f := range op {
 		if e := f(s); e != nil {
