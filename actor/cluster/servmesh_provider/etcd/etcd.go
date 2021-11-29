@@ -91,7 +91,7 @@ func (s *Etcd) RegistService(key, value string) error {
 		s.registErr = errors.New("etcd has stoped")
 		return s.registErr
 	}
-	var leaseId etcd.LeaseID = InValidLeaseId
+	leaseId := s.getLeaseID()
 	for leaseId == InValidLeaseId {
 		time.Sleep(100 * time.Millisecond)
 		leaseId = s.getLeaseID()
