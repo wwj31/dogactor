@@ -18,8 +18,8 @@ type evDispatcher struct {
 	listeners listener
 }
 
-func newEvent(s *System) *evDispatcher {
-	return &evDispatcher{listeners: make(listener), sys: s}
+func newEvent(s *System) evDispatcher {
+	return evDispatcher{listeners: make(listener), sys: s}
 }
 
 // RegistEvent 注册actor事件

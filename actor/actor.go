@@ -149,8 +149,8 @@ func (s *actor) run(ok chan struct{}) {
 		ok <- struct{}{}
 	}
 
-	_ = s.system.ev.DispatchEvent(s.id, &EvNewactor{ActorId: s.id, Publish: s.remote})
-	defer func() { _ = s.system.ev.DispatchEvent(s.id, &EvDelactor{ActorId: s.id, Publish: s.remote}) }()
+	_ = s.system.DispatchEvent(s.id, &EvNewactor{ActorId: s.id, Publish: s.remote})
+	defer func() { _ = s.system.DispatchEvent(s.id, &EvDelactor{ActorId: s.id, Publish: s.remote}) }()
 
 	upTimer := time.NewTicker(time.Millisecond * time.Duration(s.timerAccuracy))
 	defer upTimer.Stop()
