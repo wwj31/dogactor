@@ -18,7 +18,7 @@ import (
 
 const (
 	ETCD_TIMEOUT   = 5 * time.Second //etcd连接超时
-	ETCD_GRANT_TTL = 6               //etcd jtimer to live
+	ETCD_GRANT_TTL = 6               //etcd timer to live
 	InValidLeaseId = -1
 )
 
@@ -91,10 +91,10 @@ func (s *Etcd) RegistService(key, value string) error {
 		s.registErr = errors.New("etcd has stoped")
 		return s.registErr
 	}
-
-	leaseId := s.getLeaseID()
-	if leaseId == InValidLeaseId {
-		return nil
+	var leaseId etcd.LeaseID = InValidLeaseId
+	for leaseId == InValidLeaseId {
+		time.Sleep(100 * time.Millisecond)
+		leaseId = s.getLeaseID()
 	}
 
 	resp, err := s.etcdCliet.Put(context.TODO(), s.prefix+key, value, etcd.WithLease(leaseId))
