@@ -169,7 +169,7 @@ func (s *actor) run(ok chan struct{}) {
 			tools.Try(func() {
 				s.handleMsg(msg)
 				if s.timerMgr != nil {
-					s.timerMgr.Update(tools.Now().UnixNano())
+					s.timerMgr.Update(tools.Nanoseconds())
 				}
 			}, nil)
 			msg.Free()

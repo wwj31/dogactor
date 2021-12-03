@@ -2,6 +2,8 @@ package tools
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 )
 
@@ -10,12 +12,36 @@ const (
 	SecondsForever = SecondsPerDay * 365 * 10 //10年(int32~(2020+17))
 )
 
-var TimeZero = Unix(0, 0)
-var TimeZone int
+var (
+	TimeZero       = Unix(0, 0)
+	TimeOffset     int64
+	TimeOffsetPath = "./.timeoffset"
+)
 
 func init() {
-	t := Now()
-	_, TimeZone = t.Zone()
+	bytes, err := os.ReadFile(TimeOffsetPath)
+	if err != nil {
+		return
+	}
+	str := string(bytes)
+	t, err := strconv.Atoi(str)
+	if err != nil {
+		return
+	}
+	TimeOffset = int64(t)
+}
+
+func ModifyTimeOffset(add int64) {
+	TimeOffset += add
+	file, err := os.Create(TimeOffsetPath)
+	if err != nil {
+		panic(err)
+	}
+	str := strconv.Itoa(int(TimeOffset))
+	_, err = file.Write([]byte(str))
+	if err != nil {
+		panic(err)
+	}
 }
 
 func Now() time.Time {
@@ -27,11 +53,15 @@ func Unix(sec int64, nsec int64) time.Time {
 }
 
 func Milliseconds() int64 {
-	return Now().UnixNano() / int64(time.Millisecond)
+	return Nanoseconds() / int64(time.Millisecond)
+}
+
+func Nanoseconds() int64 {
+	return Now().UnixNano() + TimeOffset
 }
 
 func Seconds() int64 {
-	return Now().UnixNano() / int64(time.Second)
+	return Nanoseconds() / int64(time.Second)
 }
 
 func Date(year int, month time.Month, day, hour, min, sec, nsec int) time.Time {
