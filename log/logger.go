@@ -5,19 +5,19 @@ type Logger struct {
 	_default map[string]interface{}
 }
 
-func New(lv int32) *Logger {
-	return &Logger{logLevel: lv}
+func New(lv int32) Logger {
+	return Logger{logLevel: lv}
 }
 
-func NewWithDefault(lv int32, _default map[string]interface{}) *Logger {
-	logger := &Logger{logLevel: lv}
+func NewWithDefault(lv int32, _default map[string]interface{}) Logger {
+	logger := Logger{logLevel: lv}
 	if len(_default) > 0 {
 		logger._default = _default
 	}
 	return logger
 }
 
-func NewWithDefaultAndLogger(l *Logger, _default map[string]interface{}) *Logger {
+func NewWithDefaultAndLogger(l Logger, _default map[string]interface{}) Logger {
 	logger := NewWithDefault(l.logLevel, _default)
 	if len(l._default) > 0 {
 		if len(logger._default) == 0 {

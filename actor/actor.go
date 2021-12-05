@@ -2,6 +2,7 @@ package actor
 
 import (
 	"github.com/wwj31/jtimer"
+	"sync"
 	"time"
 
 	"github.com/wwj31/dogactor/actor/actorerr"
@@ -12,6 +13,12 @@ import (
 	"github.com/wwj31/dogactor/tools"
 	"go.uber.org/atomic"
 )
+
+var timerMgrPool = sync.Pool{
+	New: func() interface{} {
+		return jtimer.NewTimerMgr()
+	},
+}
 
 type (
 	ActorOption func(*actor)
@@ -40,7 +47,7 @@ type (
 		luapath string
 
 		//logger
-		logger *log.Logger
+		logger log.Logger
 
 		//request记录发送出去的所有请求，收到返回后，从map删掉
 		requests map[string]*request
@@ -57,7 +64,7 @@ func New(id string, handler spawnActor, op ...ActorOption) *actor {
 		handler:       handler,
 		mailBox:       make(chan actor_msg.IMessage, 100),
 		remote:        true, // 默认都能被远端发现
-		timerAccuracy: 1000,
+		timerAccuracy: 500,
 		logger:        log.NewWithDefaultAndLogger(logger, map[string]interface{}{"actorId": id}),
 		requests:      make(map[string]*request),
 	}
@@ -97,7 +104,7 @@ func (s *actor) stop() {
 // callback 	 只能是主线程回调
 func (s *actor) AddTimer(timeId string, interval time.Duration, callback func(dt int64), trigger_times ...int32) string {
 	if s.timerMgr == nil {
-		s.timerMgr = jtimer.NewTimerMgr()
+		s.timerMgr = timerMgrPool.Get().(*jtimer.TimerMgr)
 	}
 	if int64(interval) < s.timerAccuracy {
 		interval = time.Duration(s.timerAccuracy)
@@ -157,6 +164,8 @@ func (s *actor) run(ok chan struct{}) {
 
 	for {
 		if s.stopCheck() {
+			s.timerMgr.Reset()
+			timerMgrPool.Put(s.timerMgr)
 			return
 		}
 
