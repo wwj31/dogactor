@@ -126,7 +126,7 @@ type remoteHandler struct {
 	network.INetSession
 	remote   *RemoteMgr
 	peerHost string
-	logger   *log.Logger
+	logger   log.Logger
 }
 
 func (s *remoteHandler) OnSessionCreated(sess network.INetSession) {
