@@ -2,7 +2,6 @@ package actor
 
 import (
 	"github.com/wwj31/jtimer"
-	"sync"
 	"time"
 
 	"github.com/wwj31/dogactor/actor/actorerr"
@@ -13,12 +12,6 @@ import (
 	"github.com/wwj31/dogactor/tools"
 	"go.uber.org/atomic"
 )
-
-var timerMgrPool = sync.Pool{
-	New: func() interface{} {
-		return jtimer.NewTimerMgr()
-	},
-}
 
 type (
 	ActorOption func(*actor)
@@ -39,7 +32,7 @@ type (
 		syncStop  atomic.Bool
 
 		//timerAccuracy 决定计时器更新精度
-		timerMgr      *jtimer.TimerMgr
+		timerMgr      jtimer.TimerMgr
 		timerAccuracy int64
 
 		//lua
@@ -64,6 +57,7 @@ func New(id string, handler spawnActor, op ...ActorOption) *actor {
 		handler:       handler,
 		mailBox:       make(chan actor_msg.IMessage, 100),
 		remote:        true, // 默认都能被远端发现
+		timerMgr:      jtimer.NewTimerMgr(),
 		timerAccuracy: 500,
 		logger:        log.NewWithDefaultAndLogger(logger, map[string]interface{}{"actorId": id}),
 		requests:      make(map[string]*request),
@@ -103,9 +97,6 @@ func (s *actor) stop() {
 // trigger_times 执行次数 -1 无限次
 // callback 	 只能是主线程回调
 func (s *actor) AddTimer(timeId string, interval time.Duration, callback func(dt int64), trigger_times ...int32) string {
-	if s.timerMgr == nil {
-		s.timerMgr = timerMgrPool.Get().(*jtimer.TimerMgr)
-	}
 	if int64(interval) < s.timerAccuracy {
 		interval = time.Duration(s.timerAccuracy)
 	}
@@ -125,9 +116,6 @@ func (s *actor) AddTimer(timeId string, interval time.Duration, callback func(dt
 
 // 删除一个定时器
 func (s *actor) CancelTimer(timerId string) {
-	if s.timerMgr == nil {
-		return
-	}
 	s.timerMgr.CancelTimer(timerId)
 }
 
@@ -164,8 +152,6 @@ func (s *actor) run(ok chan struct{}) {
 
 	for {
 		if s.stopCheck() {
-			s.timerMgr.Reset()
-			timerMgrPool.Put(s.timerMgr)
 			return
 		}
 
@@ -177,9 +163,7 @@ func (s *actor) run(ok chan struct{}) {
 		case msg := <-s.mailBox:
 			tools.Try(func() {
 				s.handleMsg(msg)
-				if s.timerMgr != nil {
-					s.timerMgr.Update(tools.Nanoseconds())
-				}
+				s.timerMgr.Update(tools.Nanoseconds())
 			}, nil)
 			msg.Free()
 		}

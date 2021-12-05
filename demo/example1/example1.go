@@ -28,22 +28,22 @@ func main() {
 
 // PingActor
 func (s *PingActor) OnInit() {
-	s.AddTimer(tools.UUID(), 1*time.Second, func(dt int64) {
+	s.AddTimer(tools.UUID(), 10*time.Second, func(dt int64) {
 		for i := 0; i < 1000; i++ {
 			s.Send("pong", "this is data")
 		}
 		tools.PrintMemUsage()
 	}, -1)
 
-	//s.AddTimer(tools.UUID(), 10*time.Second, func(dt int64) {
-	//	s.System().Stop()
-	//}, 1)
+	s.AddTimer(tools.UUID(), 10*time.Second, func(dt int64) {
+		s.System().Stop()
+	}, 1)
 }
 func (s *PingActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	switch msg {
 	case 99999:
-		//fmt.Println(sourceId, targetId)
-		//fmt.Println()
+		fmt.Println(sourceId, targetId)
+		fmt.Println()
 	}
 }
 
@@ -51,7 +51,7 @@ func (s *PingActor) OnHandleMessage(sourceId, targetId string, msg interface{}) 
 func (s *PongActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	switch msg {
 	case "this is data":
-		//fmt.Println(sourceId, targetId)
+		fmt.Println(sourceId, targetId)
 		s.Send(sourceId, 99999)
 	}
 }
