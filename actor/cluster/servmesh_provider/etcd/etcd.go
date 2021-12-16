@@ -85,7 +85,7 @@ func (s *Etcd) IsStop() bool {
 }
 
 // 注册kv
-func (s *Etcd) RegistService(key, value string) error {
+func (s *Etcd) RegisterService(key, value string) error {
 	s.localActors.Store(key, value)
 	if s.IsStop() {
 		s.registErr = errors.New("etcd has stoped")
@@ -99,7 +99,28 @@ func (s *Etcd) RegistService(key, value string) error {
 
 	resp, err := s.etcdCliet.Put(context.TODO(), s.prefix+key, value, etcd.WithLease(leaseId))
 	if err != nil {
-		logger.KV("error", err).KV("revision", resp.Header.GetRevision()).KV("key", key).KV("value", value).Error("put etcd failed")
+		logger.KVs(log.Fields{
+			"error":    err,
+			"revision": resp.Header.GetRevision(),
+			"key":      key, "value": value}).Error("put etcd failed")
+		s.registErr = err
+	}
+	return err
+}
+
+// 注销key
+func (s *Etcd) UnregisterService(key string) error {
+	s.localActors.Delete(key)
+	if s.IsStop() {
+		s.registErr = errors.New("etcd has stoped")
+		return s.registErr
+	}
+	resp, err := s.etcdCliet.Delete(context.TODO(), s.prefix+key)
+	if err != nil {
+		logger.KVs(log.Fields{
+			"error":    err,
+			"revision": resp.Header.GetRevision(),
+			"key":      key}).Error("put etcd failed")
 		s.registErr = err
 	}
 	return err
@@ -167,7 +188,7 @@ func (s *Etcd) initAlreadyInEtcd() {
 //把本地所有actor注册到etcd上
 func (s *Etcd) syncLocalToEtcd() (err error) {
 	s.localActors.Range(func(key, value interface{}) bool {
-		if err = s.RegistService(key.(string), value.(string)); err != nil {
+		if err = s.RegisterService(key.(string), value.(string)); err != nil {
 			return false
 		}
 		return true

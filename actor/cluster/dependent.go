@@ -10,7 +10,8 @@ import (
 type IServiceMeshProvider interface {
 	Start(servmesh_provider.ServMeshHander) error
 	Stop()
-	RegistService(key string, value string) error
+	RegisterService(key string, value string) error
+	UnregisterService(key string) error
 }
 
 type IRemoteProvider interface {

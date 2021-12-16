@@ -54,6 +54,7 @@ func (c *Cluster) OnInit() {
 	_ = c.System().RegistEvent(
 		c.ID(),
 		(*actor.EvNewactor)(nil),
+		(*actor.EvDelactor)(nil),
 		(*actor.EvClusterUpdate)(nil),
 		(*actor.EvSessionclosed)(nil),
 	)
@@ -143,7 +144,6 @@ func (c *Cluster) sendRemote(sourceId, targetId, requestId string, actMsg proto.
 
 }
 
-//单线程调用,否则考虑加锁
 func (c *Cluster) watchRemote(actorId, host string, add bool) {
 	if add {
 		defer func() {
@@ -197,7 +197,11 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 	switch e := event.(type) {
 	case *actor.EvNewactor:
 		if e.Publish {
-			_ = c.serviceMesh.RegistService(e.ActorId, c.System().Address())
+			_ = c.serviceMesh.RegisterService(e.ActorId, c.System().Address())
+		}
+	case *actor.EvDelactor:
+		if !e.FromCluster && e.Publish {
+			_ = c.serviceMesh.UnregisterService(e.ActorId)
 		}
 	case *actor.EvClusterUpdate:
 		c.watchRemote(e.ActorId, e.Host, e.Add)
