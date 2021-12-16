@@ -10,7 +10,6 @@ import (
 
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
-	"github.com/wwj31/dogactor/tools"
 )
 
 var (
@@ -38,7 +37,7 @@ type Client struct {
 
 func (g *Client) Start(reconnect bool) error {
 	if reconnect {
-		tools.GoEngine(g.reconnect)
+		go g.reconnect()
 	} else {
 		return g.connect()
 	}

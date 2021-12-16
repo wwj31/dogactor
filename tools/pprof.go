@@ -11,7 +11,7 @@ import (
 )
 
 func PProfInit(port int32) {
-	GoEngine(func() {
+	go Try(func() {
 		addr := fmt.Sprintf("0.0.0.0:%v", port)
 		s := &http.Server{
 			Addr:         addr,

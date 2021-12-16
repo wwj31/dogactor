@@ -3,7 +3,6 @@ package network
 import (
 	"errors"
 	"github.com/wwj31/dogactor/log"
-	"github.com/wwj31/dogactor/tools"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -52,7 +51,7 @@ func (s *TcpClient) AddLast(hander func() INetHandler) {
 
 func (s *TcpClient) Start(reconnect bool) error {
 	if reconnect {
-		tools.GoEngine(s.reconnect)
+		go s.reconnect()
 	} else {
 		return s.connect()
 	}

@@ -9,26 +9,17 @@ import (
 	"github.com/wwj31/dogactor/log"
 )
 
-func Try(fn func(), catch func(ex interface{})) {
+func Try(fn func(), catch ...func(ex interface{})) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := fmt.Sprintf("panic recover:%v\n%v", r, string(debug.Stack()))
 			log.Error(stack)
-			if catch != nil {
-				catch(r)
+			if len(catch) > 0 {
+				catch[0](r)
 			}
 		}
 	}()
 	fn()
-}
-
-func GoEngine(fn func()) {
-	go Try(func() { fn() }, nil)
-}
-
-//逻辑需求
-func GoLogic(fn func()) {
-	go Try(func() { fn() }, nil)
 }
 
 //特别说明 于$GOROOT/src/runtime/proc.go中加入此函数

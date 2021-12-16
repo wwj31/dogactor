@@ -8,7 +8,6 @@ import (
 
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
-	"github.com/wwj31/dogactor/tools"
 )
 
 func NewServer(host string, newHandler func() Handler, ext interface{}) (*Server, error) {
@@ -25,12 +24,12 @@ func NewServer(host string, newHandler func() Handler, ext interface{}) (*Server
 	actor_msg.RegisterActorServiceServer(gs, server)
 
 	log.KV("host", host).Info("grpc server start")
-	tools.GoEngine(func() {
+	go func() {
 		err := gs.Serve(ln)
 		if err != nil {
 			log.KV("host", host).KV("error", err).Error("grpc server failed")
 		}
-	})
+	}()
 
 	return server, nil
 }

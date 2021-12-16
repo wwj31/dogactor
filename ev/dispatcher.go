@@ -37,8 +37,10 @@ func (s *eventDispatcher) Dispatch(event IEvent) {
 		return
 	}
 
-	for i := range list {
-		tools.Try(func() { list[i].OnEvent(event) }, nil)
+	for _, listener := range list {
+		tools.Try(func() {
+			listener.OnEvent(event)
+		})
 	}
 }
 

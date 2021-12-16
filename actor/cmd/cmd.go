@@ -42,7 +42,7 @@ func New() *Commands {
 
 func (c *Commands) Start(actorSystem *actor.System) {
 	c.actorSystem = actorSystem
-	tools.GoEngine(c.loop)
+	go c.loop()
 }
 
 func (c *Commands) loop() {
@@ -74,7 +74,7 @@ func (c *Commands) loop() {
 					_ = c.actorSystem.Send("", cmd.actorId, "Cmd", func() { cmd.fn(param...) })
 				}
 			}
-		}, nil)
+		})
 	}
 }
 

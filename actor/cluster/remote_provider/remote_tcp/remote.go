@@ -56,7 +56,7 @@ func (s *RemoteMgr) Start(h remote_provider.RemoteHandler) error {
 	}
 
 	s.listener = listener
-	tools.GoEngine(s.keepAlive)
+	go s.keepAlive()
 
 	// s.remoteHandler.RegistCmd("", "remoteinfo", s.remoteinfo)
 	return err

@@ -139,7 +139,7 @@ var timerTickMsg = &actor_msg.ActorMessage{}
 func (s *actor) run(ok chan struct{}) {
 	s.logger.Debug("actor startup")
 
-	tools.Try(func() { s.handler.OnInit() }, nil)
+	tools.Try(s.handler.OnInit)
 	if ok != nil {
 		ok <- struct{}{}
 	}

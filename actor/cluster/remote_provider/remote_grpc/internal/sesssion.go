@@ -71,9 +71,9 @@ func (s *Session) start(block bool) {
 	wait := sync.WaitGroup{}
 	wait.Add(2)
 
-	tools.Try(s.handler.OnSessionCreated, nil)
-	tools.GoEngine(func() { s.read(); wait.Done() })
-	tools.GoEngine(func() { s.write(); wait.Done() })
+	tools.Try(s.handler.OnSessionCreated)
+	go func() { s.read(); wait.Done() }()
+	go func() { s.write(); wait.Done() }()
 
 	if block {
 		wait.Wait()
@@ -87,9 +87,11 @@ func (s *Session) read() {
 			log.KV("id", s.id).KV("error", err).Warn("grpc recv error")
 			break
 		}
-		tools.Try(func() { s.handler.OnRecv(msg) }, nil)
+		tools.Try(func() {
+			s.handler.OnRecv(msg)
+		})
 	}
-	tools.Try(s.handler.OnSessionClosed, nil)
+	tools.Try(s.handler.OnSessionClosed)
 	s.Stop()
 }
 

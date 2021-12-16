@@ -71,8 +71,8 @@ func (s *TcpSession) start() {
 			v.OnSessionCreated(s)
 		}, nil)
 	}
-	tools.GoEngine(s.read)
-	tools.GoEngine(s.write)
+	go s.read()
+	go s.write()
 }
 
 func (s *TcpSession) Stop() {
@@ -83,7 +83,7 @@ func (s *TcpSession) Stop() {
 			log.KV("actorerr", err).Error("stop error")
 		}
 		for _, v := range s.handler {
-			tools.Try(v.OnSessionClosed, nil)
+			tools.Try(v.OnSessionClosed)
 		}
 		log.KV("sessionId", s.id).Debug("tcp session close")
 	}

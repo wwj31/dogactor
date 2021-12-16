@@ -60,7 +60,7 @@ func (s *Etcd) Start(h servmesh_provider.ServMeshHander) error {
 
 	s.etcdCliet = client
 	s.wg.Add(1)
-	tools.GoEngine(func() {
+	go tools.Try(func() {
 		defer s.wg.Done()
 		for {
 			if s.IsStop() {

@@ -49,7 +49,7 @@ func (s *TcpListener) listen() error {
 	}
 	s.listener = listener
 
-	tools.GoEngine(func() {
+	go tools.Try(func() {
 		for {
 			if conn, err := listener.Accept(); err != nil {
 				if strings.Contains(err.Error(), "use of closed network connection") {
