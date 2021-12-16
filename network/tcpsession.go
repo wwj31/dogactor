@@ -127,7 +127,7 @@ func (s *TcpSession) read() {
 
 		for _, d := range datas {
 			for _, v := range s.handler {
-				tools.Try(func() { v.OnRecv(d) }, nil)
+				tools.Try(func() { v.OnRecv(d) })
 			}
 		}
 	}
