@@ -164,11 +164,11 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 	}
 
 	if atr == nil {
-		return fmt.Errorf("%w s[%v] t[%v],r[%v]", actorerr.ActorNotFoundErr, sourceId, targetId, requestId)
+		return errFormat(actorerr.ActorNotFoundErr, sourceId, targetId, requestId)
 	}
 
 	if err := atr.push(actor_msg.NewLocalActorMessage(sourceId, targetId, requestId, msg)); err != nil {
-		return fmt.Errorf("%w s[%v] t[%v],r[%v]", err, sourceId, targetId, requestId)
+		return errFormat(err, sourceId, targetId, requestId)
 	}
 	return nil
 }
@@ -179,4 +179,8 @@ func Addr(addr string) SystemOption {
 		system.actorAddr = addr
 		return nil
 	}
+}
+
+func errFormat(err error, sourceId, targetId, requestId string) error {
+	return fmt.Errorf("%w s[%v] t[%v],r[%v]", err, sourceId, targetId, requestId)
 }
