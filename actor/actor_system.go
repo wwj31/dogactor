@@ -167,7 +167,8 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 		return errFormat(actorerr.ActorNotFoundErr, sourceId, targetId, requestId)
 	}
 
-	if err := atr.push(actor_msg.NewLocalActorMessage(sourceId, targetId, requestId, msg)); err != nil {
+	localMsg := actor_msg.NewLocalActorMessage(sourceId, targetId, requestId, msg)
+	if err := atr.push(localMsg); err != nil {
 		return errFormat(err, sourceId, targetId, requestId)
 	}
 	return nil
