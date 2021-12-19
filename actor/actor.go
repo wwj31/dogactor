@@ -14,7 +14,7 @@ import (
 )
 
 type (
-	ActorOption func(*actor)
+	Option func(*actor)
 	// 运行单元
 	actor struct {
 		id      string
@@ -51,7 +51,7 @@ type (
 // id 		actorId外部定义  @和$为内部符号，其他id尽量不占用
 // handler  消息处理模块
 // op  修改默认属性
-func New(id string, handler spawnActor, op ...ActorOption) *actor {
+func New(id string, handler spawnActor, op ...Option) *actor {
 	a := &actor{
 		id:            id,
 		handler:       handler,
@@ -246,25 +246,25 @@ func (s *actor) RegistCmd(cmd string, fn func(...string), usage ...string) {
 }
 
 //=========================
-func SetMailBoxSize(boxSize int) ActorOption {
+func SetMailBoxSize(boxSize int) Option {
 	return func(a *actor) {
 		a.mailBox = make(chan actor_msg.IMessage, boxSize)
 	}
 }
 
-func SetTimerAccuracy(acc int64) ActorOption {
+func SetTimerAccuracy(acc int64) Option {
 	return func(a *actor) {
 		a.timerAccuracy = acc
 	}
 }
 
-func SetLocalized() ActorOption {
+func SetLocalized() Option {
 	return func(a *actor) {
 		a.remote = false
 	}
 }
 
-func SetLua(path string) ActorOption {
+func SetLua(path string) Option {
 	expect.True(path != "", log.Fields{"path": "lua path is error"})
 	return func(a *actor) {
 		a.lua = script.New()
