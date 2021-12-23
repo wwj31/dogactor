@@ -94,22 +94,22 @@ func (s *Logger) CleanColor() *Logger {
 
 func (s *Logger) Debugf(msg string, args ...interface{}) {
 	msg = color[s.color].B + msg + color[s.color].E
-	s.sugar.Debugf(msg, args)
+	s.sugar.Debugf(msg, args...)
 }
 
 func (s *Logger) Infof(msg string, args ...interface{}) {
 	msg = color[s.color].B + msg + color[s.color].E
-	s.sugar.Infof(msg, args)
+	s.sugar.Infof(msg, args...)
 }
 
 func (s *Logger) Warnf(msg string, args ...interface{}) {
 	msg = color[s.color].B + msg + color[s.color].E
-	s.sugar.Warnf(msg, args)
+	s.sugar.Warnf(msg, args...)
 }
 
 func (s *Logger) Errorf(msg string, args ...interface{}) {
 	msg = color[s.color].B + msg + color[s.color].E
-	s.sugar.Errorf(msg, args)
+	s.sugar.Errorf(msg, args...)
 }
 
 func (s *Logger) Debugw(msg string, args ...interface{}) {

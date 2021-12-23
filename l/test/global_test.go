@@ -51,8 +51,6 @@ func GOGO() {
 		"val", 123,
 		"uuid", tools.UUID())
 
-	ln.Errorw("this is error",
-		"k", "v",
-		"val", 123,
+	ln.Color(l.Gray).Errorf("this is error %v %v",
 		"uuid", tools.UUID())
 }
