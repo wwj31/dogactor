@@ -3,7 +3,6 @@ module github.com/wwj31/dogactor
 go 1.17
 
 require (
-	github.com/go-ini/ini v1.63.2
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.3.0
@@ -17,8 +16,10 @@ require (
 	go.etcd.io/etcd/api/v3 v3.5.1
 	go.etcd.io/etcd/client/v3 v3.5.1
 	go.uber.org/atomic v1.9.0
+	go.uber.org/zap v1.19.1
 	google.golang.org/grpc v1.42.0
 	google.golang.org/protobuf v1.27.1
+	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
 
 require (
@@ -32,7 +33,6 @@ require (
 	github.com/tklauser/numcpus v0.3.0 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.1 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/net v0.0.0-20210405180319-a5a99cb37ef4 // indirect
 	golang.org/x/sys v0.0.0-20210816074244-15123e1e1f71 // indirect
 	golang.org/x/text v0.3.5 // indirect
