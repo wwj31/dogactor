@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider"
-	"github.com/wwj31/dogactor/actor/log"
+	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -48,12 +48,12 @@ func NewEtcd(endpoints, prefix string) *Etcd {
 func (s *Etcd) Start(h servmesh_provider.ServMeshHander) error {
 	s.hander = h
 
-	logInfo := []interface{}{"endpoints", s.endpoints,"prefix", s.prefix}
+	logInfo := []interface{}{"endpoints", s.endpoints, "prefix", s.prefix}
 	log.SysLog.Infow("etcd start", logInfo...)
 
 	client, err := etcd.New(etcd.Config{Endpoints: strings.Split(s.endpoints, "_"), DialTimeout: ETCD_TIMEOUT})
 	if err != nil {
-		log.SysLog.Errorw("new etcd client failed",append(logInfo,"err", err)...)
+		log.SysLog.Errorw("new etcd client failed", append(logInfo, "err", err)...)
 		return err
 	}
 
@@ -99,11 +99,11 @@ func (s *Etcd) RegisterService(key, value string) error {
 	resp, err := s.etcdCliet.Put(context.TODO(), s.prefix+key, value, etcd.WithLease(leaseId))
 	if err != nil {
 		log.SysLog.Errorf("RegisterService etcd failed",
-			"error",    err,
+			"error", err,
 			"revision", resp.Header.GetRevision(),
-			"key",      key,
+			"key", key,
 			"value", value,
-			)
+		)
 		s.registErr = err
 	}
 	return err
@@ -118,9 +118,9 @@ func (s *Etcd) UnregisterService(key string) error {
 	resp, err := s.etcdCliet.Delete(context.TODO(), s.prefix+key)
 	if err != nil {
 		log.SysLog.Errorf("UnregisterService etcd failed",
-			"error",    err,
+			"error", err,
 			"revision", resp.Header.GetRevision(),
-			"key",      key,
+			"key", key,
 		)
 		s.registErr = err
 	}
@@ -138,14 +138,14 @@ func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelF
 	ctx, _ := context.WithTimeout(context.TODO(), ETCD_TIMEOUT)
 	lease, err := s.etcdCliet.Grant(ctx, ETCD_GRANT_TTL)
 	if err != nil {
-		log.SysLog.Errorw("etcd keepAlive create lease failed","actorerr", err)
+		log.SysLog.Errorw("etcd keepAlive create lease failed", "actorerr", err)
 		return nil, nil, nil, nil, false
 	}
 
 	ctx, cancelAlive := context.WithCancel(context.TODO())
 	alive, err := s.etcdCliet.KeepAlive(ctx, lease.ID)
 	if err != nil {
-		log.SysLog.Errorw("etcd keepAlive failed","err", err)
+		log.SysLog.Errorw("etcd keepAlive failed", "err", err)
 		return alive, cancelAlive, nil, nil, false
 	}
 
@@ -153,7 +153,7 @@ func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelF
 
 	s.registErr = nil
 	if err := s.syncLocalToEtcd(); err != nil {
-		log.SysLog.Errorw("etcd syncLocalToEtcd failed","err", err)
+		log.SysLog.Errorw("etcd syncLocalToEtcd failed", "err", err)
 		return alive, cancelAlive, nil, nil, false
 	}
 
@@ -161,7 +161,7 @@ func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelF
 	watch := s.etcdCliet.Watch(ctx, s.prefix, etcd.WithPrefix(), etcd.WithPrevKV())
 	s.initAlreadyInEtcd()
 
-	log.SysLog.Infow("etcd keepAlive success!","lease", s.getLeaseID())
+	log.SysLog.Infow("etcd keepAlive success!", "lease", s.getLeaseID())
 	return alive, cancelAlive, watch, cancelWatch, true
 }
 
@@ -225,20 +225,20 @@ func (s *Etcd) run() {
 			}
 		case watchResp := <-watch:
 			if err := watchResp.Err(); err != nil {
-				log.SysLog.Errorw("watch etcd error","error", err)
+				log.SysLog.Errorw("watch etcd error", "error", err)
 				return
 			}
 
 			revision := watchResp.Header.GetRevision()
 			if s.revision > revision {
-				log.SysLog.Warnw("watch etcd revision","last", s.revision,"revision", revision)
+				log.SysLog.Warnw("watch etcd revision", "last", s.revision, "revision", revision)
 				break
 			}
 			s.revision = revision
 
 			for _, e := range watchResp.Events {
 				key, val := s.shiftStruct(e.Kv)
-				log.SysLog.Infow("watch etcd","actorId",key,"revision", revision,"put", e.Type == etcd.EventTypePut)
+				log.SysLog.Infow("watch etcd", "actorId", key, "revision", revision, "put", e.Type == etcd.EventTypePut)
 				s.hander.OnNewServ(key, val, e.Type == etcd.EventTypePut)
 			}
 		}

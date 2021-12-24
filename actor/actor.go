@@ -1,7 +1,6 @@
 package actor
 
 import (
-	log2 "github.com/wwj31/dogactor/actor/log"
 	"github.com/wwj31/jtimer"
 	"time"
 
@@ -104,7 +103,7 @@ func (s *actor) AddTimer(timeId string, interval time.Duration, callback func(dt
 	}
 	newTimer, e := jtimer.NewTimer(now, now+interval.Nanoseconds(), times, callback, timeId)
 	if e != nil {
-		log2.SysLog.Errorw("AddTimer failed","err",e)
+		log.SysLog.Errorw("AddTimer failed", "err", e)
 		return ""
 	}
 	return s.timerMgr.AddTimer(newTimer)
@@ -122,10 +121,10 @@ func (s *actor) push(msg actor_msg.IMessage) error {
 	}
 
 	if l, c := len(s.mailBox), cap(s.mailBox); l > c*2/3 {
-		log2.SysLog.Warnw("mail box will quickly full",
-			"len",l,
-			"cap",c,
-			"actorId",s.id)
+		log.SysLog.Warnw("mail box will quickly full",
+			"len", l,
+			"cap", c,
+			"actorId", s.id)
 	}
 
 	s.mailBox <- msg
@@ -172,7 +171,7 @@ func (s *actor) run(ok chan<- struct{}) {
 func (s *actor) handleMsg(msg actor_msg.IMessage) {
 	message, ok := msg.(*actor_msg.ActorMessage)
 	if !ok {
-		log2.SysLog.Warnw("unkown type of the message", "msg",message)
+		log.SysLog.Warnw("unkown type of the message", "msg", message)
 		return
 	}
 	if message.Message() == nil {
@@ -185,7 +184,7 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 		endTime := tools.Milliseconds()
 		dur := endTime - beginTime
 		if dur > int64(100*time.Millisecond) {
-			log2.SysLog.Warnw("too long to process time","msg",msg)
+			log.SysLog.Warnw("too long to process time", "msg", msg)
 		}
 	}()
 
@@ -263,7 +262,6 @@ func SetLocalized() Option {
 }
 
 func SetLua(path string) Option {
-	expect.True(path != "", log.Fields{"path": "lua path is error"})
 	return func(a *actor) {
 		a.lua = script.New()
 		a.register2Lua()

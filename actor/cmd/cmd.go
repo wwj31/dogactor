@@ -3,7 +3,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/wwj31/dogactor/l"
+	"github.com/wwj31/dogactor/log"
 	"os"
 	"strings"
 	"sync"
@@ -64,7 +64,7 @@ func (c *Commands) loop() {
 
 			ins, exist := c.cmds.Load(cmdName)
 			if !exist {
-				l.Warnw("cmd not exists","cmdName", cmdName)
+				log.SysLog.Warnw("cmd not exists", "cmdName", cmdName)
 			} else {
 				cmd := ins.(Cmd)
 				param := args[1:]

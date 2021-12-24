@@ -21,7 +21,12 @@ func newTcpSession(conn net.Conn, coder ICodec, handler ...INetHandler) *TcpSess
 		handler: handler,
 		sendQue: make(chan []byte, 16),
 	}
-	log.KVs(log.Fields{"sessionId": session.Id(), "local": session.LocalAddr(), "remote": session.RemoteAddr()}).Debug("new tcp session")
+
+	log.SysLog.Debugw("new tcp session",
+		"sessionId", session.Id(),
+		"local", session.LocalAddr(),
+		"remote", session.RemoteAddr())
+
 	return session
 }
 
@@ -80,12 +85,12 @@ func (s *TcpSession) Stop() {
 		close(s.sendQue)
 		err := s.conn.Close()
 		if err != nil {
-			log.KV("actorerr", err).Error("stop error")
+			log.SysLog.Errorw("tcp session stop error", "err", err)
 		}
 		for _, v := range s.handler {
 			tools.Try(v.OnSessionClosed)
 		}
-		log.KV("sessionId", s.id).Debug("tcp session close")
+		log.SysLog.Errorw("tcp session close", "sessionId", s.id)
 	}
 }
 
@@ -102,7 +107,7 @@ func (s *TcpSession) read() {
 
 	for {
 		if err := s.conn.SetReadDeadline(tools.Now().Add(time.Second * 30)); err != nil {
-			log.KVs(log.Fields{"sessionId": s.Id(), "actorerr": err}).Info("tcp read SetReadDeadline")
+			log.SysLog.Infow("tcp read SetReadDeadline", "sessionId", s.Id(), "err", err)
 			break
 		}
 
@@ -111,7 +116,7 @@ func (s *TcpSession) read() {
 			if operr, ok := err.(*net.OpError); ok && (operr.Err == syscall.EAGAIN || operr.Err == syscall.EWOULDBLOCK) { //没数据了
 				continue
 			}
-			log.KVs(log.Fields{"sessionId": s.Id(), "actorerr": err}).Info("tcp read buff failed")
+			log.SysLog.Infow("tcp read buff failed", "sessionId", s.Id(), "err", err)
 			break
 		}
 
@@ -121,7 +126,7 @@ func (s *TcpSession) read() {
 
 		datas, err := s.coder.Decode(buffer[:n])
 		if err != nil {
-			log.KVs(log.Fields{"sessionId": s.Id(), "actorerr": err}).Info("tcp decode failed")
+			log.SysLog.Infow("tcp decode failed", "sessionId", s.Id(), "err", err)
 			break
 		}
 
@@ -137,12 +142,12 @@ func (s *TcpSession) read() {
 func (s *TcpSession) write() {
 	for data := range s.sendQue {
 		if err := s.conn.SetWriteDeadline(tools.Now().Add(time.Second * 5)); err != nil {
-			log.KVs(log.Fields{"sessionId": s.Id(), "actorerr": err}).Info("tcp read SetWriteDeadline")
+			log.SysLog.Infow("tcp read SetWriteDeadline", "sessionId", s.Id(), "err", err)
 			break
 		}
 
 		if _, err := s.conn.Write(s.coder.Encode(data)); err != nil {
-			log.KVs(log.Fields{"sessionId": s.Id(), "actorerr": err}).Info("tcp session write error")
+			log.SysLog.Infow("tcp session write error", "sessionId", s.Id(), "err", err)
 			break
 		}
 	}

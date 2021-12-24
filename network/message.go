@@ -22,7 +22,7 @@ func (s *Message) Buffer() []byte {
 	if s.pb != nil {
 		data, err := proto.Marshal(s.pb)
 		if err != nil {
-			log.KV("actorerr", err).ErrorStack(3, "marshal pb failed")
+			log.SysLog.Errorw("marshal pb failed", "err", err)
 			return nil
 		}
 		return append(Uint32ToByte4(uint32(s.msgId)), data...)
@@ -37,7 +37,7 @@ func (s *Message) Proto() proto.Message { return s.pb }
 func (s *Message) parse(data []byte, mm *tools.ProtoParser) *Message {
 	dlen := len(data)
 	if dlen < 4 {
-		log.KV("data", data).Error("actorerr msg length")
+		log.SysLog.Errorw("actorerr msg length", "data", data)
 		return nil
 	}
 

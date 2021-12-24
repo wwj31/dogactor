@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
-	"github.com/wwj31/dogactor/actor/log"
+	"github.com/wwj31/dogactor/log"
 )
 
 var (
@@ -67,13 +67,13 @@ func (g *Client) connect() error {
 	//kacp := grpc.WithKeepaliveParams(keepalive.ClientParameters{Time: 15 * time.Second, Timeout: 5 * time.Second, PermitWithoutStream: true})
 	conn, err := grpc.Dial(g.host, grpc.WithInsecure())
 	if conn == nil {
-		log.SysLog.Errorw("connect grpc remote error","host", g.host,"error", err)
+		log.SysLog.Errorw("connect grpc remote error", "host", g.host, "error", err)
 		return err
 	}
 
 	stream, err := actor_msg.NewActorServiceClient(conn).Receive(context.Background())
 	if stream == nil {
-		log.SysLog.Errorw("connect grpc remote error","host", g.host,"error", err)
+		log.SysLog.Errorw("connect grpc remote error", "host", g.host, "error", err)
 		return err
 	}
 	g.conn = conn

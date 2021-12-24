@@ -19,11 +19,10 @@ func PProfInit(port int32) {
 			ReadTimeout:  3 * time.Minute,
 			WriteTimeout: 3 * time.Minute,
 		}
-		log.KV("addr", addr).Info("pprof start")
+		log.SysLog.Infow("pprof start", "addr", addr)
 		err := s.ListenAndServe()
 		if err != nil {
-			log.KV("actorerr", err).Error("pprof start")
-			Exit(1)
+			log.SysLog.Errorw("pprof start", "err", err)
 		}
 	})
 }

@@ -9,7 +9,7 @@ import (
 // 左闭右开 [x,y)
 func Randx_y(x, y int) int {
 	if x > y {
-		log.KVs(log.Fields{"x": x, "y": y}).ErrorStack(3, "x>y;")
+		log.SysLog.Errorw("x > y", "x", x, "y", y)
 		return 0
 	} else if x == y {
 		return x

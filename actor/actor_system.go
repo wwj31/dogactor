@@ -2,7 +2,7 @@ package actor
 
 import (
 	"fmt"
-	"github.com/wwj31/dogactor/actor/log"
+	"github.com/wwj31/dogactor/log"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -83,7 +83,7 @@ func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 	go func() {
 		actor.run(ok)
 		// exit
-		log.SysLog.Infow("actor done","actorId",actor.ID())
+		log.SysLog.Infow("actor done", "actorId", actor.ID())
 		s.actorCache.Delete(actor.ID())
 		s.waitStop.Done()
 	}()
@@ -114,10 +114,10 @@ func (s *System) Stop() {
 				}
 			}
 
-			if s.clusterId != ""{
+			if s.clusterId != "" {
 				e := s.Send("", s.clusterId, "", "stop")
 				if e != nil {
-					log.SysLog.Errorw("system stop exception","err",e)
+					log.SysLog.Errorw("system stop exception", "err", e)
 				}
 			}
 

@@ -1,4 +1,3 @@
-//Copyright (c) 2017 Tap4Fun.Co.Ltd. All rights reserved.
 package structenh
 
 import (

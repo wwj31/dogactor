@@ -28,7 +28,6 @@ func NewProtoParser() *ProtoParser {
 func (s *ProtoParser) Init(packageName, msgType string) *ProtoParser {
 	enums, err := protoregistry.GlobalTypes.FindEnumByName(protoreflect.FullName(packageName + "." + msgType))
 	if err != nil {
-		log.KV("packageName", packageName).KV("msgType", msgType).Error("OnInit error")
 		panic(fmt.Errorf("OnInit error packageName=%v msgType=%v", packageName, msgType))
 		return s
 	}
@@ -57,7 +56,6 @@ func (s *ProtoParser) Init(packageName, msgType string) *ProtoParser {
 			s.typemap[int32(values.Get(i).Number())] = tp
 			s.msgNames[string(tp.Descriptor().FullName())] = int32(values.Get(i).Number())
 		} else {
-			log.KV("msgTypeName", msgTypeName).Error("msg format error")
 			panic(fmt.Errorf("msg format error msgTypeName=%v", msgTypeName))
 		}
 	}
@@ -67,13 +65,13 @@ func (s *ProtoParser) Init(packageName, msgType string) *ProtoParser {
 func (s *ProtoParser) UnmarshalPbMsg(msgType int32, data []byte) proto.Message {
 	tp, ok := s.typemap[msgType]
 	if !ok {
-		log.KV("msgId", msgType).KV("data", data).ErrorStack(5, "msg not regist parser")
+		log.SysLog.Errorw("msg not regist parser", "msgId", msgType, "data", data)
 		return nil
 	}
 	msg := tp.New().Interface().(proto.Message)
 	err := proto.Unmarshal(data, msg)
 	if err != nil {
-		log.KVs(log.Fields{"msgType": msgType, "data": data}).Error("msg parse failed")
+		log.SysLog.Errorw("msg parse failed", "msgType", msgType, "data", data)
 		return nil
 	}
 	return msg
@@ -88,11 +86,11 @@ func (s *ProtoParser) MsgIdToName(msgId int32) (msgName string, ok bool) {
 }
 
 func (s *ProtoParser) MsgNameToId(msgName string) (msgId int32, ok bool) {
-	msgId, has := s.msgNames[msgName]
+	id, has := s.msgNames[msgName]
 	if !has {
 		return
 	}
-	return msgId, true
+	return id, true
 }
 
 func convertMsgName(msgName string) (name string) {

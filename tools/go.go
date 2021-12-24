@@ -2,18 +2,15 @@ package tools
 
 import (
 	"fmt"
-	"os"
-	"runtime/debug"
-	"time"
-
 	"github.com/wwj31/dogactor/log"
+	"runtime/debug"
 )
 
 func Try(fn func(), catch ...func(ex interface{})) {
 	defer func() {
 		if r := recover(); r != nil {
 			stack := fmt.Sprintf("panic recover:%v\n%v", r, string(debug.Stack()))
-			log.Error(stack)
+			log.SysLog.Errorf(stack)
 			if len(catch) > 0 {
 				catch[0](r)
 			}
@@ -36,9 +33,3 @@ func Try(fn func(), catch ...func(ex interface{})) {
 //	n, _ := strconv.ParseUint(string(b), 10, 64)
 //	return n
 //}
-
-func Exit(code int) {
-	log.KV("code", code).FatalStack(1, "os.Exit")
-	time.Sleep(5 * time.Second)
-	os.Exit(code)
-}

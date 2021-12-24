@@ -53,7 +53,7 @@ func (s *eventDispatcher) AddEventListener(eventType EventType, listener IEventL
 	list := s.listeners[eventType]
 	for i := range list {
 		if list[i] == listener {
-			log.KV("etype", eventType).Error("AddEventListener repeated")
+			log.SysLog.Errorw("AddEventListener repeated", "etype", eventType)
 			return
 		}
 	}
@@ -63,7 +63,7 @@ func (s *eventDispatcher) AddEventListener(eventType EventType, listener IEventL
 func (s *eventDispatcher) RemoveListenerByEType(eventType EventType, listener IEventListener) {
 	list, ok := s.listeners[eventType]
 	if !ok {
-		log.KV("eventType", eventType).Error("RemoveListenerByEType failed")
+		log.SysLog.Errorw("RemoveListenerByEType failed", "eventType", eventType)
 		return
 	}
 	for i := range list {

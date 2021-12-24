@@ -22,8 +22,10 @@ type Student struct {
 	Age  int
 }
 
+var log *l.Logger
+
 func main() {
-	l.Init(l.Option{
+	log = l.New(l.Option{
 		Level:          l.DebugLevel,
 		LogPath:        "./example2",
 		FileName:       "e.log",
@@ -56,31 +58,31 @@ func (s *Student) OnInit() {
 func (s *Student) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	switch m := msg.(type) {
 	case *interval.LileiSay:
-		l.Infof(m.Data)
+		log.Infof(m.Data)
 
 		s.Send(sourceId, &interval.HanMeimeiSay{
 			Data: "hi~! Li Lei, I'm HanMeimei",
 		})
 	case *interval.HanMeimeiSay:
-		l.Infof(m.Data)
+		log.Infof(m.Data)
 
 		resp, _ := s.RequestWait(sourceId, &interval.LileiSay{
 			Data: "Be my grilfriend?",
 		})
 		// waiting....
-		l.Infof(resp.(*interval.HanMeimeiSay).Data)
+		log.Infof(resp.(*interval.HanMeimeiSay).Data)
 
 		s.Request(sourceId, &interval.LileiSay{
 			Data: "it's ok! I will protect you.",
 		}).Handle(func(resp interface{}, err error) {
-			l.Infof(resp.(*interval.HanMeimeiSay).Data)
+			log.Infof(resp.(*interval.HanMeimeiSay).Data)
 		})
 
 		s.AddTimer(tools.UUID(), 1*time.Second, func(dt int64) {
 			s.Request(sourceId, &interval.LileiSay{
 				Data: "please~",
 			}).Handle(func(resp interface{}, err error) {
-				l.Infof(resp.(*interval.HanMeimeiSay).Data)
+				log.Infof(resp.(*interval.HanMeimeiSay).Data)
 			})
 		}, -1)
 	}
@@ -88,7 +90,7 @@ func (s *Student) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 func (s *Student) OnHandleRequest(sourceId, targetId string, requestId string, msg interface{}) error {
 	switch m := msg.(type) {
 	case *interval.LileiSay:
-		l.Infof(m.Data)
+		log.Infof(m.Data)
 
 		s.Response(requestId, &interval.HanMeimeiSay{
 			Data: "no!",

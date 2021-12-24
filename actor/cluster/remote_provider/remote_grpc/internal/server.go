@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
-	"github.com/wwj31/dogactor/actor/log"
+	"github.com/wwj31/dogactor/log"
 )
 
 func NewServer(host string, newHandler func() Handler, ext interface{}) (*Server, error) {
@@ -23,11 +23,11 @@ func NewServer(host string, newHandler func() Handler, ext interface{}) (*Server
 	server := &Server{Server: gs, newHandler: newHandler, ext: ext}
 	actor_msg.RegisterActorServiceServer(gs, server)
 
-	log.SysLog.Infow("grpc server start","host", host)
+	log.SysLog.Infow("grpc server start", "host", host)
 	go func() {
 		err := gs.Serve(ln)
 		if err != nil {
-			log.SysLog.Infow("grpc server failed","host", host,"error", err)
+			log.SysLog.Infow("grpc server failed", "host", host, "error", err)
 		}
 	}()
 

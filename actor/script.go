@@ -1,7 +1,7 @@
 package actor
 
 import (
-	"github.com/wwj31/dogactor/actor/log"
+	"github.com/wwj31/dogactor/log"
 	"runtime"
 	"time"
 
@@ -59,7 +59,7 @@ func (s *actor) LAddTimer(l *lua.LState) int {
 	l.Pop(3)
 
 	if count == 0 || interval < 0 {
-		log.SysLog.Errorw("LAddTimer val error","count",count,"timeout",interval)
+		log.SysLog.Errorw("LAddTimer val error", "count", count, "timeout", interval)
 		return 0
 	}
 

@@ -20,11 +20,11 @@ type HttpHandler struct {
 func (h *HttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c := time.Now()
 	defer func() {
-		log.KV("url", r.URL.String()).KV("from", r.RemoteAddr).KV("cost", time.Now().Sub(c)).Debug("http request")
+		log.SysLog.Debugw("http request", "url", r.URL.String(), "from", r.RemoteAddr, "cost", time.Now().Sub(c))
 	}()
 
 	r.ParseForm()
-	log.KV("url", r.URL.String()).KV("from", r.RemoteAddr).KV("Content-Type", r.Header.Get("Content-Type")).Debug("http request")
+	log.SysLog.Debugw("http request", "url", r.URL.String(), "from", r.RemoteAddr, "Content-Type", r.Header.Get("Content-Type"))
 
 	Try(func() {
 		if method := h.HanderMap[r.URL.Path]; method != nil {
@@ -67,7 +67,7 @@ func HttpReq(r *http.Request) *http.Response {
 
 	response, err := client.Do(r)
 	if err != nil {
-		log.KV("error", err).ErrorStack(2, "httpreq error")
+		log.SysLog.Errorw("httpreq error", "err", err)
 		return nil
 	}
 	return response
@@ -123,7 +123,7 @@ func HttpTransmit(w http.ResponseWriter, r *http.Request, remote string) {
 
 	remoter, err := http.NewRequest(r.Method, fmt.Sprintf("http://%v%v", remote, r.URL.Path), r.Body)
 	if err != nil {
-		log.KV("error", err).Error("HttpTransmit actorerr")
+		log.SysLog.Errorw("HttpTransmit actor err", "err", err)
 		return
 	}
 
@@ -145,13 +145,13 @@ func HttpUnmarshalBody(r *http.Request, data interface{}) (body []byte, ok bool)
 	defer r.Body.Close()
 	content, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		log.KV("actorerr", err).WarnStack(2, "http body read actorerr")
+		log.SysLog.Errorw("http body read actorerr", "err", err)
 		return
 	}
 
 	err = json.Unmarshal(content, data)
 	if err != nil {
-		log.KV("actorerr", err).KV("content", string(content)).WarnStack(2, "http body json unmarshal actorerr")
+		log.SysLog.Errorw("http body json unmarshal actorerr", "err", err, "content", string(content))
 		return content, false
 	}
 	return content, true
@@ -160,11 +160,11 @@ func HttpUnmarshalBody(r *http.Request, data interface{}) (body []byte, ok bool)
 func HttpResponse(w http.ResponseWriter, data interface{}) (ok bool) {
 	content, err := json.Marshal(data)
 	if err != nil {
-		log.KV("error", err).ErrorStack(2, "json marsh failed")
+		log.SysLog.Errorw("json marsh failed", "err", err)
 		return
 	}
 	if _, err := w.Write(content); err != nil {
-		log.KVs(log.Fields{"content": string(content), "error": err}).ErrorStack(2, "write http error")
+		log.SysLog.Errorw("write http error", "err", err, "content", string(content))
 		return
 	}
 	return true

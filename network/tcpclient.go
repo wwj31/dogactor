@@ -70,7 +70,7 @@ func (s *TcpClient) Stop() {
 		s.connMux.Lock()
 		defer s.connMux.Unlock()
 
-		log.KV("addr", s.addr).InfoStack(1, "stop client")
+		log.SysLog.Infow("tcp client stop", "addr", s.addr)
 		s.session.Stop()
 	}
 }

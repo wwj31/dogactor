@@ -2,11 +2,9 @@ package remote_grpc
 
 import (
 	"fmt"
-	"github.com/wwj31/dogactor/actor/log"
+	"github.com/wwj31/dogactor/log"
 	"strings"
-
 )
-
 
 func (s *RemoteMgr) remoteinfo(param ...string) {
 	sessions := []string{}

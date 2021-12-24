@@ -3,7 +3,7 @@ package actor
 import (
 	"errors"
 	"fmt"
-	"github.com/wwj31/dogactor/actor/log"
+	"github.com/wwj31/dogactor/log"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -34,7 +34,7 @@ type request struct {
 
 func (s *request) Handle(fn func(resp interface{}, err error)) {
 	if s.fn != nil {
-		log.SysLog.Errorw( "repeated set handle request id","requestId",s.id)
+		log.SysLog.Errorw("repeated set handle request id", "requestId", s.id)
 		return
 	}
 	s.fn = fn
@@ -104,7 +104,7 @@ func (s *actor) Response(requestId string, msg interface{}) error {
 func (s *actor) doneRequest(requestId string, resp interface{}) {
 	req, ok := s.requests[requestId]
 	if !ok {
-		log.SysLog.Warnw("can not find request","requestId",requestId,"actorId",s.id)
+		log.SysLog.Warnw("can not find request", "requestId", requestId, "actorId", s.id)
 		return
 	}
 

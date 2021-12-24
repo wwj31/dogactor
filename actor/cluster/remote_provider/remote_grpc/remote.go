@@ -10,7 +10,7 @@ import (
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_grpc/internal"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
-	"github.com/wwj31/dogactor/actor/log"
+	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -118,19 +118,19 @@ func (s *remoteHandler) OnRecv(msg *actor_msg.ActorMessage) {
 		s.remote.remoteHandler.OnSessionOpened(s.peerHost)
 	} else {
 		if s.peerHost == "" {
-			log.SysLog.Errorw("has not regist","msg", msg.MsgName)
+			log.SysLog.Errorw("has not regist", "msg", msg.MsgName)
 			return
 		}
 
 		tp, err := tools.FindMsgByName(msg.MsgName)
 		if err != nil {
-			log.SysLog.Errorw("msg name not find","msgName", msg.MsgName,"err", err)
+			log.SysLog.Errorw("msg name not find", "msgName", msg.MsgName, "err", err)
 			return
 		}
 
 		actMsg := tp.New().Interface().(proto.Message)
 		if err = proto.Unmarshal(msg.Data, actMsg); err != nil {
-			log.SysLog.Errorw("Unmarshal failed","msgName", msg.MsgName,"err", err)
+			log.SysLog.Errorw("Unmarshal failed", "msgName", msg.MsgName, "err", err)
 			return
 		}
 		s.remote.remoteHandler.OnSessionRecv(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)

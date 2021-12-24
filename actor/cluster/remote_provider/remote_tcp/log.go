@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/wwj31/dogactor/actor/log"
+	"github.com/wwj31/dogactor/log"
 )
 
 func (s *RemoteMgr) remoteinfo(param ...string) {

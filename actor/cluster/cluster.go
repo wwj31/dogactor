@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_tcp"
-	"github.com/wwj31/dogactor/actor/log"
 	"github.com/wwj31/dogactor/expect"
+	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 	"reflect"
 	"strings"
@@ -61,11 +61,11 @@ func (c *Cluster) OnInit() {
 	))
 
 	if err := c.remote.Start(c); err != nil {
-		log.SysLog.Errorw("remote start error","err", err)
+		log.SysLog.Errorw("remote start error", "err", err)
 	}
 
 	if err := c.serviceMesh.Start(c); err != nil {
-		log.SysLog.Errorw("serviceMesh start error","err", err)
+		log.SysLog.Errorw("serviceMesh start error", "err", err)
 	}
 
 	c.RegistCmd("clusterinfo", c.clusterinfo, "所有远端actor信息")
@@ -136,7 +136,7 @@ func (c *Cluster) OnSessionRecv(sourceId, targetId, requestId string, msg proto.
 		log.SysLog.Errorw("cluster OnSessionRecv send error",
 			"sourceId", sourceId,
 			"targetId", targetId,
-			"requestId",requestId,
+			"requestId", requestId,
 			"err", err,
 		)
 	}
@@ -160,10 +160,10 @@ func (c *Cluster) watchRemote(actorId, host string, add bool) {
 	if add {
 		defer func() {
 			log.SysLog.Infow("remote actor regist",
-				"host",host,
-				"actorId",actorId,
-				"ready",c.ready[host],
-				)
+				"host", host,
+				"actorId", actorId,
+				"ready", c.ready[host],
+			)
 			if c.ready[host] {
 				c.System().DispatchEvent(c.ID(), &actor.EvNewactor{ActorId: actorId, FromCluster: true})
 			}
