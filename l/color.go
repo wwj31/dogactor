@@ -1,5 +1,5 @@
 //go:build !debug || disable_TColor
-// +build !debug disable_TColor
+//+build !debug disable_TColor
 
 package l
 
@@ -16,4 +16,4 @@ const (
 	Red
 )
 
-var color = map[TColor]string{}
+var color = make(map[TColor]struct{ B, E string })

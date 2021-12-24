@@ -1,5 +1,5 @@
 //go:build debug && !disable_color
-// +build debug,!disable_color
+//+build debug,!disable_color
 
 package l
 

@@ -24,7 +24,7 @@ func TestGLogger(t *testing.T) {
 func GOGO() {
 	ln := l.New(l.Option{
 		Level:          l.DebugLevel,
-		LogPath:        "./testDir",
+		LogPath:        "./testLog",
 		FileName:       "test.log",
 		FileMaxAge:     1,
 		FileMaxSize:    1,
@@ -46,7 +46,7 @@ func GOGO() {
 		"val", 123,
 		"uuid", tools.UUID())
 
-	ln.Errorw("this is error",
+	ln.DefaultMsg("default msg").Errorw("this is error",
 		"k", "v",
 		"val", 123,
 		"uuid", tools.UUID())
