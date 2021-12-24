@@ -2,14 +2,13 @@ package l
 
 import (
 	"bufio"
+	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
 	"log"
 	"os"
 	"path"
-
-	"go.uber.org/zap"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type Option struct {

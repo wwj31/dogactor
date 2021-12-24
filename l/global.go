@@ -1,11 +1,22 @@
 package l
 
+import "time"
+
 var gLogger *Logger
 var loggers []*Logger
 
 func Init(option Option) {
 	gLogger = New(option)
 	loggers = append(loggers, gLogger)
+
+	ticker := time.NewTicker(500 * time.Millisecond)
+	go func() {
+		for range ticker.C {
+			for _, l := range loggers {
+				_ = l.sugar.Sync()
+			}
+		}
+	}()
 }
 
 func Close() {
