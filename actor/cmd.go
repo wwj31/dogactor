@@ -5,13 +5,13 @@ import (
 	"strings"
 )
 
-type ICmd interface {
+type Cmder interface {
 	Start(actorSystem *System)
 	RegistCmd(actorId, cmd string, f func(...string), usage ...string)
 }
 
 // 设置Actor监听的端口
-func WithCMD(cmd ICmd) SystemOption {
+func WithCMD(cmd Cmder) SystemOption {
 	return func(system *System) error {
 		system.cmd = cmd
 		cmd.RegistCmd("", "actorinfo", system.actorInfo, "本地actor信息")

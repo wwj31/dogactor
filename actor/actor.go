@@ -136,7 +136,7 @@ func (s *actor) push(msg actor_msg.IMessage) error {
 // 定期tick，执行定时器
 var timerTickMsg = &actor_msg.ActorMessage{}
 
-func (s *actor) run(ok chan struct{}) {
+func (s *actor) run(ok chan<- struct{}) {
 	s.logger.Debug("actor startup")
 
 	tools.Try(s.handler.OnInit)

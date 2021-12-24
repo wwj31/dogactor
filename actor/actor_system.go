@@ -33,7 +33,7 @@ type System struct {
 	clusterId string
 
 	// 辅助模块
-	cmd ICmd
+	cmd Cmder
 	evDispatcher
 }
 
@@ -74,7 +74,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 	return s, nil
 }
 
-func (s *System) runActor(actor *actor, ok chan struct{}) {
+func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
 		return
 	}
