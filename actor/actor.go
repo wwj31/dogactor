@@ -1,6 +1,7 @@
 package actor
 
 import (
+	log2 "github.com/wwj31/dogactor/actor/log"
 	"github.com/wwj31/jtimer"
 	"time"
 
@@ -39,18 +40,14 @@ type (
 		lua     script.ILua
 		luapath string
 
-		//logger
-		logger log.Logger
-
 		//request记录发送出去的所有请求，收到返回后，从map删掉
 		requests map[string]*request
 	}
 )
 
-// New 创建actor
+// New new actor
 // id 		actorId外部定义  @和$为内部符号，其他id尽量不占用
 // handler  消息处理模块
-// op  修改默认属性
 func New(id string, handler spawnActor, op ...Option) *actor {
 	a := &actor{
 		id:            id,
@@ -59,7 +56,6 @@ func New(id string, handler spawnActor, op ...Option) *actor {
 		remote:        true, // 默认都能被远端发现
 		timerMgr:      jtimer.NewTimerMgr(),
 		timerAccuracy: 500,
-		logger:        log.NewWithDefaultAndLogger(logger, map[string]interface{}{"actorId": id}),
 		requests:      make(map[string]*request),
 	}
 
@@ -71,7 +67,7 @@ func New(id string, handler spawnActor, op ...Option) *actor {
 	return a
 }
 
-// 获取actorID
+// ID get actorID
 func (s *actor) ID() string {
 	return s.id
 }
@@ -108,7 +104,7 @@ func (s *actor) AddTimer(timeId string, interval time.Duration, callback func(dt
 	}
 	newTimer, e := jtimer.NewTimer(now, now+interval.Nanoseconds(), times, callback, timeId)
 	if e != nil {
-		s.logger.KV("error", e).ErrorStack(3, "AddTimer failed")
+		log2.SysLog.Errorw("AddTimer failed","err",e)
 		return ""
 	}
 	return s.timerMgr.AddTimer(newTimer)
@@ -126,7 +122,10 @@ func (s *actor) push(msg actor_msg.IMessage) error {
 	}
 
 	if l, c := len(s.mailBox), cap(s.mailBox); l > c*2/3 {
-		s.logger.KVs(log.Fields{"len": l, "cap": c, "actor": s.id}).WarnStack(2, "mail box will quickly full")
+		log2.SysLog.Warnw("mail box will quickly full",
+			"len",l,
+			"cap",c,
+			"actorId",s.id)
 	}
 
 	s.mailBox <- msg
@@ -137,15 +136,15 @@ func (s *actor) push(msg actor_msg.IMessage) error {
 var timerTickMsg = &actor_msg.ActorMessage{}
 
 func (s *actor) run(ok chan<- struct{}) {
-	s.logger.Debug("actor startup")
-
 	tools.Try(s.handler.OnInit)
 	if ok != nil {
 		ok <- struct{}{}
 	}
 
-	_ = s.system.DispatchEvent(s.id, &EvNewactor{ActorId: s.id, Publish: s.remote})
-	defer func() { _ = s.system.DispatchEvent(s.id, &EvDelactor{ActorId: s.id, Publish: s.remote}) }()
+	s.system.DispatchEvent(s.id, &EvNewactor{ActorId: s.id, Publish: s.remote})
+	defer func() {
+		s.system.DispatchEvent(s.id, &EvDelactor{ActorId: s.id, Publish: s.remote})
+	}()
 
 	upTimer := time.NewTicker(time.Millisecond * time.Duration(s.timerAccuracy))
 	defer upTimer.Stop()
@@ -164,17 +163,16 @@ func (s *actor) run(ok chan<- struct{}) {
 			tools.Try(func() {
 				s.handleMsg(msg)
 				s.timerMgr.Update(tools.Nanoseconds())
-			}, nil)
+			})
 			msg.Free()
 		}
 	}
 }
 
 func (s *actor) handleMsg(msg actor_msg.IMessage) {
-	s.logger.KVs(log.Fields{"message": msg}).Bule().Debug("Recv ActorMessage")
 	message, ok := msg.(*actor_msg.ActorMessage)
 	if !ok {
-		s.logger.KVs(log.Fields{"message": message}).Red().Warn("unkown actor message type")
+		log2.SysLog.Warnw("unkown type of the message", "msg",message)
 		return
 	}
 	if message.Message() == nil {
@@ -186,8 +184,8 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 	defer func() {
 		endTime := tools.Milliseconds()
 		dur := endTime - beginTime
-		if dur > int64(200*time.Millisecond) {
-			s.logger.KV("message", msg).KV("dur", dur).Warn("handle too long")
+		if dur > int64(100*time.Millisecond) {
+			log2.SysLog.Warnw("too long to process time","msg",msg)
 		}
 	}()
 
@@ -273,7 +271,7 @@ func SetLua(path string) Option {
 		a.lua.Load(a.luapath)
 		a.RegistCmd("loadlua", func(s ...string) {
 			a.lua.Load(path)
-		}, "加载lua脚本")
+		}, "load lua")
 	}
 }
 

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_tcp"
+	"github.com/wwj31/dogactor/actor/log"
+	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/tools"
 	"reflect"
 	"strings"
@@ -12,7 +14,6 @@ import (
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd"
-	"github.com/wwj31/dogactor/log"
 )
 
 func WithRemote(ectd_addr, prefix string) actor.SystemOption {
@@ -51,20 +52,20 @@ type Cluster struct {
 }
 
 func (c *Cluster) OnInit() {
-	_ = c.System().RegistEvent(
+	expect.Nil(c.System().RegistEvent(
 		c.ID(),
 		(*actor.EvNewactor)(nil),
 		(*actor.EvDelactor)(nil),
 		(*actor.EvClusterUpdate)(nil),
 		(*actor.EvSessionclosed)(nil),
-	)
+	))
 
-	if e := c.remote.Start(c); e != nil {
-		logger.KV("err", e).Error("remote start error")
+	if err := c.remote.Start(c); err != nil {
+		log.SysLog.Errorw("remote start error","err", err)
 	}
 
-	if e := c.serviceMesh.Start(c); e != nil {
-		logger.KV("err", e).Error("serviceMesh start error")
+	if err := c.serviceMesh.Start(c); err != nil {
+		log.SysLog.Errorw("serviceMesh start error","err", err)
 	}
 
 	c.RegistCmd("clusterinfo", c.clusterinfo, "所有远端actor信息")
@@ -79,7 +80,11 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg inte
 	_, reqTargetId, _, _ := actor.ParseRequestId(requestId)
 	if c.ID() != reqTargetId {
 		if err := c.sendRemote(sourceId, targetId, requestId, msg.(proto.Message)); err != nil {
-			logger.KVs(log.Fields{"id": c.ID(), "targetId": targetId, "err": err}).Error("remote actor send failed")
+			log.SysLog.Errorw("remote actor send failed",
+				"id", c.ID(),
+				"targetId", targetId,
+				"err", err,
+			)
 			return err
 		}
 		return
@@ -91,7 +96,11 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	// cluster 只特殊处理 stop 消息，其余消息全部转发remote
 	if targetId != c.ID() {
 		if e := c.sendRemote(sourceId, targetId, "", msg.(proto.Message)); e != nil {
-			logger.KV("targetId", targetId).KV("error", e).Error("remote actor send failed")
+			log.SysLog.Errorw("cluster handle message",
+				"id", c.ID(),
+				"targetId", targetId,
+				"err", e,
+			)
 		}
 		return
 	}
@@ -101,32 +110,35 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 		c.remote.Stop()
 		c.Exit()
 	} else {
-		logger.KVs(log.Fields{"t": reflect.TypeOf(msg).Name(), "str": str}).Warn("no such case type")
+		log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
 	}
 }
 
-// 处理新服务
+// OnNewServ dispatch a new remote
 func (c *Cluster) OnNewServ(actorId, host string, add bool) {
-	e := c.System().DispatchEvent("", &actor.EvClusterUpdate{ActorId: actorId, Host: host, Add: add})
-	if e != nil {
-		logger.KVs(log.Fields{"ActorId": actorId, "Host": host, "Add": true, "err": e}).Error("system dispatch event error")
-	}
+	c.System().DispatchEvent("", &actor.EvClusterUpdate{ActorId: actorId, Host: host, Add: add})
 }
 
 ////////////////////////////////////// RemoteHandler /////////////////////////////////////////////////////////////////
+
 func (c *Cluster) Address() string {
 	return c.System().Address()
 }
 func (c *Cluster) OnSessionClosed(peerHost string) {
-	_ = c.System().DispatchEvent(c.ID(), &actor.EvSessionclosed{PeerHost: peerHost})
+	c.System().DispatchEvent(c.ID(), &actor.EvSessionclosed{PeerHost: peerHost})
 }
 func (c *Cluster) OnSessionOpened(peerHost string) {
-	_ = c.System().DispatchEvent(c.ID(), &actor.EvSessionopened{PeerHost: peerHost})
+	c.System().DispatchEvent(c.ID(), &actor.EvSessionopened{PeerHost: peerHost})
 }
 func (c *Cluster) OnSessionRecv(sourceId, targetId, requestId string, msg proto.Message) {
-	e := c.System().Send(sourceId, targetId, requestId, msg)
-	if e != nil {
-		logger.KVs(log.Fields{"sourceId": sourceId, "targetId": targetId, "requestId": requestId, "err": e}).Debug("cluster OnSessionRecv send error")
+	err := c.System().Send(sourceId, targetId, requestId, msg)
+	if err != nil {
+		log.SysLog.Errorw("cluster OnSessionRecv send error",
+			"sourceId", sourceId,
+			"targetId", targetId,
+			"requestId",requestId,
+			"err", err,
+		)
 	}
 }
 
@@ -147,9 +159,13 @@ func (c *Cluster) sendRemote(sourceId, targetId, requestId string, actMsg proto.
 func (c *Cluster) watchRemote(actorId, host string, add bool) {
 	if add {
 		defer func() {
-			logger.KV("host", host).KV("actorId", actorId).KV("ready", c.ready[host]).Debug("remote actor regist")
+			log.SysLog.Infow("remote actor regist",
+				"host",host,
+				"actorId",actorId,
+				"ready",c.ready[host],
+				)
 			if c.ready[host] {
-				_ = c.System().DispatchEvent(c.ID(), &actor.EvNewactor{ActorId: actorId, FromCluster: true})
+				c.System().DispatchEvent(c.ID(), &actor.EvNewactor{ActorId: actorId, FromCluster: true})
 			}
 		}()
 
@@ -169,7 +185,6 @@ func (c *Cluster) watchRemote(actorId, host string, add bool) {
 			return
 		}
 
-		logger.KV("host", host).KV("actorId", actorId).Debug("try to connect")
 		c.clients[host] = map[string]bool{actorId: true}
 		c.remote.NewClient(host)
 	} else {
@@ -181,7 +196,7 @@ func (c *Cluster) delRemoteActor(actorId string) {
 	old := c.actors[actorId]
 	delete(c.actors, actorId)
 
-	_ = c.System().DispatchEvent(c.ID(), &actor.EvDelactor{ActorId: actorId, FromCluster: true})
+	c.System().DispatchEvent(c.ID(), &actor.EvDelactor{ActorId: actorId, FromCluster: true})
 
 	if actors, ok := c.clients[old]; ok {
 		delete(actors, actorId)
@@ -209,15 +224,14 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 		delete(c.ready, e.PeerHost)
 		for actorId, host := range c.actors {
 			if host == e.PeerHost {
-				_ = c.System().DispatchEvent(c.ID(), &actor.EvDelactor{ActorId: actorId, FromCluster: true})
+				c.System().DispatchEvent(c.ID(), &actor.EvDelactor{ActorId: actorId, FromCluster: true})
 			}
 		}
 	case *actor.EvSessionopened:
 		c.ready[e.PeerHost] = true
-		logger.KV("host", e.PeerHost).Debug("remote host connect")
 		for actorId, host := range c.actors {
 			if host == e.PeerHost {
-				_ = c.System().DispatchEvent(c.ID(), &actor.EvNewactor{ActorId: actorId, FromCluster: true})
+				c.System().DispatchEvent(c.ID(), &actor.EvNewactor{ActorId: actorId, FromCluster: true})
 			}
 		}
 	}

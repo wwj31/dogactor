@@ -2,7 +2,7 @@ package actor
 
 import (
 	"fmt"
-	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/actor/log"
 	"reflect"
 	"sync"
 
@@ -75,10 +75,15 @@ func (ed *evDispatcher) CancelAll(actorId string) {
 }
 
 // DispatchEvent 事件触发
-func (ed *evDispatcher) DispatchEvent(sourceId string, event interface{}) error {
+func (ed *evDispatcher) DispatchEvent(sourceId string, event interface{}) {
 	rtype := reflect.TypeOf(event)
 	if rtype.Kind() != reflect.Ptr {
-		return fmt.Errorf(" %w,actorId:%v,event:%v", actorerr.DispatchEventErr, sourceId, event)
+		log.SysLog.Errorw("dispatch event type of event is not ptr",
+			"err",actorerr.DispatchEventErr,
+			"actorId",sourceId,
+			"event",event,
+			)
+		return
 	}
 
 	etype := rtype.Elem().Name()
@@ -91,9 +96,8 @@ func (ed *evDispatcher) DispatchEvent(sourceId string, event interface{}) error 
 		for actorId, _ := range listeners {
 			err := ed.sys.Send(sourceId, actorId, "", wrap)
 			if err != nil {
-				log.KVs(log.Fields{"actorId": actorId, "err": err}).Error("DispatchEvent send to actor")
+				log.SysLog.Errorw("DispatchEvent send to actor","actorId",actorId,"err",err)
 			}
 		}
 	}
-	return nil
 }

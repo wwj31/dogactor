@@ -3,12 +3,12 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"github.com/wwj31/dogactor/l"
 	"os"
 	"strings"
 	"sync"
 
 	"github.com/wwj31/dogactor/actor"
-	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -64,7 +64,7 @@ func (c *Commands) loop() {
 
 			ins, exist := c.cmds.Load(cmdName)
 			if !exist {
-				log.KV("cmdName", cmdName).Info("cmd not exists")
+				l.Warnw("cmd not exists","cmdName", cmdName)
 			} else {
 				cmd := ins.(Cmd)
 				param := args[1:]

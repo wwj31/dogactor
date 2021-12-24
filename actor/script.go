@@ -1,18 +1,18 @@
 package actor
 
 import (
+	"github.com/wwj31/dogactor/actor/log"
 	"runtime"
 	"time"
 
 	"github.com/wwj31/dogactor/expect"
-	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 	lua "github.com/yuin/gopher-lua"
 )
 
 func (s *actor) CallLua(name string, ret int, args ...lua.LValue) []lua.LValue {
 	if s.lua == nil {
-		log.WarnStack(4, "call lua, the actor was not Call actor.SetLua()")
+		log.SysLog.Errorf("call lua, the actor was not Call actor.SetLua()")
 		return nil
 	}
 	return s.lua.CallFun(name, ret, args...)
@@ -36,19 +36,19 @@ func LGoVersion(l *lua.LState) int {
 func LDebug(l *lua.LState) int {
 	str := l.ToString(-1)
 	l.Pop(1)
-	log.Debug(str)
+	log.SysLog.Debugf(str)
 	return 0
 }
 func LWarn(l *lua.LState) int {
 	str := l.ToString(-1)
 	l.Pop(1)
-	log.Warn(str)
+	log.SysLog.Warnf(str)
 	return 0
 }
 func LError(l *lua.LState) int {
 	str := l.ToString(-1)
 	l.Pop(1)
-	log.Error(str)
+	log.SysLog.Errorf(str)
 	return 0
 }
 
@@ -59,7 +59,7 @@ func (s *actor) LAddTimer(l *lua.LState) int {
 	l.Pop(3)
 
 	if count == 0 || interval < 0 {
-		log.KVs(log.Fields{"count": count, "timeout": interval}).Error("val error")
+		log.SysLog.Errorw("LAddTimer val error","count",count,"timeout",interval)
 		return 0
 	}
 

@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/wwj31/dogactor/actor/cmd"
-	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/l"
 	"time"
 
 	"github.com/wwj31/dogactor/actor"
@@ -14,7 +14,16 @@ type PingActor struct{ actor.Base }
 type PongActor struct{ actor.Base }
 
 func main() {
-	log.Init(log.TAG_DEBUG_I, nil, "./_log", "demo", 1)
+	l.Init(l.Option{
+		Level:          l.DebugLevel,
+		LogPath:        "./example",
+		FileName:       "e.log",
+		FileMaxAge:     1,
+		FileMaxSize:    100,
+		FileMaxBackups: 1,
+		DisplayConsole: true,
+	})
+	l.Infow("example start")
 	system, _ := actor.NewSystem(actor.WithCMD(cmd.New()))
 	ping := actor.New("ping", &PingActor{}, actor.SetMailBoxSize(5000))
 	pong := actor.New("pong", &PongActor{}, actor.SetMailBoxSize(5000))
@@ -22,7 +31,8 @@ func main() {
 	system.Regist(pong)
 
 	<-system.CStop
-	log.Stop()
+
+	l.Close()
 	fmt.Println("stop")
 }
 

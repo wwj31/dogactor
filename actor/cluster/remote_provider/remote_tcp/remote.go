@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
-	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/actor/log"
 	"github.com/wwj31/dogactor/network"
 	"github.com/wwj31/dogactor/tools"
 )
@@ -39,7 +39,11 @@ func NewRemoteMgr() *RemoteMgr {
 func (s *RemoteMgr) Start(h remote_provider.RemoteHandler) error {
 	s.remoteHandler = h
 
-	listener := network.StartTcpListen(s.remoteHandler.Address(), func() network.ICodec { return &network.StreamCodec{} }, func() network.INetHandler { return &remoteHandler{remote: s} })
+	listener := network.StartTcpListen(s.remoteHandler.Address(),
+		func() network.ICodec { return &network.StreamCodec{} },
+		func() network.INetHandler { return &remoteHandler{remote: s}},
+	)
+
 	err := listener.Start()
 	if err != nil {
 		return err
@@ -58,7 +62,6 @@ func (s *RemoteMgr) Start(h remote_provider.RemoteHandler) error {
 	s.listener = listener
 	go s.keepAlive()
 
-	// s.remoteHandler.RegistCmd("", "remoteinfo", s.remoteinfo)
 	return err
 }
 
@@ -126,15 +129,13 @@ type remoteHandler struct {
 	network.INetSession
 	remote   *RemoteMgr
 	peerHost string
-	logger   log.Logger
 }
 
 func (s *remoteHandler) OnSessionCreated(sess network.INetSession) {
 	s.INetSession = sess
-	s.logger = log.NewWithDefaultAndLogger(logger, map[string]interface{}{"local": sess.LocalAddr(), "remote": sess.RemoteAddr(), "session": sess.Id()})
 	err := sess.SendMsg(s.remote.regist)
 	if err != nil {
-		log.KV("actorerr", err).Error("sendmsg error")
+		log.SysLog.Errorw("OnSessionCreated error","err",err)
 	}
 }
 
@@ -154,7 +155,7 @@ func (s *remoteHandler) OnRecv(data []byte) {
 	msg := &actor_msg.ActorMessage{}
 	err := msg.Unmarshal(data)
 	if err != nil {
-		s.logger.Error("unmarshal msg failed")
+		log.SysLog.Errorf("unmarshal msg failed","err",err)
 		return
 	}
 
@@ -167,19 +168,19 @@ func (s *remoteHandler) OnRecv(data []byte) {
 		//s.logger.Debug("recv ping")
 	} else {
 		if s.peerHost == "" {
-			s.logger.KV("msg", msg.MsgName).Error("has not regist")
+			log.SysLog.Errorf("has not regist","msg", msg.MsgName)
 			return
 		}
 
 		tp, err := tools.FindMsgByName(msg.MsgName)
 		if err != nil {
-			s.logger.KV("MsgName", msg.MsgName).KV("actorerr", err).Error("msg name not find")
+			log.SysLog.Errorf("msg name not find","err", err,"MsgName", msg.MsgName)
 			return
 		}
 
 		actMsg := tp.New().Interface().(proto.Message)
 		if err = proto.Unmarshal(msg.Data, actMsg); err != nil {
-			s.logger.KV("MsgName", msg.MsgName).KV("actorerr", err).Error("Unmarshal failed")
+			log.SysLog.Errorf("Unmarshal failed","err", err,"MsgName", msg.MsgName)
 			return
 		}
 		s.remote.remoteHandler.OnSessionRecv(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)

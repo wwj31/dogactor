@@ -2,33 +2,20 @@ package expect
 
 import (
 	"fmt"
-
-	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/l"
 )
 
-func Nil(v interface{}, elseLog ...log.Fields) {
+func Nil(v interface{}, args ...interface{}) {
 	if v != nil {
 		msg := fmt.Sprintf("\n%v\n", v)
-		if len(elseLog) > 0 {
-			for _, v := range elseLog {
-				log.KVs(v).ErrorStack(3, msg)
-			}
-		} else {
-			log.ErrorStack(3, msg)
-		}
+		l.Errorw(msg,args...)
 		panic(nil)
 	}
 }
-func True(b bool, elseLog ...log.Fields) {
+func True(b bool, args ...interface{}) {
 	if !b {
 		msg := "assert false"
-		if len(elseLog) > 0 {
-			for _, v := range elseLog {
-				log.KVs(v).ErrorStack(3, msg)
-			}
-		} else {
-			log.ErrorStack(3, msg)
-		}
+		l.Errorw(msg,args...)
 		panic(nil)
 	}
 }

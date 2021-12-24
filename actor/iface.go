@@ -12,10 +12,7 @@ type (
 		System() *System
 		Exit()
 
-		//Timer 计时器
 		Timer
-
-		// Sender 不保证消息发送可靠性
 		Sender
 
 		//lua
@@ -36,7 +33,7 @@ type (
 		Response(requestId string, msg interface{}) error
 	}
 
-	// spawnActor 基于携带匿名 Base 的结构
+	// spawnActor used to init actor
 	spawnActor interface {
 		actorHandler
 		actorInitiator
@@ -46,18 +43,18 @@ type (
 	actorHandler interface {
 		OnInit()
 
-		// OnStop true 立刻停止，false 延迟停止
+		// OnStop true is right now stop，false mean to late stop
 		OnStop() bool
 
-		// OnHandleEvent 事件消息
+		// OnHandleEvent process event
 		OnHandleEvent(event interface{})
-		// OnHandleMessage 普通消息
+		// OnHandleMessage process message
 		OnHandleMessage(sourceId, targetId string, msg interface{})
-		// OnHandleRequest 请求消息(需要应答)
+		// OnHandleRequest process request
 		OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) error
 	}
 
-	// 仅 Base 实现
+	// only Base implement
 	actorInitiator interface {
 		initActor(actor Actor)
 	}

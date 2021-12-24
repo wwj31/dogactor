@@ -19,7 +19,6 @@ type result struct {
 }
 
 func (s *waitActor) OnInit() {
-	//发出请求，等待结果
 	req := s.Request(s.targetId, s.msg, s.timeout)
 	req.Handle(func(resp interface{}, e error) {
 		s.c <- result{result: resp, err: e}

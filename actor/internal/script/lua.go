@@ -5,7 +5,6 @@ import (
 	"path"
 
 	"github.com/wwj31/dogactor/expect"
-	"github.com/wwj31/dogactor/log"
 )
 
 type ILua interface {
@@ -28,7 +27,7 @@ func New() ILua {
 func (s *lua) Load(lmain string) {
 	var err error
 	err = s.ls.DoFile(lmain)
-	expect.Nil(err, log.Fields{"lmain": lmain})
+	expect.Nil(err, "lmain", lmain)
 
 	dir, _ := path.Split(lmain)
 	err = s.ls.CallByParam(golua.P{
@@ -36,7 +35,7 @@ func (s *lua) Load(lmain string) {
 		NRet:    0,
 		Protect: true,
 	}, golua.LString(dir))
-	expect.Nil(err, log.Fields{"lmain": lmain})
+	expect.Nil(err, "lmain", lmain)
 }
 
 func (s *lua) Register(fname string, f golua.LGFunction) {
@@ -49,7 +48,7 @@ func (s *lua) CallFun(name string, ret int, args ...golua.LValue) []golua.LValue
 		NRet:    ret,
 		Protect: true,
 	}, args...)
-	expect.Nil(err, log.Fields{"name": name})
+	expect.Nil(err, "name", name)
 	res := []golua.LValue{}
 	for i := -1; i >= -ret; i-- {
 		res = append(res, s.ls.Get(i))

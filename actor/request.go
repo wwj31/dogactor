@@ -3,6 +3,7 @@ package actor
 import (
 	"errors"
 	"fmt"
+	"github.com/wwj31/dogactor/actor/log"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/expect"
-	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -34,7 +34,7 @@ type request struct {
 
 func (s *request) Handle(fn func(resp interface{}, err error)) {
 	if s.fn != nil {
-		logger.KV("requestId", s.id).ErrorStack(3, "repeated set handle request id")
+		log.SysLog.Errorw( "repeated set handle request id","requestId",s.id)
 		return
 	}
 	s.fn = fn
@@ -71,7 +71,7 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 	return req
 }
 
-// 同步请求结果
+// RequestWait sync request
 func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (resp interface{}, err error) {
 	if s.asyncStop.Load() {
 		return
@@ -86,11 +86,12 @@ func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Du
 	waiter := New(tools.UUID(), &waitActor{c: waitRsp, msg: msg, targetId: targetId, timeout: t}, SetLocalized())
 	expect.Nil(s.System().Regist(waiter))
 
-	// 阻塞等待waiter返回结果
+	// wait to result
 	r := <-waitRsp
 	return r.result, r.err
 }
 
+// Response response a result
 func (s *actor) Response(requestId string, msg interface{}) error {
 	reqSourceId, _, _, ok := ParseRequestId(requestId)
 	if !ok {
@@ -99,11 +100,11 @@ func (s *actor) Response(requestId string, msg interface{}) error {
 	return s.system.Send(s.id, reqSourceId, requestId, msg)
 }
 
-// 收到response消息的处理逻辑
+// process to Response msg
 func (s *actor) doneRequest(requestId string, resp interface{}) {
 	req, ok := s.requests[requestId]
 	if !ok {
-		s.logger.KVs(log.Fields{"requestId": requestId, "actor": s.id}).Warn("can not find request")
+		log.SysLog.Warnw("can not find request","requestId",requestId,"actorId",s.id)
 		return
 	}
 

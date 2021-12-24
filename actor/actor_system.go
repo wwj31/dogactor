@@ -2,6 +2,7 @@ package actor
 
 import (
 	"fmt"
+	"github.com/wwj31/dogactor/actor/log"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -70,7 +71,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 			}
 		}
 	}()
-	logger.Info("System Start")
+	log.SysLog.Infof("System Start")
 	return s, nil
 }
 
@@ -82,7 +83,7 @@ func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 	go func() {
 		actor.run(ok)
 		// exit
-		logger.KV("actor", actor.ID()).Info("actor done")
+		log.SysLog.Infow("actor done","actorId",actor.ID())
 		s.actorCache.Delete(actor.ID())
 		s.waitStop.Done()
 	}()
@@ -113,13 +114,16 @@ func (s *System) Stop() {
 				}
 			}
 
-			e := s.Send("", s.clusterId, "", "stop")
-			if e != nil {
-				logger.KV("actorerr", e).Error("stop error")
+			if s.clusterId != ""{
+				e := s.Send("", s.clusterId, "", "stop")
+				if e != nil {
+					log.SysLog.Errorw("system stop exception","err",e)
+				}
 			}
+
 			s.waitStop.Wait()
 			close(s.newList)
-			logger.Info("System Exit")
+			log.SysLog.Infof("System Exit")
 			s.CStop <- struct{}{}
 		}()
 	}

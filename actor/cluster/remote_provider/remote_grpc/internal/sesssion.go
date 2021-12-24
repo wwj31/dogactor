@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
-	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/actor/log"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -55,7 +55,7 @@ func (s *Session) Id() int64 { return s.id }
 func (s *Session) Stop() {
 	if s.running.CAS(0, 1) {
 		close(s.chSend)
-		log.KV("id", s.id).Debug("session closed")
+		log.SysLog.Debugw("session closed","id", s.id)
 	}
 }
 
@@ -84,7 +84,7 @@ func (s *Session) read() {
 	for {
 		msg, err := s.stream.Recv()
 		if err != nil {
-			log.KV("id", s.id).KV("error", err).Warn("grpc recv error")
+			log.SysLog.Debugw("grpc recv error","error", err,"id", s.id)
 			break
 		}
 		tools.Try(func() {
@@ -98,7 +98,7 @@ func (s *Session) read() {
 func (s *Session) write() {
 	for msg := range s.chSend {
 		if err := s.stream.Send(msg); err != nil {
-			log.KV("id", s.id).KV("error", err).Error("send msg error")
+			log.SysLog.Debugw("send msg error","error", err,"id", s.id)
 			break
 		}
 		msg.Free()
