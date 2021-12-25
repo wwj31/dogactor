@@ -14,7 +14,7 @@ import (
 )
 
 /*
-所有actor的驱动器和调度器
+	actor system
 */
 
 type SystemOption func(*System) error
@@ -22,18 +22,16 @@ type SystemOption func(*System) error
 type System struct {
 	CStop chan struct{}
 
-	actorAddr string          // 远程actor连接端口
+	actorAddr string          // cluster listen addr
 	waitStop  *sync.WaitGroup // stop wait
-	exiting   int32           // 停止标记
+	exiting   int32           // state of stopping
 
-	// 本地actor管理
-	actorCache sync.Map    // 所有本地actor
-	newList    chan *actor // 等待启动的actor列表
+	actorCache sync.Map    // all of local actor
+	newList    chan *actor // new list
 
-	//集群管理actorId
 	clusterId string
 
-	// 辅助模块
+	// extra
 	cmd Cmder
 	evDispatcher
 }
@@ -75,6 +73,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 	return s, nil
 }
 
+// if ok != nil, caller wait to actor inited
 func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
 		return
@@ -99,7 +98,7 @@ func (s *System) SetCluster(id string) {
 func (s *System) Stop() {
 	if atomic.CompareAndSwapInt32(&s.exiting, 0, 1) {
 		go func() {
-			//shutdown() 通知所有actor执行关闭
+			// notify all of actor to stop
 			s.actorCache.Range(func(key, value interface{}) bool {
 				value.(*actor).stop()
 				return true
@@ -129,8 +128,7 @@ func (s *System) Stop() {
 	}
 }
 
-// Regist 注册actor，外部创建对象，保证ActorId唯一性
-func (s *System) Regist(actor *actor) error {
+func (s *System) Add(actor *actor) error {
 	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
 		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSystemErr, actor.ID())
 	}
@@ -151,18 +149,14 @@ func (s *System) Regist(actor *actor) error {
 	return nil
 }
 
-// Send actor之间发送消息,
-// sourceid 发送源actor
-// targetid 目标actor
-// message 消息内容
 func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) error {
 	var atr *actor
-	if localActor, ok := s.actorCache.Load(targetId); ok { //消息能否发给本地
+	if localActor, ok := s.actorCache.Load(targetId); ok {
 		atr = localActor.(*actor)
 	} else {
 		_, canRemote := msg.(proto.Message)
 		cluster, ok := s.actorCache.Load(s.clusterId)
-		if canRemote && ok { // 消息能否发送给远端
+		if canRemote && ok {
 			atr = cluster.(*actor)
 		}
 	}
@@ -178,7 +172,6 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 	return nil
 }
 
-// Addr 设置Actor监听的端口
 func Addr(addr string) SystemOption {
 	return func(system *System) error {
 		system.actorAddr = addr

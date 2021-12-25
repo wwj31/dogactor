@@ -84,7 +84,7 @@ func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Du
 		&waitActor{c: waitRsp, msg: msg, targetId: targetId, timeout: t},
 		SetLocalized(),
 	)
-	expect.Nil(s.System().Regist(waiter))
+	expect.Nil(s.System().Add(waiter))
 
 	// wait to result
 	r := <-waitRsp

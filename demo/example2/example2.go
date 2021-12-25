@@ -39,11 +39,11 @@ func main() {
 	})
 	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:5000"), cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.WithCMD(cmd.New()))
 	lilei := actor.New("LiLei", &Student{Name: "LiLei", Age: 19})
-	system1.Regist(lilei)
+	system1.Add(lilei)
 
 	system2, _ := actor.NewSystem(actor.Addr("127.0.0.1:5001"), cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX))
 	hanmeimei := actor.New("HanMeimei", &Student{Name: "HanMeimei", Age: 15})
-	system2.Regist(hanmeimei)
+	system2.Add(hanmeimei)
 
 	c := make(chan os.Signal)
 	signal.Notify(c, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

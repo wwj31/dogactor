@@ -14,16 +14,13 @@ import (
 
 type (
 	Option func(*actor)
-	// 运行单元
-	actor struct {
+	actor  struct {
+		system *System
+
 		id      string
 		handler actorHandler
 		mailBox chan actor_msg.IMessage
-		system  *System
-
-		// 是否能被远端发现 默认为true, 如果是本地actor,
-		// 手动设SetLocalized()后,再注册
-		remote bool
+		remote  bool
 
 		// timer
 		timerMgr jtimer.TimerMgr
@@ -34,14 +31,13 @@ type (
 		lua     script.ILua
 		luapath string
 
-		//request记录发送出去的所有请求，收到返回后，从map删掉
+		// record Request msg and del in done
 		requests map[string]*request
 	}
 )
 
 // New new actor
-// id 		actorId外部定义  @和$为内部符号，其他id尽量不占用
-// handler  消息处理模块
+// id is invalid if contain '@' or '$'
 func New(id string, handler spawnActor, op ...Option) *actor {
 	a := &actor{
 		id:       id,
@@ -70,12 +66,12 @@ func (s *actor) isWaitActor() bool {
 	return ok
 }
 
-// 业务层触发关闭
+// actor done
 func (s *actor) Exit() {
 	_ = s.push(actorStopMsg)
 }
 
-// system触发关闭
+// system close
 func (s *actor) stop() {
 	var stop bool
 	tools.Try(func() {
@@ -89,19 +85,16 @@ func (s *actor) stop() {
 	}
 }
 
-// AddTimer 添加计时器,每个actor独立一个计时器
-// timeId        计时器id,一般传UUID
-// interval 	 单位nanoseconds
-// trigger_times 执行次数 -1 无限次
-// callback 	 只能是主线程回调
-func (s *actor) AddTimer(timeId string, endAt int64, callback func(dt int64), trigger_times ...int32) string {
+// AddTimer default value of timeId is uuid.
+// if count == -1 timer will repack in timer system infinitely util call CancelTimer,
+func (s *actor) AddTimer(timeId string, endAt int64, callback func(dt int64), count ...int32) string {
 	now := tools.NowTime()
-	times := int32(1)
-	if len(trigger_times) > 0 {
-		times = trigger_times[0]
+	c := int32(1)
+	if len(count) > 0 {
+		c = count[0]
 	}
 
-	newTimer, e := jtimer.NewTimer(now, endAt, times, callback, timeId)
+	newTimer, e := jtimer.NewTimer(now, endAt, c, callback, timeId)
 	if e != nil {
 		log.SysLog.Errorw("AddTimer failed", "err", e)
 		return ""
@@ -194,7 +187,7 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 		return
 	}
 
-	// 慢日志记录
+	// record processed of slow message
 	beginTime := tools.Milliseconds()
 	defer func() {
 		endTime := tools.Milliseconds()
@@ -204,27 +197,27 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 		}
 	}()
 
-	// 处理Req消息
 	reqSourceId, _, _, reqOK := ParseRequestId(message.RequestId)
 	if reqOK {
-		if s.id == reqSourceId { //收到Respone
+		//recv Response
+		if s.id == reqSourceId {
 			s.doneRequest(message.RequestId, message.Message())
 			return
 		}
-		// 收到Request
+		// recv Request
 		if e := s.handler.OnHandleRequest(message.SourceId, message.TargetId, message.RequestId, message.Message()); e != nil {
 			expect.Nil(s.Response(message.RequestId, &actor_msg.RequestDeadLetter{Err: e.Error()}))
 		}
 		return
 	}
 
-	//事件消息
+	//message
 	if event, ok := message.Message().(*actor_msg.EventMessage); ok {
 		s.handler.OnHandleEvent(event.ActEvent())
 		return
 	}
 
-	// 函数消息
+	// fn
 	if fn, ok := message.Message().(func()); ok {
 		fn()
 		return
@@ -251,9 +244,7 @@ func (s *actor) isStop(msg actor_msg.IMessage) bool {
 	return false
 }
 
-//=========================简化actorSystem调用
 func (s *actor) System() *System { return s.system }
-
 func (s *actor) Send(targetId string, msg interface{}) error {
 	return s.system.Send(s.id, targetId, "", msg)
 }
@@ -263,7 +254,7 @@ func (s *actor) RegistCmd(cmd string, fn func(...string), usage ...string) {
 	}
 }
 
-//=========================
+// Extra Option
 func SetMailBoxSize(boxSize int) Option {
 	return func(a *actor) {
 		a.mailBox = make(chan actor_msg.IMessage, boxSize)
@@ -287,5 +278,3 @@ func SetLua(path string) Option {
 		}, "load lua")
 	}
 }
-
-//=========================

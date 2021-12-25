@@ -15,8 +15,8 @@ func main() {
 	system, _ := actor.NewSystem(actor.WithCMD(cmd.New()))
 	ping := actor.New("ping", &PingActor{}, actor.SetMailBoxSize(5000))
 	pong := actor.New("pong", &PongActor{}, actor.SetMailBoxSize(5000))
-	system.Regist(ping)
-	system.Regist(pong)
+	system.Add(ping)
+	system.Add(pong)
 
 	<-system.CStop
 

@@ -19,7 +19,7 @@ func WithRemote(ectd_addr, prefix string) actor.SystemOption {
 	return func(system *actor.System) error {
 		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_tcp.NewRemoteMgr())
 		clusterActor := actor.New("cluster_"+tools.UUID(), cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
-		if e := system.Regist(clusterActor); e != nil {
+		if e := system.Add(clusterActor); e != nil {
 			return fmt.Errorf("%w %v", actorerr.RegistClusterErr, e)
 		}
 		system.SetCluster(clusterActor.ID())
@@ -171,7 +171,7 @@ func (c *Cluster) watchRemote(actorId, host string, add bool) {
 
 		if old := c.actors[actorId]; old == host { //重复put
 			return
-		} else if _, ok := c.clients[old]; ok { //actor地址修改了
+		} else if _, ok := c.clients[old]; ok {
 			c.delRemoteActor(actorId)
 		}
 		c.actors[actorId] = host
