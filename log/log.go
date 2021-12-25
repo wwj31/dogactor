@@ -14,3 +14,7 @@ var SysLog = l.New(l.Option{
 	DisplayConsole: true,
 	Skip:           1,
 })
+
+func init() {
+	SysLog.Color(l.Gray)
+}
