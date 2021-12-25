@@ -36,6 +36,7 @@ func main() {
 		FileMaxSize:    100,
 		FileMaxBackups: 1,
 		DisplayConsole: true,
+		Skip:           1,
 	})
 	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:5000"), cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.WithCMD(cmd.New()))
 	lilei := actor.New("LiLei", &Student{Name: "LiLei", Age: 19})

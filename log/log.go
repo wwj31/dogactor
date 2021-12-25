@@ -12,4 +12,5 @@ var SysLog = l.New(l.Option{
 	FileMaxSize:    512,
 	FileMaxBackups: 10,
 	DisplayConsole: true,
+	Skip:           1,
 })
