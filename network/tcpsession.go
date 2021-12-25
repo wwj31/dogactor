@@ -90,7 +90,7 @@ func (s *TcpSession) Stop() {
 		for _, v := range s.handler {
 			tools.Try(v.OnSessionClosed)
 		}
-		log.SysLog.Errorw("tcp session close", "sessionId", s.id)
+		log.SysLog.Infow("tcp session close", "sessionId", s.id)
 	}
 }
 

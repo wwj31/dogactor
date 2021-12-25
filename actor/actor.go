@@ -10,7 +10,6 @@ import (
 	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
-	"go.uber.org/atomic"
 )
 
 type (
@@ -26,14 +25,10 @@ type (
 		// 手动设SetLocalized()后,再注册
 		remote bool
 
-		// asyncStop 表示actor外部触发 stop,
-		// syncStop 表示actor主动执行 Exit
-		asyncStop atomic.Bool
-		syncStop  atomic.Bool
-
-		//timerAccuracy 决定计时器更新精度
-		timerMgr      jtimer.TimerMgr
-		timerAccuracy int64
+		// timer
+		timerMgr jtimer.TimerMgr
+		timer    *time.Timer
+		nextAt   int64
 
 		//lua
 		lua     script.ILua
@@ -49,13 +44,12 @@ type (
 // handler  消息处理模块
 func New(id string, handler spawnActor, op ...Option) *actor {
 	a := &actor{
-		id:            id,
-		handler:       handler,
-		mailBox:       make(chan actor_msg.IMessage, 100),
-		remote:        true, // 默认都能被远端发现
-		timerMgr:      jtimer.NewTimerMgr(),
-		timerAccuracy: 500,
-		requests:      make(map[string]*request),
+		id:       id,
+		handler:  handler,
+		mailBox:  make(chan actor_msg.IMessage, 100),
+		remote:   true, // 默认都能被远端发现
+		timerMgr: jtimer.NewTimerMgr(),
+		requests: make(map[string]*request),
 	}
 
 	handler.initActor(a)
@@ -78,12 +72,21 @@ func (s *actor) isWaitActor() bool {
 
 // 业务层触发关闭
 func (s *actor) Exit() {
-	s.syncStop.Swap(true)
+	_ = s.push(actorStopMsg)
 }
 
 // system触发关闭
 func (s *actor) stop() {
-	s.asyncStop.Swap(true)
+	var stop bool
+	tools.Try(func() {
+		stop = s.handler.OnStop()
+	}, func(ex interface{}) {
+		stop = true
+	})
+
+	if stop {
+		_ = s.push(actorStopMsg)
+	}
 }
 
 // AddTimer 添加计时器,每个actor独立一个计时器
@@ -91,27 +94,37 @@ func (s *actor) stop() {
 // interval 	 单位nanoseconds
 // trigger_times 执行次数 -1 无限次
 // callback 	 只能是主线程回调
-func (s *actor) AddTimer(timeId string, interval time.Duration, callback func(dt int64), trigger_times ...int32) string {
-	if int64(interval) < s.timerAccuracy {
-		interval = time.Duration(s.timerAccuracy)
-	}
-
-	now := tools.Now().UnixNano()
+func (s *actor) AddTimer(timeId string, endAt int64, callback func(dt int64), trigger_times ...int32) string {
+	now := tools.NowTime()
 	times := int32(1)
 	if len(trigger_times) > 0 {
 		times = trigger_times[0]
 	}
-	newTimer, e := jtimer.NewTimer(now, now+interval.Nanoseconds(), times, callback, timeId)
+
+	newTimer, e := jtimer.NewTimer(now, endAt, times, callback, timeId)
 	if e != nil {
 		log.SysLog.Errorw("AddTimer failed", "err", e)
 		return ""
 	}
-	return s.timerMgr.AddTimer(newTimer)
+
+	timerId := s.timerMgr.AddTimer(newTimer)
+	s.resetTime()
+	return timerId
+}
+
+func (s *actor) UpdateTimer(timeId string, endAt int64) error {
+	err := s.timerMgr.UpdateTimer(timeId, endAt)
+	if err != nil {
+		return err
+	}
+	s.resetTime()
+	return nil
 }
 
 // 删除一个定时器
 func (s *actor) CancelTimer(timerId string) {
 	s.timerMgr.CancelTimer(timerId)
+	s.resetTime()
 }
 
 // Push一个消息
@@ -131,10 +144,17 @@ func (s *actor) push(msg actor_msg.IMessage) error {
 	return nil
 }
 
-// 定期tick，执行定时器
-var timerTickMsg = &actor_msg.ActorMessage{}
+var (
+	timerTickMsg = &actor_msg.ActorMessage{} // timer tick msg
+	actorStopMsg = &actor_msg.ActorMessage{} // actor stop msg
+)
 
 func (s *actor) run(ok chan<- struct{}) {
+	s.timer = time.NewTimer(0)
+	if !s.timer.Stop() {
+		<-s.timer.C
+	}
+
 	tools.Try(s.handler.OnInit)
 	if ok != nil {
 		ok <- struct{}{}
@@ -145,23 +165,19 @@ func (s *actor) run(ok chan<- struct{}) {
 		s.system.DispatchEvent(s.id, &EvDelactor{ActorId: s.id, Publish: s.remote})
 	}()
 
-	upTimer := time.NewTicker(time.Millisecond * time.Duration(s.timerAccuracy))
-	defer upTimer.Stop()
-
 	for {
-		if s.stopCheck() {
-			return
-		}
-
 		select {
-		case <-upTimer.C:
-			if !s.asyncStop.Load() {
-				_ = s.push(timerTickMsg)
-			}
+		case <-s.timer.C:
+			_ = s.push(timerTickMsg)
 		case msg := <-s.mailBox:
+			if s.isStop(msg) {
+				return
+			}
 			tools.Try(func() {
 				s.handleMsg(msg)
-				s.timerMgr.Update(tools.Nanoseconds())
+
+				s.timerMgr.Update(tools.NowTime())
+				s.resetTime()
 			})
 			msg.Free()
 		}
@@ -217,17 +233,22 @@ func (s *actor) handleMsg(msg actor_msg.IMessage) {
 	s.handler.OnHandleMessage(message.SourceId, message.TargetId, message.Message())
 }
 
-func (s *actor) stopCheck() (immediatelyStop bool) {
-	//逻辑层说停止=>立即停止
-	if s.syncStop.Load() {
+func (s *actor) resetTime() {
+	nextAt := s.timerMgr.NextAt()
+	if nextAt > 0 {
+		d := tools.Maxi64(nextAt-tools.NowTime(), 1)
+		if d > 0 && d != s.nextAt {
+			s.timer.Reset(time.Duration(d))
+			s.nextAt = nextAt
+		}
+	}
+}
+func (s *actor) isStop(msg actor_msg.IMessage) bool {
+	message, ok := msg.(*actor_msg.ActorMessage)
+	if ok && message == actorStopMsg {
 		return true
 	}
-
-	//系统层说停止=>通知逻辑,并且返回是否立即停止
-	if s.asyncStop.Load() {
-		tools.Try(func() { immediatelyStop = s.handler.OnStop() }, func(ex interface{}) { immediatelyStop = true })
-	}
-	return
+	return false
 }
 
 //=========================简化actorSystem调用
@@ -246,12 +267,6 @@ func (s *actor) RegistCmd(cmd string, fn func(...string), usage ...string) {
 func SetMailBoxSize(boxSize int) Option {
 	return func(a *actor) {
 		a.mailBox = make(chan actor_msg.IMessage, boxSize)
-	}
-}
-
-func SetTimerAccuracy(acc int64) Option {
-	return func(a *actor) {
-		a.timerAccuracy = acc
 	}
 }
 

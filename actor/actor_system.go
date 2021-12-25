@@ -48,7 +48,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 
 	for _, f := range op {
 		if e := f(s); e != nil {
-			return nil, fmt.Errorf("%w %w", actorerr.ActorSystemOptionErr, e.Error())
+			return nil, fmt.Errorf("%w %v", actorerr.ActorSystemOptionErr, e.Error())
 		}
 	}
 
@@ -107,7 +107,7 @@ func (s *System) Stop() {
 			if s.clusterId != "" {
 				for c := false; !c; {
 					s.actorCache.Range(func(key, value interface{}) bool {
-						c = key == s.clusterId
+						c = (key.(string)) == s.clusterId
 						return c
 					})
 					runtime.Gosched()
@@ -123,7 +123,7 @@ func (s *System) Stop() {
 
 			s.waitStop.Wait()
 			close(s.newList)
-			log.SysLog.Infof("System Exit")
+			log.SysLog.Infof("System Exit %v", s.Address())
 			s.CStop <- struct{}{}
 		}()
 	}

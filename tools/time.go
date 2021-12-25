@@ -45,7 +45,7 @@ func ModifyTimeOffset(add int64) {
 }
 
 func Now() time.Time {
-	return time.Now().UTC()
+	return time.Now().UTC().Add(time.Duration(TimeOffset))
 }
 
 func Unix(sec int64, nsec int64) time.Time {
@@ -53,15 +53,15 @@ func Unix(sec int64, nsec int64) time.Time {
 }
 
 func Milliseconds() int64 {
-	return Nanoseconds() / int64(time.Millisecond)
+	return NowTime() / int64(time.Millisecond)
 }
 
-func Nanoseconds() int64 {
-	return Now().UnixNano() + TimeOffset
+func NowTime() int64 {
+	return Now().UnixNano()
 }
 
 func Seconds() int64 {
-	return Nanoseconds() / int64(time.Second)
+	return NowTime() / int64(time.Second)
 }
 
 func Date(year int, month time.Month, day, hour, min, sec, nsec int) time.Time {

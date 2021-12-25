@@ -19,7 +19,7 @@ var (
 	requestPool = sync.Pool{New: func() interface{} { return &request{} }}
 )
 
-const DefaultTimeout = time.Second * 30
+const DefaultTimeout = time.Second * 5
 
 type request struct {
 	id       string
@@ -65,7 +65,7 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 		interval = timeout[0]
 	}
 
-	req.timeoutId = s.AddTimer(tools.UUID(), interval, func(dt int64) {
+	req.timeoutId = s.AddTimer(tools.UUID(), tools.NowTime()+int64(interval), func(dt int64) {
 		expect.Nil(s.Response(req.id, &actor_msg.RequestDeadLetter{Err: "Request timeout"}))
 	})
 	return req
@@ -73,17 +73,17 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 
 // RequestWait sync request
 func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (resp interface{}, err error) {
-	if s.asyncStop.Load() {
-		return
-	}
-
-	t := time.Duration(0)
+	var t time.Duration
 	if len(timeout) > 0 && timeout[0] > 0 {
 		t = timeout[0]
 	}
 
 	waitRsp := make(chan result)
-	waiter := New(tools.UUID(), &waitActor{c: waitRsp, msg: msg, targetId: targetId, timeout: t}, SetLocalized())
+	waiter := New(
+		"wait_"+tools.UUID(),
+		&waitActor{c: waitRsp, msg: msg, targetId: targetId, timeout: t},
+		SetLocalized(),
+	)
 	expect.Nil(s.System().Regist(waiter))
 
 	// wait to result

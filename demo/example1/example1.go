@@ -2,11 +2,10 @@ package main
 
 import (
 	"fmt"
-	"github.com/wwj31/dogactor/actor/cmd"
-	"time"
-
 	"github.com/wwj31/dogactor/actor"
+	"github.com/wwj31/dogactor/actor/cmd"
 	"github.com/wwj31/dogactor/tools"
+	"time"
 )
 
 type PingActor struct{ actor.Base }
@@ -26,10 +25,9 @@ func main() {
 
 // PingActor
 func (s *PingActor) OnInit() {
-	s.AddTimer(tools.UUID(), 100*time.Millisecond, func(dt int64) {
+	s.AddTimer(tools.UUID(), tools.NowTime()+int64(1*time.Second), func(dt int64) {
 		s.Send("pong", "this is data")
 	}, -1)
-
 }
 func (s *PingActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	switch msg {

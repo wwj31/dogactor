@@ -22,7 +22,8 @@ type (
 	}
 
 	Timer interface {
-		AddTimer(timeId string, interval time.Duration, callback func(dt int64), trigger_times ...int32) string
+		AddTimer(timeId string, endAt int64, callback func(dt int64), trigger_times ...int32) string
+		UpdateTimer(timeId string, endAt int64) error
 		CancelTimer(timerId string)
 	}
 
@@ -43,7 +44,7 @@ type (
 	actorHandler interface {
 		OnInit()
 
-		// OnStop true is right now stop，false mean to late stop
+		// OnStop true if right now stop，false if late stop
 		OnStop() bool
 
 		// OnHandleEvent process event

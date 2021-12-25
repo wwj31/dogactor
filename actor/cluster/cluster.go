@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_tcp"
-	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 	"reflect"
@@ -21,7 +20,7 @@ func WithRemote(ectd_addr, prefix string) actor.SystemOption {
 		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_tcp.NewRemoteMgr())
 		clusterActor := actor.New("cluster_"+tools.UUID(), cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
 		if e := system.Regist(clusterActor); e != nil {
-			return fmt.Errorf("%w %w", actorerr.RegistClusterErr, e)
+			return fmt.Errorf("%w %v", actorerr.RegistClusterErr, e)
 		}
 		system.SetCluster(clusterActor.ID())
 		return nil
@@ -52,13 +51,13 @@ type Cluster struct {
 }
 
 func (c *Cluster) OnInit() {
-	expect.Nil(c.System().RegistEvent(
+	_ = c.System().RegistEvent(
 		c.ID(),
 		(*actor.EvNewactor)(nil),
 		(*actor.EvDelactor)(nil),
 		(*actor.EvClusterUpdate)(nil),
 		(*actor.EvSessionclosed)(nil),
-	))
+	)
 
 	if err := c.remote.Start(c); err != nil {
 		log.SysLog.Errorw("remote start error", "err", err)
@@ -72,7 +71,7 @@ func (c *Cluster) OnInit() {
 	c.ready[c.System().Address()] = true
 }
 
-func (c *Cluster) OnStop() (immediatelyStop bool) {
+func (c *Cluster) OnStop() bool {
 	return false
 }
 
@@ -106,6 +105,7 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	}
 
 	if str, ok := msg.(string); ok && str == "stop" {
+		c.System().CancelAll(c.ID())
 		c.serviceMesh.Stop()
 		c.remote.Stop()
 		c.Exit()

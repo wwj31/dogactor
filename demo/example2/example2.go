@@ -6,6 +6,9 @@ import (
 	"github.com/wwj31/dogactor/demo/example2/interval"
 	"github.com/wwj31/dogactor/l"
 	"github.com/wwj31/dogactor/tools"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/wwj31/dogactor/actor"
@@ -42,6 +45,11 @@ func main() {
 	hanmeimei := actor.New("HanMeimei", &Student{Name: "HanMeimei", Age: 15})
 	system2.Regist(hanmeimei)
 
+	c := make(chan os.Signal)
+	signal.Notify(c, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	<-c
+	system1.Stop()
+	system2.Stop()
 	<-system1.CStop
 	<-system2.CStop
 
@@ -49,7 +57,7 @@ func main() {
 }
 func (s *Student) OnInit() {
 	if s.Name == "LiLei" {
-		s.AddTimer(tools.UUID(), 2*time.Second, func(dt int64) {
+		s.AddTimer(tools.UUID(), tools.NowTime()+int64(2*time.Second), func(dt int64) {
 			s.Send("HanMeimei", &interval.LileiSay{Data: "hello, I'm Li Lei"})
 		})
 	}
@@ -78,7 +86,7 @@ func (s *Student) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 			log.Infof(resp.(*interval.HanMeimeiSay).Data)
 		})
 
-		s.AddTimer(tools.UUID(), 1*time.Second, func(dt int64) {
+		s.AddTimer(tools.UUID(), tools.NowTime()+int64(1*time.Second), func(dt int64) {
 			s.Request(sourceId, &interval.LileiSay{
 				Data: "please~",
 			}).Handle(func(resp interface{}, err error) {
