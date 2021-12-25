@@ -19,6 +19,7 @@ type Option struct {
 	FileMaxSize    int    // 文件切割大小MB
 	FileMaxBackups int    // 最大备份数量
 	DisplayConsole bool   // 是否在控制台显示
+	Skip           int    // 跳过的栈底
 }
 
 func New(opt Option) *Logger {
@@ -47,7 +48,7 @@ func New(opt Option) *Logger {
 	core := zapcore.NewCore(encoder, &sync{Writer: output}, opt.Level)
 	sugar := zap.New(core,
 		zap.AddStacktrace(zap.ErrorLevel),
-		zap.AddCallerSkip(1),
+		zap.AddCallerSkip(opt.Skip),
 		zap.AddCaller(),
 	).Sugar()
 
