@@ -11,17 +11,17 @@ import (
 // 重复key替换测试
 func TestAdd(t *testing.T) {
 	rank := New()
-	rank.Add("张三", Score(43))
-	rank.Add("李四", Score(12))
-	rank.Add("王五", Score(678))
-	rank.Add("赵六", Score(54, 1000))
-	rank.Add("孙七", Score(54, 2000))
-	rank.Add("周八", Score(67, 1111))
-	rank.Add("吴九", Score(67, 2222))
-	rank.Add("郑十", Score(67, 1000))
+	rank.Add("张三", 43)
+	rank.Add("李四", 12)
+	rank.Add("王五", 678)
+	rank.Add("赵六", 54, 1000)
+	rank.Add("孙七", 54, 2000)
+	rank.Add("周八", 67, 1111)
+	rank.Add("吴九", 67, 2222)
+	rank.Add("郑十", 67, 1000)
 
-	rank.Add("郑十", Score(68, 1000))
-	rank.Add("孙七", Score(1, 5))
+	rank.Add("郑十", 68, 1000)
+	rank.Add("孙七", 1, 5)
 	fmt.Println("全排名:", rank.Get())
 
 	fmt.Println(rank.GetByKey("周八"))
@@ -32,7 +32,7 @@ func TestAdd(t *testing.T) {
 func TestGetByScore(t *testing.T) {
 	rank := New()
 	for i := 0; i < 100; i++ {
-		rank.Add(fmt.Sprintf("number:%v ", i), Score(rand.Int63n(1000), rand.Int63n(1000)))
+		rank.Add(fmt.Sprintf("number:%v ", i), rand.Int63n(1000), rand.Int63n(1000))
 	}
 	r := rank.Get()
 	for _, v := range r {
@@ -50,7 +50,7 @@ func TestGetByScore(t *testing.T) {
 func TestMarshal(t *testing.T) {
 	rank := New()
 	for i := 0; i < 1000000; i++ {
-		rank.Add(fmt.Sprintf(uuid.New().String()), Score(rand.Int63n(10000), rand.Int63n(10000), rand.Int63n(10000)))
+		rank.Add(fmt.Sprintf(uuid.New().String()), rand.Int63n(10000), rand.Int63n(10000), rand.Int63n(10000))
 	}
 	data := rank.Marshal()
 	fmt.Println(fmt.Sprintf("bytes size:%.3f MB", float64(len(data))/(1024*1024)))

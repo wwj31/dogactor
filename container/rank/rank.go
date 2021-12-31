@@ -4,13 +4,10 @@ import (
 	"bytes"
 	"math"
 	"reflect"
-	"time"
 	"unsafe"
 
 	"github.com/wwj31/dogactor/container/skiplist"
 )
-
-var ()
 
 type (
 	Rank struct {
@@ -32,26 +29,14 @@ func (r *Rank) Len() int {
 
 var _inc int64
 
-// Score 作为 Rank.Add 第二参数，传入分数依次作为排名权重
-func Score(scores ...int64) []num {
-	nums := []num{}
-	for _, i64 := range scores {
-		nums = append(nums, num(i64))
-	}
-
-	nums = append(nums, num(math.MaxInt64-(int64(time.Now().Nanosecond())+_inc)))
-	_inc++
-	return nums
-}
-
-// Add 例子：
-// Rank.Add("xxxx",rank.Score(999)) 单分排行
-// Rank.Add("xxxx",rank.Score(999,123,456)) 多分排行
-func (r *Rank) Add(key string, scores []num) *Rank {
+// Add Rank.Add("xxxx",999) 单分排行
+// Rank.Add("xxxx",999,123,456) 多分排行
+func (r *Rank) Add(key string, scores ...int64) *Rank {
 	m, ok := r.members[key]
 
+	s := score(scores...)
 	// Fast path
-	if reflect.DeepEqual(m.Scores, scores) {
+	if reflect.DeepEqual(m.Scores, s) {
 		return r
 	}
 
@@ -59,7 +44,7 @@ func (r *Rank) Add(key string, scores []num) *Rank {
 	if ok {
 		r.skiplist.Delete(m)
 	}
-	m.Scores = scores
+	m.Scores = s
 	m.Key = key
 	r.members[key] = m
 	r.skiplist.Insert(m)
@@ -67,11 +52,9 @@ func (r *Rank) Add(key string, scores []num) *Rank {
 }
 
 // Get rankSection 名次区间
-// 例子：
-// members := Rank.Get() 获得全部名次
-// members := Rank.Get(1) 获得1名
-// members := Rank.Get(3) 获得3名
-// members := Rank.Get(1,100) 获得1～100名
+// Rank.Get() 获得全部名次
+// Rank.Get(1) 获得1名
+// Rank.Get(1,100) 获得1～100名
 func (r *Rank) Get(rankSection ...int) []Member {
 	var (
 		top     int
@@ -120,7 +103,6 @@ func (r *Rank) GetByKey(key string) (int, Member) {
 }
 
 // GetByScore scoreSection 分数区间
-// 例子：
 // Rank.GetByScore([]int64{100},[]int64{900}) 获得分数为100~999区间的集合
 func (r *Rank) GetByScore(floorScores, roofScores []int64) []Member {
 	members := make([]Member, 0)

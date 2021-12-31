@@ -1,5 +1,10 @@
 package rank
 
+import (
+	"math"
+	"time"
+)
+
 type num int64 // 分数类型
 
 type Member struct {
@@ -21,4 +26,16 @@ func (s Member) Less(other interface{}) bool {
 		}
 	}
 	return len(omember.Scores) < len(s.Scores)
+}
+
+// Score 作为 Rank.Add 第二参数，传入分数依次作为排名权重
+func score(scores ...int64) []num {
+	var nums []num
+	for _, i64 := range scores {
+		nums = append(nums, num(i64))
+	}
+
+	nums = append(nums, num(math.MaxInt64-(int64(time.Now().Nanosecond())+_inc)))
+	_inc++
+	return nums
 }
