@@ -33,7 +33,7 @@ const HTTPPrefixPProf = "/debug/pprof"
 func pprofHandlers() map[string]http.Handler {
 	// set only when there's no existing setting
 	if runtime.SetMutexProfileFraction(-1) == 0 {
-		// 1 out of 5 mutex ev are reported, on average
+		// 1 out of 5 mutex observe are reported, on average
 		runtime.SetMutexProfileFraction(5)
 	}
 
