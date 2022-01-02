@@ -7,6 +7,7 @@ import (
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/golang/protobuf/proto"
@@ -242,6 +243,9 @@ func (c *Cluster) clusterinfo(params ...string) {
 	for id, host := range c.actors {
 		actors = append(actors, fmt.Sprintf("┃%-47v┃%15v%2v", id, host, "┃"))
 	}
+	sort.SliceStable(actors, func(i, j int) bool {
+		return actors[i] < actors[j]
+	})
 	format := `
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━remote actor━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
 ┃                   actorId                     ┃     host       ┃

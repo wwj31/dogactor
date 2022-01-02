@@ -2,6 +2,7 @@ package actor
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -25,6 +26,9 @@ func (s *System) actorInfo(param ...string) {
 	s.actorCache.Range(func(key, value interface{}) bool {
 		actors = append(actors, fmt.Sprintf("┃%-46v┃%10v%6v", key, len(value.(*actor).mailBox), "┃"))
 		return true
+	})
+	sort.SliceStable(actors, func(i, j int) bool {
+		return actors[i] < actors[j]
 	})
 	format := `
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━local actor━━━━━━━━━┳━━━━━━━━━━━━━━━┓
