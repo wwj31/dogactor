@@ -14,19 +14,19 @@ const (
 	TYPE_WS  SessionType = 3
 )
 
-type INetListener interface {
+type Listener interface {
 	Start() error
 	Stop()
 }
 
-type INetClient interface {
+type Client interface {
 	SendMsg([]byte) error
-	AddLast(hander func() INetHandler)
+	AddLast(hander func() NetSessionHandler)
 	Start(reconect bool) error
 	Stop()
 }
 
-type INetSession interface {
+type NetSession interface {
 	Id() uint32
 	LocalAddr() net.Addr
 	RemoteAddr() net.Addr
@@ -39,8 +39,8 @@ type INetSession interface {
 	Type() SessionType
 }
 
-type INetHandler interface {
-	OnSessionCreated(INetSession)
+type NetSessionHandler interface {
+	OnSessionCreated(NetSession)
 	OnSessionClosed()
 	OnRecv([]byte)
 }

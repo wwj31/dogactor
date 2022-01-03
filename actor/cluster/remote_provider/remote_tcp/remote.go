@@ -18,7 +18,7 @@ import (
 // 管理所有远端的session
 type RemoteMgr struct {
 	remoteHandler remote_provider.RemoteHandler
-	listener      network.INetListener
+	listener      network.Listener
 
 	stop     atomic.Int32
 	sessions cmap.ConcurrentMap //host=>session
@@ -40,8 +40,8 @@ func (s *RemoteMgr) Start(h remote_provider.RemoteHandler) error {
 	s.remoteHandler = h
 
 	listener := network.StartTcpListen(s.remoteHandler.Address(),
-		func() network.ICodec { return &network.StreamCodec{} },
-		func() network.INetHandler { return &remoteHandler{remote: s} },
+		func() network.DecodeEncoder { return &network.StreamCode{} },
+		func() network.NetSessionHandler { return &remoteHandler{remote: s} },
 	)
 
 	err := listener.Start()
@@ -70,20 +70,20 @@ func (s *RemoteMgr) Stop() {
 		if s.listener != nil {
 			s.listener.Stop()
 		}
-		s.clients.IterCb(func(key string, v interface{}) { v.(network.INetClient).Stop() })
+		s.clients.IterCb(func(key string, v interface{}) { v.(network.Client).Stop() })
 	}
 }
 
 func (s *RemoteMgr) NewClient(host string) {
-	c := network.NewTcpClient(host, func() network.ICodec { return &network.StreamCodec{} })
-	c.AddLast(func() network.INetHandler { return &remoteHandler{remote: s, peerHost: host} })
+	c := network.NewTcpClient(host, func() network.DecodeEncoder { return &network.StreamCode{} })
+	c.AddLast(func() network.NetSessionHandler { return &remoteHandler{remote: s, peerHost: host} })
 	s.clients.Set(host, c)
 	expect.Nil(c.Start(true))
 }
 
 func (s *RemoteMgr) StopClient(host string) {
 	if c, ok := s.clients.Pop(host); ok {
-		c.(network.INetClient).Stop()
+		c.(network.Client).Stop()
 	}
 }
 
@@ -126,13 +126,13 @@ func (s *RemoteMgr) SendMsg(addr string, sourceId, targetId, requestId string, m
 
 ///////////////////////////////////////// remoteHandler /////////////////////////////////////////////
 type remoteHandler struct {
-	network.INetSession
+	network.NetSession
 	remote   *RemoteMgr
 	peerHost string
 }
 
-func (s *remoteHandler) OnSessionCreated(sess network.INetSession) {
-	s.INetSession = sess
+func (s *remoteHandler) OnSessionCreated(sess network.NetSession) {
+	s.NetSession = sess
 	err := sess.SendMsg(s.remote.regist)
 	if err != nil {
 		log.SysLog.Errorw("OnSessionCreated error", "err", err)

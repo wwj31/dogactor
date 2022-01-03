@@ -6,21 +6,20 @@ import (
 	"errors"
 )
 
-type ICodec interface {
+type DecodeEncoder interface {
 	Decode([]byte) ([][]byte, error)
 	Encode(data []byte) []byte
-	MaxDec() int
 }
 
 var ErrRecvLen = errors.New("data is too long")
 
-type EchoCodec struct {
+type EchoCode struct {
 	MaxDecode int
 
 	context bytes.Buffer
 }
 
-func (s *EchoCodec) Decode(data []byte) ([][]byte, error) {
+func (s *EchoCode) Decode(data []byte) ([][]byte, error) {
 	s.context.Write(data)
 	var ret [][]byte = nil
 	for {
@@ -36,13 +35,9 @@ func (s *EchoCodec) Decode(data []byte) ([][]byte, error) {
 	return ret, nil
 }
 
-func (s *EchoCodec) Encode(data []byte) []byte {
+func (s *EchoCode) Encode(data []byte) []byte {
 	data = append(data, '\n')
 	return data
-}
-
-func (s *EchoCodec) MaxDec() int {
-	return s.MaxDecode
 }
 
 /*
@@ -51,9 +46,9 @@ func (s *EchoCodec) MaxDec() int {
 	┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 	┃ head(body size) ┃               body (data)                ┃
 	┗━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-    ├──────────── MAX Size:StreamCodec.MaxDecode ────────────────┤
+    ├──────────── MAX Size:StreamCode.MaxDecode ────────────────┤
 */
-type StreamCodec struct {
+type StreamCode struct {
 	MaxDecode int
 
 	msglen  uint32
@@ -62,7 +57,7 @@ type StreamCodec struct {
 
 const STREAM_HEADLEN = 4
 
-func (s *StreamCodec) Decode(data []byte) ([][]byte, error) {
+func (s *StreamCode) Decode(data []byte) ([][]byte, error) {
 	s.context.Write(data)
 
 	var ret [][]byte = nil
@@ -91,13 +86,9 @@ func (s *StreamCodec) Decode(data []byte) ([][]byte, error) {
 	return ret, nil
 }
 
-func (s *StreamCodec) Encode(data []byte) []byte {
+func (s *StreamCode) Encode(data []byte) []byte {
 	d := make([]byte, STREAM_HEADLEN)
 	binary.BigEndian.PutUint32(d, uint32(len(data)))
 	data = append(d, data...)
 	return data
-}
-
-func (s *StreamCodec) MaxDec() int {
-	return s.MaxDecode
 }

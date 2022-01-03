@@ -12,7 +12,7 @@ import (
 	"github.com/wwj31/dogactor/tools"
 )
 
-func newTcpSession(conn net.Conn, coder ICodec, handler ...INetHandler) *TcpSession {
+func newTcpSession(conn net.Conn, coder DecodeEncoder, handler ...NetSessionHandler) *TcpSession {
 	session := &TcpSession{
 		id:      GenNetSessionId(),
 		conn:    conn,
@@ -36,8 +36,8 @@ type TcpSession struct {
 	storage sync.Map
 
 	running int32
-	coder   ICodec
-	handler []INetHandler
+	coder   DecodeEncoder
+	handler []NetSessionHandler
 	sendQue chan []byte
 }
 

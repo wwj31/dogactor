@@ -15,8 +15,8 @@ type TcpClient struct {
 	addr    string
 	running int32
 
-	newCodec    func() ICodec
-	handlersFun []func() INetHandler
+	newCodec    func() DecodeEncoder
+	handlersFun []func() NetSessionHandler
 
 	session     *TcpSession
 	reconnTimes int
@@ -25,15 +25,15 @@ type TcpClient struct {
 	connMux sync.Mutex
 }
 
-func NewTcpClient(addr string, newCodec func() ICodec, op ...OptionClient) INetClient {
+func NewTcpClient(addr string, newCodec func() DecodeEncoder, op ...OptionClient) Client {
 	c := &TcpClient{
 		addr:        addr,
 		running:     1,
 		newCodec:    newCodec,
-		handlersFun: make([]func() INetHandler, 0),
+		handlersFun: make([]func() NetSessionHandler, 0),
 		reconn:      make(chan struct{}, 1),
 	}
-	h := func() INetHandler {
+	h := func() NetSessionHandler {
 		return &tcpReconnectHandler{reconnect: c.reconn}
 	}
 	c.AddLast(h)
@@ -45,7 +45,7 @@ func NewTcpClient(addr string, newCodec func() ICodec, op ...OptionClient) INetC
 }
 
 // add handler to last of list
-func (s *TcpClient) AddLast(hander func() INetHandler) {
+func (s *TcpClient) AddLast(hander func() NetSessionHandler) {
 	s.handlersFun = append(s.handlersFun, hander)
 }
 
@@ -89,7 +89,7 @@ func (s *TcpClient) connect() error {
 		return err
 	}
 
-	handers := []INetHandler{}
+	handers := []NetSessionHandler{}
 	for _, f := range s.handlersFun {
 		handers = append(handers, f())
 	}
