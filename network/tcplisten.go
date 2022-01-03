@@ -11,11 +11,11 @@ import (
 
 type OptionListen func(l *TcpListener)
 
-func StartTcpListen(addr string, newCodec func() DecodeEncoder, newHanlder func() NetSessionHandler, op ...OptionListen) Listener {
+func StartTcpListen(addr string, newCodec func() DecodeEncoder, newHandler func() NetSessionHandler, op ...OptionListen) Listener {
 	l := &TcpListener{
 		addr:       addr,
 		newCodec:   newCodec,
-		newHanlder: newHanlder,
+		newHanlder: newHandler,
 	}
 
 	for _, f := range op {
