@@ -15,7 +15,7 @@ func StartTcpListen(addr string, newCodec func() DecodeEncoder, newHandler func(
 	l := &TcpListener{
 		addr:       addr,
 		newCodec:   newCodec,
-		newHanlder: newHandler,
+		newHandler: newHandler,
 	}
 
 	for _, f := range op {
@@ -29,7 +29,7 @@ type TcpListener struct {
 	listener   net.Listener
 	running    int32
 	newCodec   func() DecodeEncoder
-	newHanlder func() NetSessionHandler
+	newHandler func() NetSessionHandler
 }
 
 func (s *TcpListener) Start() error {
@@ -57,7 +57,7 @@ func (s *TcpListener) listen() error {
 				}
 				log.SysLog.Infow("tcp accept error", "addr", s.addr, "err", err)
 			} else {
-				newTcpSession(conn, s.newCodec(), s.newHanlder()).start()
+				newTcpSession(conn, s.newCodec(), s.newHandler()).start()
 			}
 		}
 		s.Stop()
