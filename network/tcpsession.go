@@ -16,11 +16,11 @@ func newTcpSession(conn net.Conn, coder DecodeEncoder, handler ...NetSessionHand
 	session := &TcpSession{
 		id:      GenNetSessionId(),
 		conn:    conn,
-		running: 1,
 		coder:   coder,
 		handler: handler,
 		sendQue: make(chan []byte, 16),
 	}
+	session.running.Store(1)
 
 	log.SysLog.Debugw("new tcp session",
 		"sessionId", session.Id(),
@@ -35,7 +35,7 @@ type TcpSession struct {
 	conn    net.Conn
 	storage sync.Map
 
-	running int32
+	running atomic.Value // 1.running 0.stop
 	coder   DecodeEncoder
 	handler []NetSessionHandler
 	sendQue chan []byte
@@ -81,7 +81,7 @@ func (s *TcpSession) start() {
 }
 
 func (s *TcpSession) Stop() {
-	if atomic.CompareAndSwapInt32(&s.running, 1, 0) {
+	if s.running.CompareAndSwap(1, 0) {
 		close(s.sendQue)
 		err := s.conn.Close()
 		if err != nil {
@@ -95,7 +95,7 @@ func (s *TcpSession) Stop() {
 }
 
 func (s *TcpSession) SendMsg(msg []byte) error {
-	if atomic.LoadInt32(&s.running) == 0 {
+	if s.running.Load() == 0 {
 		return errors.New("tcp session was stop")
 	}
 	tools.Try(func() { s.sendQue <- msg }, nil)
