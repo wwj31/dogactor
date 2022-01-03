@@ -3,12 +3,12 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/wwj31/dogactor/log"
 	"os"
 	"strings"
 	"sync"
 
 	"github.com/wwj31/dogactor/actor"
+	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -53,6 +53,11 @@ func (c *Commands) loop() {
 			if err != nil || len(result) == 0 {
 				fmt.Println("read error:", err)
 				return
+			}
+
+			// special windows type of ENTER
+			if index := strings.Index(result, "\r"); index >= 0 {
+				result = result[:index] + result[index+1:]
 			}
 
 			result = result[:len(result)-1]

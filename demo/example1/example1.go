@@ -13,8 +13,8 @@ type PongActor struct{ actor.Base }
 
 func main() {
 	system, _ := actor.NewSystem(actor.WithCMD(cmd.New()))
-	ping := actor.New("ping", &PingActor{}, actor.SetMailBoxSize(5000))
-	pong := actor.New("pong", &PongActor{}, actor.SetMailBoxSize(5000))
+	ping := actor.New("ping", &PingActor{}, actor.SetMailBoxSize(500))
+	pong := actor.New("pong", &PongActor{}, actor.SetMailBoxSize(500))
 	system.Add(ping)
 	system.Add(pong)
 
@@ -23,7 +23,7 @@ func main() {
 	fmt.Println("stop")
 }
 
-// PingActor
+// OnInit PingActor
 func (s *PingActor) OnInit() {
 	s.AddTimer(tools.UUID(), tools.NowTime()+int64(1*time.Second), func(dt int64) {
 		s.Send("pong", "this is data")
@@ -37,7 +37,7 @@ func (s *PingActor) OnHandleMessage(sourceId, targetId string, msg interface{}) 
 	}
 }
 
-//PongActor
+// OnHandleMessage PongActor
 func (s *PongActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	switch msg {
 	case "this is data":

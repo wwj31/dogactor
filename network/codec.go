@@ -45,6 +45,14 @@ func (s *EchoCodec) MaxDec() int {
 	return s.MaxDecode
 }
 
+/*
+
+	├──── 4bytes ─────┼────────────── body size ─────────────────┤
+	┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+	┃ head(body size) ┃               body (data)                ┃
+	┗━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+    ├──────────── MAX Size:StreamCodec.MaxDecode ────────────────┤
+*/
 type StreamCodec struct {
 	MaxDecode int
 
