@@ -6,8 +6,8 @@ it has implemented server discovery using ETCD.
 Getting Started
 ===============
 
-# 1.Installing
-#### To start using godactor, install Go and run `go get`:
+# 1.Installation
+#### To start using dogactor, install Go and run `go get`:
 ```sh
 $ go get -u github.com/wwj31/dogactor
 ```
