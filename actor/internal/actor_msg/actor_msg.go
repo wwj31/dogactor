@@ -50,14 +50,11 @@ type ActorMessage struct {
 	free    int32
 	message interface{}
 
-	SourceId             string   `protobuf:"bytes,1,opt,name=SourceId,json=sourceId,proto3" json:"SourceId,omitempty"`
-	TargetId             string   `protobuf:"bytes,2,opt,name=TargetId,json=targetId,proto3" json:"TargetId,omitempty"`
-	RequestId            string   `protobuf:"bytes,3,opt,name=RequestId,json=requestId,proto3" json:"RequestId,omitempty"`
-	MsgName              string   `protobuf:"bytes,4,opt,name=MsgName,json=msgName,proto3" json:"MsgName,omitempty"`
-	Data                 []byte   `protobuf:"bytes,5,opt,name=Data,json=data,proto3" json:"Data,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	SourceId  string `protobuf:"bytes,1,opt,name=SourceId,proto3" json:"SourceId,omitempty"`
+	TargetId  string `protobuf:"bytes,2,opt,name=TargetId,proto3" json:"TargetId,omitempty"`
+	RequestId string `protobuf:"bytes,3,opt,name=RequestId,proto3" json:"RequestId,omitempty"`
+	MsgName   string `protobuf:"bytes,4,opt,name=MsgName,proto3" json:"MsgName,omitempty"`
+	Data      []byte `protobuf:"bytes,5,opt,name=Data,proto3" json:"Data,omitempty"`
 }
 
 func (msg *ActorMessage) Free() {

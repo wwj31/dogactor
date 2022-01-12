@@ -1,2 +1,2 @@
-..\..\..\..\..\protoc\protoc.exe --plugin protoc-gen-go=..\..\..\..\..\protoc\protoc-gen-go-win.exe -I=.\ --go_out=.\ .\*.proto
+protoc --gogofaster_out=plugins=grpc:. .\*.proto
 pause
