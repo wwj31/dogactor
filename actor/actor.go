@@ -2,6 +2,7 @@ package actor
 
 import (
 	"github.com/wwj31/jtimer"
+	"reflect"
 	"time"
 
 	"github.com/wwj31/dogactor/actor/actorerr"
@@ -180,7 +181,7 @@ func (s *actor) run(ok chan<- struct{}) {
 func (s *actor) handleMsg(msg actor_msg.IMessage) {
 	message, ok := msg.(*actor_msg.ActorMessage)
 	if !ok {
-		log.SysLog.Warnw("unkown type of the message", "msg", message)
+		log.SysLog.Warnw("unknown type of the message", "msg", reflect.TypeOf(message).String())
 		return
 	}
 	if message.Message() == nil {

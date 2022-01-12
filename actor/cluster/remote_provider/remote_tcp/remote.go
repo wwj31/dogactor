@@ -97,7 +97,15 @@ func (s *RemoteMgr) keepAlive() {
 		}
 		select {
 		case <-ticker.C:
-			s.sessions.IterCb(func(key string, v interface{}) { v.(*remoteHandler).SendMsg(s.ping) })
+			s.sessions.IterCb(func(key string, v interface{}) {
+				remote ,_:= v.(*remoteHandler)
+				err := v.(*remoteHandler).SendMsg(s.ping)
+				if err != nil{
+					log.SysLog.Errorw("keepAlive SendMsg",
+						"err", err,
+						"remote",remote.RemoteIP())
+				}
+			})
 		}
 	}
 }
