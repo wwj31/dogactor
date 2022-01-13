@@ -20,7 +20,7 @@ type (
 
 		id      string
 		handler actorHandler
-		mailBox chan actor_msg.IMessage
+		mailBox chan actor_msg.Message
 		remote  bool
 
 		// timer
@@ -43,7 +43,7 @@ func New(id string, handler spawnActor, op ...Option) *actor {
 	a := &actor{
 		id:       id,
 		handler:  handler,
-		mailBox:  make(chan actor_msg.IMessage, 100),
+		mailBox:  make(chan actor_msg.Message, 100),
 		remote:   true, // 默认都能被远端发现
 		timerMgr: jtimer.NewTimerMgr(),
 		requests: make(map[string]*request),
@@ -122,7 +122,7 @@ func (s *actor) CancelTimer(timerId string) {
 }
 
 // Push一个消息
-func (s *actor) push(msg actor_msg.IMessage) error {
+func (s *actor) push(msg actor_msg.Message) error {
 	if msg == nil {
 		return actorerr.ActorPushMsgErr
 	}
@@ -179,7 +179,7 @@ func (s *actor) run(ok chan<- struct{}) {
 	}
 }
 
-func (s *actor) handleMsg(msg actor_msg.IMessage) {
+func (s *actor) handleMsg(msg actor_msg.Message) {
 	message, ok := msg.(*actor_msg.ActorMessage)
 	if !ok {
 		log.SysLog.Warnw("unknown type of the message", "msg", reflect.TypeOf(message).String())
@@ -238,7 +238,7 @@ func (s *actor) resetTime() {
 		}
 	}
 }
-func (s *actor) isStop(msg actor_msg.IMessage) bool {
+func (s *actor) isStop(msg actor_msg.Message) bool {
 	message, ok := msg.(*actor_msg.ActorMessage)
 	if ok && message == actorStopMsg {
 		return true
@@ -259,7 +259,7 @@ func (s *actor) RegistCmd(cmd string, fn func(...string), usage ...string) {
 // Extra Option
 func SetMailBoxSize(boxSize int) Option {
 	return func(a *actor) {
-		a.mailBox = make(chan actor_msg.IMessage, boxSize)
+		a.mailBox = make(chan actor_msg.Message, boxSize)
 	}
 }
 

@@ -17,7 +17,7 @@ func init() {
 }
 
 // actor邮箱消息基类
-type IMessage interface {
+type Message interface {
 	Free()
 	String() string
 }
