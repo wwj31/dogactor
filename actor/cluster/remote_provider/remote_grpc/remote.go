@@ -73,7 +73,6 @@ func (s *RemoteMgr) StopClient(host string) {
 
 // 远端actor发送消息
 func (s *RemoteMgr) SendMsg(addr string, netMsg *actor_msg.ActorMessage) error {
-	defer netMsg.Free()
 	session, ok := s.sessions.Get(addr)
 	if !ok {
 		return errors.New("remote addr not found")

@@ -67,6 +67,13 @@ func (msg *ActorMessage) Free() {
 	}
 }
 
+func (msg *ActorMessage) LockFree() {
+	atomic.CompareAndSwapInt32(&msg.free, 1, 0)
+}
+func (msg *ActorMessage) UnlockFree() {
+	atomic.CompareAndSwapInt32(&msg.free, 0, 1)
+}
+
 func (s *ActorMessage) Message() interface{} {
 	return s.message
 }

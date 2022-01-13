@@ -63,6 +63,8 @@ func (s *Session) Send(msg *actor_msg.ActorMessage) (err error) {
 	if s.running.Load() != 0 {
 		return errors.New("session has closed")
 	}
+
+	msg.LockFree()
 	tools.Try(func() { s.chSend <- msg }, func(ex interface{}) { err = errors.New("session has closed") })
 	return err
 }
@@ -101,6 +103,8 @@ func (s *Session) write() {
 			log.SysLog.Debugw("send msg error", "error", err, "id", s.id)
 			break
 		}
+
+		msg.UnlockFree()
 		msg.Free()
 	}
 	s.Stop()
