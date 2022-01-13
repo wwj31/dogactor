@@ -1,10 +1,9 @@
 package cluster
 
 import (
-	//"github.com/gogo/protobuf/proto"
-	"github.com/golang/protobuf/proto"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider"
 	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider"
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 )
 
 type IServiceMeshProvider interface {
@@ -20,5 +19,5 @@ type IRemoteProvider interface {
 	NewClient(host string)
 	StopClient(host string)
 
-	SendMsg(addr string, sourceId, targetId, requestId string, msg proto.Message) error
+	SendMsg(addr string, netMsg *actor_msg.ActorMessage) error
 }

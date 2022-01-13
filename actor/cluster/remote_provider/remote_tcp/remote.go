@@ -111,21 +111,14 @@ func (s *RemoteMgr) keepAlive() {
 }
 
 // 远端actor发送消息
-func (s *RemoteMgr) SendMsg(addr string, sourceId, targetId, requestId string, msg proto.Message) error {
+func (s *RemoteMgr) SendMsg(addr string, netMsg *actor_msg.ActorMessage) error {
+	defer netMsg.Free()
 	session, ok := s.sessions.Get(addr)
 	if !ok {
 		return errors.New("remote addr not found")
 	}
 
-	//TODO 开协程处理？
-	data, err := proto.Marshal(msg)
-	if err != nil {
-		return err
-	}
-
-	netMsg := actor_msg.NewNetActorMessage(sourceId, targetId, requestId, tools.MsgName(msg), data)
-	defer netMsg.Free()
-	data, err = netMsg.Marshal()
+	data, err := netMsg.Marshal()
 	if err != nil {
 		return err
 	}

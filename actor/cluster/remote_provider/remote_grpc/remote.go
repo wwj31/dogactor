@@ -1,7 +1,7 @@
 package remote_grpc
 
 import (
-	"fmt"
+	"errors"
 	//"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/proto"
 	cmap "github.com/orcaman/concurrent-map"
@@ -72,21 +72,14 @@ func (s *RemoteMgr) StopClient(host string) {
 }
 
 // 远端actor发送消息
-func (s *RemoteMgr) SendMsg(addr string, sourceId, targetId, requestId string, msg proto.Message) error {
+func (s *RemoteMgr) SendMsg(addr string, netMsg *actor_msg.ActorMessage) error {
+	defer netMsg.Free()
 	session, ok := s.sessions.Get(addr)
 	if !ok {
-		return fmt.Errorf("remote addr not found %v reqId:%v", addr, requestId)
+		return errors.New("remote addr not found")
 	}
-
-	//TODO 开协程处理？
-	data, err := proto.Marshal(msg)
-	if err != nil {
-		return err
-	}
-	netMsg := actor_msg.NewNetActorMessage(sourceId, targetId, requestId, tools.MsgName(msg), data)
 	return session.(*remoteHandler).Send(netMsg)
 }
-
 ///////////////////////////////////////// remoteHandler /////////////////////////////////////////////
 type remoteHandler struct {
 	internal.BaseHandler

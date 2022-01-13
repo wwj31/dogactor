@@ -17,6 +17,7 @@ var (
 	RegistClusterErr       = errors.New("regist cluster error")
 	RegisterActorSystemErr = errors.New("actor system has stopped")
 	RegisterActorSameIdErr = errors.New("actor with same id")
+	ProtoMarshalErr 	   = errors.New("actor system send proto marshal failed")
 	ActorNotFoundErr       = errors.New("local actor not found")
 	ActorPushMsgErr        = errors.New("push a nil msg to actor")
 	ActorUnimplemented     = errors.New("actor has no implemented OnHandleRequest")

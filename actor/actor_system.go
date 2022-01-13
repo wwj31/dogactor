@@ -29,7 +29,7 @@ type System struct {
 	actorCache sync.Map    // all of local actor
 	newList    chan *actor // new list
 
-	clusterId string
+	cluster *actor
 
 	// extra
 	cmd Cmder
@@ -91,8 +91,8 @@ func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 func (s *System) Address() string {
 	return s.actorAddr
 }
-func (s *System) SetCluster(id string) {
-	s.clusterId = id
+func (s *System) SetCluster(act *actor) {
+	s.cluster = act
 }
 
 func (s *System) Stop() {
@@ -103,18 +103,18 @@ func (s *System) Stop() {
 				value.(*actor).stop()
 				return true
 			})
-			if s.clusterId != "" {
+			if s.cluster != nil {
 				for c := false; !c; {
 					s.actorCache.Range(func(key, value interface{}) bool {
-						c = (key.(string)) == s.clusterId
+						c = (key.(string)) == s.cluster.id
 						return c
 					})
 					runtime.Gosched()
 				}
 			}
 
-			if s.clusterId != "" {
-				e := s.Send("", s.clusterId, "", "stop")
+			if s.cluster != nil {
+				e := s.Send("", s.cluster.id, "", "stop")
 				if e != nil {
 					log.SysLog.Errorw("system stop exception", "err", e)
 				}
@@ -154,10 +154,14 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 	if localActor, ok := s.actorCache.Load(targetId); ok {
 		atr = localActor.(*actor)
 	} else {
-		_, canRemote := msg.(proto.Message)
-		cluster, ok := s.actorCache.Load(s.clusterId)
-		if canRemote && ok {
-			atr = cluster.(*actor)
+		pt, canRemote := msg.(proto.Message)
+		if canRemote {
+			atr = s.cluster
+			bytes,err := proto.Marshal(pt)
+			if err != nil {
+				return errFormat(fmt.Errorf("%w %v",actorerr.ProtoMarshalErr,err),sourceId,targetId,requestId)
+			}
+			msg = actor_msg.NewNetActorMessage(sourceId, targetId, requestId, tools.MsgName(pt), bytes)
 		}
 	}
 

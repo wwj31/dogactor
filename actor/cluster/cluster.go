@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_tcp"
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 	"reflect"
@@ -23,7 +24,7 @@ func WithRemote(ectd_addr, prefix string) actor.SystemOption {
 		if e := system.Add(clusterActor); e != nil {
 			return fmt.Errorf("%w %v", actorerr.RegistClusterErr, e)
 		}
-		system.SetCluster(clusterActor.ID())
+		system.SetCluster(clusterActor)
 		return nil
 	}
 }
@@ -79,7 +80,7 @@ func (c *Cluster) OnStop() bool {
 func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
 	_, reqTargetId, _, _ := actor.ParseRequestId(requestId)
 	if c.ID() != reqTargetId {
-		if err := c.sendRemote(sourceId, targetId, requestId, msg.(proto.Message)); err != nil {
+		if err := c.sendRemote(msg.(*actor_msg.ActorMessage)); err != nil {
 			log.SysLog.Errorw("remote actor send failed",
 				"id", c.ID(),
 				"targetId", targetId,
@@ -95,7 +96,7 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg inte
 func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	// cluster 只特殊处理 stop 消息，其余消息全部转发remote
 	if targetId != c.ID() {
-		if e := c.sendRemote(sourceId, targetId, "", msg.(proto.Message)); e != nil {
+		if e := c.sendRemote(msg.(*actor_msg.ActorMessage)); e != nil {
 			log.SysLog.Errorw("cluster handle message",
 				"id", c.ID(),
 				"targetId", targetId,
@@ -145,16 +146,15 @@ func (c *Cluster) OnSessionRecv(sourceId, targetId, requestId string, msg proto.
 
 ////////////////////////////////////// RemoteHandler /////////////////////////////////////////////////////////////////
 
-func (c *Cluster) sendRemote(sourceId, targetId, requestId string, actMsg proto.Message) error {
+func (c *Cluster) sendRemote(netMsg *actor_msg.ActorMessage) error {
 	//Response的时候地址由requestId解析提供
 	var addr string
-	if reqSourceId, _, _addr, _ := actor.ParseRequestId(requestId); reqSourceId == targetId {
+	if reqSourceId, _, _addr, _ := actor.ParseRequestId(netMsg.RequestId); reqSourceId == netMsg.TargetId {
 		addr = _addr
-	} else if addr = c.actors[targetId]; addr == "" {
+	} else if addr = c.actors[netMsg.TargetId]; addr == "" {
 		return errors.New("target actor not find")
 	}
-	return c.remote.SendMsg(addr, sourceId, targetId, requestId, actMsg)
-
+	return c.remote.SendMsg(addr, netMsg)
 }
 
 func (c *Cluster) watchRemote(actorId, host string, add bool) {
