@@ -157,11 +157,17 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 		pt, canRemote := msg.(proto.Message)
 		if canRemote {
 			atr = s.cluster
-			bytes,err := proto.Marshal(pt)
+			bytes, err := proto.Marshal(pt)
 			if err != nil {
-				return errFormat(fmt.Errorf("%w %v",actorerr.ProtoMarshalErr,err),sourceId,targetId,requestId)
+				return errFormat(fmt.Errorf("%w %v", actorerr.ProtoMarshalErr, err), sourceId, targetId, requestId)
 			}
-			msg = actor_msg.NewNetActorMessage(sourceId, targetId, requestId, tools.MsgName(pt), bytes)
+			actorMsg := &actor_msg.ActorMessage{} // remote message
+			actorMsg.SourceId = sourceId
+			actorMsg.TargetId = targetId
+			actorMsg.RequestId = requestId
+			actorMsg.MsgName = tools.MsgName(pt)
+			actorMsg.Data = bytes
+			msg, _ = actorMsg.Marshal()
 		}
 	}
 
@@ -169,7 +175,12 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 		return errFormat(actorerr.ActorNotFoundErr, sourceId, targetId, requestId)
 	}
 
-	localMsg := actor_msg.NewLocalActorMessage(sourceId, targetId, requestId, msg)
+	localMsg := actor_msg.NewActorMessage() // local message
+	localMsg.SourceId = sourceId
+	localMsg.TargetId = targetId
+	localMsg.RequestId = requestId
+	localMsg.SetMessage(msg)
+
 	if err := atr.push(localMsg); err != nil {
 		return errFormat(err, sourceId, targetId, requestId)
 	}

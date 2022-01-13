@@ -2,8 +2,7 @@ package remote_grpc
 
 import (
 	"errors"
-	//"github.com/gogo/protobuf/proto"
-	"github.com/golang/protobuf/proto"
+
 	cmap "github.com/orcaman/concurrent-map"
 	"go.uber.org/atomic"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_grpc/internal"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
-	"github.com/wwj31/dogactor/tools"
 )
 
 // 管理所有远端的session
@@ -43,10 +41,12 @@ func (s *RemoteMgr) Start(actorSystem remote_provider.RemoteHandler) error {
 		return err
 	}
 
-	s.regist = actor_msg.NewNetActorMessage("", "", "", "$regist", []byte(s.remoteHandler.Address()))
-	s.listener = listener
+	s.regist = actor_msg.NewActorMessage() // registry message
+	s.regist.MsgName = "$regist"
+	s.regist.Data = []byte(s.remoteHandler.Address())
+	s.regist.Free()
 
-	//s.remoteHandler.RegistCmd("", "remoteinfo", s.remoteinfo)
+	s.listener = listener
 	return err
 }
 
@@ -79,6 +79,7 @@ func (s *RemoteMgr) SendMsg(addr string, netMsg *actor_msg.ActorMessage) error {
 	}
 	return session.(*remoteHandler).Send(netMsg)
 }
+
 ///////////////////////////////////////// remoteHandler /////////////////////////////////////////////
 type remoteHandler struct {
 	internal.BaseHandler
@@ -113,18 +114,6 @@ func (s *remoteHandler) OnRecv(msg *actor_msg.ActorMessage) {
 			log.SysLog.Errorw("has not regist", "msg", msg.MsgName)
 			return
 		}
-
-		tp, err := tools.FindMsgByName(msg.MsgName)
-		if err != nil {
-			log.SysLog.Errorw("msg name not find", "msgName", msg.MsgName, "err", err)
-			return
-		}
-
-		actMsg := tp.New().Interface().(proto.Message)
-		if err = proto.Unmarshal(msg.Data, actMsg); err != nil {
-			log.SysLog.Errorw("Unmarshal failed", "msgName", msg.MsgName, "err", err)
-			return
-		}
-		s.remote.remoteHandler.OnSessionRecv(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
+		s.remote.remoteHandler.OnSessionRecv(msg)
 	}
 }

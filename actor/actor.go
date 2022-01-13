@@ -180,6 +180,7 @@ func (s *actor) run(ok chan<- struct{}) {
 }
 
 func (s *actor) handleMsg(msg actor_msg.Message) {
+	// first unwrap
 	message, ok := msg.(*actor_msg.ActorMessage)
 	if !ok {
 		log.SysLog.Warnw("unknown type of the message", "msg", reflect.TypeOf(message).String())
@@ -187,6 +188,14 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 	}
 	if message.Message() == nil {
 		return
+	}
+
+	var efaceMsg = message.Message()
+
+	if remoteMsg, ok := message.Message().(*actor_msg.ActorMessage); ok {
+		// remote message shall need second unwrap
+		efaceMsg = remoteMsg.Fill()
+		remoteMsg.Free()
 	}
 
 	// record processed of slow message
@@ -203,11 +212,11 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 	if reqOK {
 		//recv Response
 		if s.id == reqSourceId {
-			s.doneRequest(message.RequestId, message.Message())
+			s.doneRequest(message.RequestId, efaceMsg)
 			return
 		}
 		// recv Request
-		if e := s.handler.OnHandleRequest(message.SourceId, message.TargetId, message.RequestId, message.Message()); e != nil {
+		if e := s.handler.OnHandleRequest(message.SourceId, message.TargetId, message.RequestId, efaceMsg); e != nil {
 			expect.Nil(s.Response(message.RequestId, &actor_msg.RequestDeadLetter{Err: e.Error()}))
 		}
 		return
@@ -220,12 +229,12 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 	}
 
 	// fn
-	if fn, ok := message.Message().(func()); ok {
+	if fn, ok := efaceMsg.(func()); ok {
 		fn()
 		return
 	}
 
-	s.handler.OnHandleMessage(message.SourceId, message.TargetId, message.Message())
+	s.handler.OnHandleMessage(message.SourceId, message.TargetId, efaceMsg)
 }
 
 func (s *actor) resetTime() {
