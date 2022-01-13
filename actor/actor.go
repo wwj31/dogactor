@@ -167,6 +167,7 @@ func (s *actor) run(ok chan<- struct{}) {
 			if s.isStop(msg) {
 				return
 			}
+
 			tools.Try(func() {
 				s.handleMsg(msg)
 
