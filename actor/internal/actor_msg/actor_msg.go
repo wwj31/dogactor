@@ -1,6 +1,9 @@
 package actor_msg
 
 import (
+	"github.com/golang/protobuf/proto"
+	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 	"reflect"
 	"sync"
 	"sync/atomic"
@@ -16,32 +19,19 @@ func init() {
 	_eventPool.New = func() interface{} { return &EventMessage{pool: &_eventPool} }
 }
 
-// actor邮箱消息基类
 type Message interface {
 	Free()
+	GetSourceId() string
+	GetTargetId() string
+	GetRequestId() string
+	GetMsgName() string
+	Message() interface{}
 	String() string
 }
 
-func NewLocalActorMessage(sourceId, targetId, requestId string, message interface{}) *ActorMessage {
+func NewActorMessage() *ActorMessage {
 	msg := _msgPool.Get().(*ActorMessage)
 	atomic.StoreInt32(&msg.free, 1)
-
-	msg.SourceId = sourceId
-	msg.TargetId = targetId
-	msg.RequestId = requestId
-	msg.message = message
-	return msg
-}
-
-func NewNetActorMessage(sourceId, targetId, requestId string, msgName string, data []byte) *ActorMessage {
-	msg := _msgPool.Get().(*ActorMessage)
-	atomic.StoreInt32(&msg.free, 1)
-
-	msg.SourceId = sourceId
-	msg.TargetId = targetId
-	msg.MsgName = msgName
-	msg.Data = data
-	msg.RequestId = requestId
 	return msg
 }
 
@@ -57,6 +47,16 @@ type ActorMessage struct {
 	Data      []byte `protobuf:"bytes,5,opt,name=Data,proto3" json:"Data,omitempty"`
 }
 
+func (s *ActorMessage) Message() interface{} {
+	if msg, ok := s.message.(*ActorMessage); ok {
+		if msg.Data != nil && msg.MsgName != "" {
+			defer msg.Free()
+			return msg.fill()
+		}
+	}
+	return s.message
+}
+
 func (msg *ActorMessage) Free() {
 	if msg.pool != nil && atomic.CompareAndSwapInt32(&msg.free, 1, 0) {
 		msg.message = nil
@@ -68,14 +68,29 @@ func (msg *ActorMessage) Free() {
 }
 
 func (msg *ActorMessage) LockFree() {
-	atomic.CompareAndSwapInt32(&msg.free, 1, 0)
+	atomic.StoreInt32(&msg.free, 0)
 }
 func (msg *ActorMessage) UnlockFree() {
-	atomic.CompareAndSwapInt32(&msg.free, 0, 1)
+	atomic.StoreInt32(&msg.free, 1)
 }
 
-func (s *ActorMessage) Message() interface{} {
-	return s.message
+func (s *ActorMessage) SetMessage(v interface{}) {
+	s.message = v
+}
+
+func (msg *ActorMessage) fill() proto.Message {
+	tp, err := tools.FindMsgByName(msg.MsgName)
+	if err != nil {
+		log.SysLog.Errorf("msg name not find", "err", err, "MsgName", msg.MsgName, "msg", msg.String())
+		return nil
+	}
+
+	pt := tp.New().Interface().(proto.Message)
+	if err = proto.Unmarshal(msg.Data, pt); err != nil {
+		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", msg.MsgName)
+		return nil
+	}
+	return pt
 }
 
 func NewEventMessage(actEvent interface{}) *EventMessage {

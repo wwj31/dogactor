@@ -11,7 +11,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd"
@@ -80,7 +79,7 @@ func (c *Cluster) OnStop() bool {
 func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
 	_, reqTargetId, _, _ := actor.ParseRequestId(requestId)
 	if c.ID() != reqTargetId {
-		if err := c.sendRemote(msg.(*actor_msg.ActorMessage)); err != nil {
+		if err := c.sendRemote(targetId, requestId, msg.([]byte)); err != nil {
 			log.SysLog.Errorw("remote actor send failed",
 				"id", c.ID(),
 				"targetId", targetId,
@@ -96,7 +95,7 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg inte
 func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	// cluster 只特殊处理 stop 消息，其余消息全部转发remote
 	if targetId != c.ID() {
-		if e := c.sendRemote(msg.(*actor_msg.ActorMessage)); e != nil {
+		if e := c.sendRemote(targetId, "", msg.([]byte)); e != nil {
 			log.SysLog.Errorw("cluster handle message",
 				"id", c.ID(),
 				"targetId", targetId,
@@ -132,29 +131,37 @@ func (c *Cluster) OnSessionClosed(peerHost string) {
 func (c *Cluster) OnSessionOpened(peerHost string) {
 	c.System().DispatchEvent(c.ID(), &actor.EvSessionopened{PeerHost: peerHost})
 }
-func (c *Cluster) OnSessionRecv(sourceId, targetId, requestId string, msg proto.Message) {
-	err := c.System().Send(sourceId, targetId, requestId, msg)
+
+//func (c *Cluster) OnSessionRecv(sourceId, targetId, requestId string, msg proto.Message) {
+//	err := c.System().Send(sourceId, targetId, requestId, msg)
+//	if err != nil {
+//		log.SysLog.Errorw("cluster OnSessionRecv send error",
+//			"sourceId", sourceId,
+//			"targetId", targetId,
+//			"requestId", requestId,
+//			"err", err,
+//		)
+//	}
+//}
+
+func (c *Cluster) OnSessionRecv(msg *actor_msg.ActorMessage) {
+	err := c.System().Send(msg.SourceId, msg.TargetId, msg.RequestId, msg)
 	if err != nil {
-		log.SysLog.Errorw("cluster OnSessionRecv send error",
-			"sourceId", sourceId,
-			"targetId", targetId,
-			"requestId", requestId,
-			"err", err,
-		)
+		log.SysLog.Errorw("cluster OnSessionRecv send error", "msg", msg.String(), "err", err)
 	}
 }
 
 ////////////////////////////////////// RemoteHandler /////////////////////////////////////////////////////////////////
 
-func (c *Cluster) sendRemote(netMsg *actor_msg.ActorMessage) error {
+func (c *Cluster) sendRemote(targetId, requestId string, bytes []byte) error {
 	//Response的时候地址由requestId解析提供
 	var addr string
-	if reqSourceId, _, _addr, _ := actor.ParseRequestId(netMsg.RequestId); reqSourceId == netMsg.TargetId {
+	if reqSourceId, _, _addr, _ := actor.ParseRequestId(requestId); reqSourceId == targetId {
 		addr = _addr
-	} else if addr = c.actors[netMsg.TargetId]; addr == "" {
+	} else if addr = c.actors[targetId]; addr == "" {
 		return errors.New("target actor not find")
 	}
-	return c.remote.SendMsg(addr, netMsg)
+	return c.remote.SendMsg(addr, bytes)
 }
 
 func (c *Cluster) watchRemote(actorId, host string, add bool) {

@@ -1,10 +1,12 @@
 package remote_provider
 
-import "github.com/golang/protobuf/proto"
+import (
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+)
 
 type RemoteHandler interface {
 	Address() string
 	OnSessionClosed(peerHost string)
 	OnSessionOpened(peerHost string)
-	OnSessionRecv(sourceId, targetId, requestId string, msg proto.Message)
+	OnSessionRecv(msg *actor_msg.ActorMessage)
 }

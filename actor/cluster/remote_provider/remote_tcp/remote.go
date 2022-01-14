@@ -2,7 +2,6 @@ package remote_tcp
 
 import (
 	"errors"
-	"github.com/golang/protobuf/proto"
 	cmap "github.com/orcaman/concurrent-map"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider"
 	"github.com/wwj31/dogactor/expect"
@@ -12,7 +11,6 @@ import (
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/network"
-	"github.com/wwj31/dogactor/tools"
 )
 
 // 管理所有远端的session
@@ -49,15 +47,22 @@ func (s *RemoteMgr) Start(h remote_provider.RemoteHandler) error {
 		return err
 	}
 
-	s.ping, err = actor_msg.NewNetActorMessage("", "", "", "$ping", nil).Marshal()
+	pingmsg := actor_msg.NewActorMessage() // ping message
+	pingmsg.MsgName = "$ping"
+	s.ping, err = pingmsg.Marshal()
 	if err != nil {
 		return err
 	}
+	pingmsg.Free()
 
-	s.regist, err = actor_msg.NewNetActorMessage("", "", "", "$regist", []byte(s.remoteHandler.Address())).Marshal()
+	regmsg := actor_msg.NewActorMessage() // registry message
+	regmsg.MsgName = "$regist"
+	regmsg.Data = []byte(s.remoteHandler.Address())
+	s.regist, err = regmsg.Marshal()
 	if err != nil {
 		return err
 	}
+	regmsg.Free()
 
 	s.listener = listener
 	go s.keepAlive()
@@ -98,12 +103,12 @@ func (s *RemoteMgr) keepAlive() {
 		select {
 		case <-ticker.C:
 			s.sessions.IterCb(func(key string, v interface{}) {
-				remote ,_:= v.(*remoteHandler)
+				remote, _ := v.(*remoteHandler)
 				err := v.(*remoteHandler).SendMsg(s.ping)
-				if err != nil{
+				if err != nil {
 					log.SysLog.Errorw("keepAlive SendMsg",
 						"err", err,
-						"remote",remote.RemoteIP())
+						"remote", remote.RemoteIP())
 				}
 			})
 		}
@@ -111,17 +116,13 @@ func (s *RemoteMgr) keepAlive() {
 }
 
 // 远端actor发送消息
-func (s *RemoteMgr) SendMsg(addr string, netMsg *actor_msg.ActorMessage) error {
+func (s *RemoteMgr) SendMsg(addr string, bytes []byte) error {
 	session, ok := s.sessions.Get(addr)
 	if !ok {
 		return errors.New("remote addr not found")
 	}
 
-	data, err := netMsg.Marshal()
-	if err != nil {
-		return err
-	}
-	return session.(*remoteHandler).SendMsg(data)
+	return session.(*remoteHandler).SendMsg(bytes)
 }
 
 ///////////////////////////////////////// remoteHandler /////////////////////////////////////////////
@@ -152,37 +153,26 @@ func (s *remoteHandler) OnRecv(data []byte) {
 		return
 	}
 
-	msg := &actor_msg.ActorMessage{}
+	msg := actor_msg.NewActorMessage() // remote recv message
 	err := msg.Unmarshal(data)
 	if err != nil {
 		log.SysLog.Errorf("unmarshal msg failed", "err", err)
 		return
 	}
 
-	if msg.MsgName == "$regist" {
+	switch msg.MsgName {
+	case "$regist":
 		s.peerHost = string(msg.Data)
 		s.remote.sessions.Set(s.peerHost, s)
 		s.remote.remoteHandler.OnSessionOpened(s.peerHost)
-	} else if msg.MsgName == "$ping" {
-		//do nothing
-		//s.logger.Debug("recv ping")
-	} else {
+	case "$ping":
+
+	default:
 		if s.peerHost == "" {
 			log.SysLog.Errorf("has not regist", "msg", msg.MsgName)
 			return
 		}
 
-		tp, err := tools.FindMsgByName(msg.MsgName)
-		if err != nil {
-			log.SysLog.Errorf("msg name not find", "err", err, "MsgName", msg.MsgName)
-			return
-		}
-
-		actMsg := tp.New().Interface().(proto.Message)
-		if err = proto.Unmarshal(msg.Data, actMsg); err != nil {
-			log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", msg.MsgName)
-			return
-		}
-		s.remote.remoteHandler.OnSessionRecv(msg.SourceId, msg.TargetId, msg.RequestId, actMsg)
+		s.remote.remoteHandler.OnSessionRecv(msg)
 	}
 }

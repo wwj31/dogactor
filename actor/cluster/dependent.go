@@ -3,7 +3,6 @@ package cluster
 import (
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider"
 	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider"
-	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 )
 
 type IServiceMeshProvider interface {
@@ -19,5 +18,5 @@ type IRemoteProvider interface {
 	NewClient(host string)
 	StopClient(host string)
 
-	SendMsg(addr string, netMsg *actor_msg.ActorMessage) error
+	SendMsg(addr string, bytes []byte) error
 }

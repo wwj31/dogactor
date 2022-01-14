@@ -2,7 +2,6 @@ package actor
 
 import (
 	"github.com/wwj31/jtimer"
-	"reflect"
 	"time"
 
 	"github.com/wwj31/dogactor/actor/actorerr"
@@ -180,16 +179,12 @@ func (s *actor) run(ok chan<- struct{}) {
 }
 
 func (s *actor) handleMsg(msg actor_msg.Message) {
-	message, ok := msg.(*actor_msg.ActorMessage)
-	if !ok {
-		log.SysLog.Warnw("unknown type of the message", "msg", reflect.TypeOf(message).String())
-		return
-	}
-	if message.Message() == nil {
+	var message = msg.Message()
+	if message == nil {
 		return
 	}
 
-	// record processed of slow message
+	// recording slow processed of message
 	beginTime := tools.Milliseconds()
 	defer func() {
 		endTime := tools.Milliseconds()
@@ -199,33 +194,33 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 		}
 	}()
 
-	reqSourceId, _, _, reqOK := ParseRequestId(message.RequestId)
+	reqSourceId, _, _, reqOK := ParseRequestId(msg.GetRequestId())
 	if reqOK {
 		//recv Response
 		if s.id == reqSourceId {
-			s.doneRequest(message.RequestId, message.Message())
+			s.doneRequest(msg.GetRequestId(), message)
 			return
 		}
 		// recv Request
-		if e := s.handler.OnHandleRequest(message.SourceId, message.TargetId, message.RequestId, message.Message()); e != nil {
-			expect.Nil(s.Response(message.RequestId, &actor_msg.RequestDeadLetter{Err: e.Error()}))
+		if e := s.handler.OnHandleRequest(msg.GetSourceId(), msg.GetTargetId(), msg.GetRequestId(), message); e != nil {
+			expect.Nil(s.Response(msg.GetRequestId(), &actor_msg.RequestDeadLetter{Err: e.Error()}))
 		}
 		return
 	}
 
 	//message
-	if event, ok := message.Message().(*actor_msg.EventMessage); ok {
+	if event, ok := msg.Message().(*actor_msg.EventMessage); ok {
 		s.handler.OnHandleEvent(event.ActEvent())
 		return
 	}
 
 	// fn
-	if fn, ok := message.Message().(func()); ok {
+	if fn, ok := message.(func()); ok {
 		fn()
 		return
 	}
 
-	s.handler.OnHandleMessage(message.SourceId, message.TargetId, message.Message())
+	s.handler.OnHandleMessage(msg.GetSourceId(), msg.GetTargetId(), message)
 }
 
 func (s *actor) resetTime() {
