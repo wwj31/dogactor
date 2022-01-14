@@ -21,6 +21,11 @@ func init() {
 
 type Message interface {
 	Free()
+	GetSourceId() string
+	GetTargetId() string
+	GetRequestId() string
+	GetMsgName() string
+	Message() interface{}
 	String() string
 }
 
@@ -42,19 +47,14 @@ type ActorMessage struct {
 	Data      []byte `protobuf:"bytes,5,opt,name=Data,proto3" json:"Data,omitempty"`
 }
 
-func (msg *ActorMessage) Fill() proto.Message {
-	tp, err := tools.FindMsgByName(msg.MsgName)
-	if err != nil {
-		log.SysLog.Errorf("msg name not find", "err", err, "MsgName", msg.MsgName, "msg", msg.String())
-		return nil
+func (s *ActorMessage) Message() interface{} {
+	if msg, ok := s.message.(*ActorMessage); ok {
+		if msg.Data != nil && msg.MsgName != "" {
+			defer msg.Free()
+			return msg.fill()
+		}
 	}
-
-	pt := tp.New().Interface().(proto.Message)
-	if err = proto.Unmarshal(msg.Data, pt); err != nil {
-		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", msg.MsgName)
-		return nil
-	}
-	return pt
+	return s.message
 }
 
 func (msg *ActorMessage) Free() {
@@ -74,11 +74,23 @@ func (msg *ActorMessage) UnlockFree() {
 	atomic.StoreInt32(&msg.free, 1)
 }
 
-func (s *ActorMessage) Message() interface{} {
-	return s.message
-}
 func (s *ActorMessage) SetMessage(v interface{}) {
 	s.message = v
+}
+
+func (msg *ActorMessage) fill() proto.Message {
+	tp, err := tools.FindMsgByName(msg.MsgName)
+	if err != nil {
+		log.SysLog.Errorf("msg name not find", "err", err, "MsgName", msg.MsgName, "msg", msg.String())
+		return nil
+	}
+
+	pt := tp.New().Interface().(proto.Message)
+	if err = proto.Unmarshal(msg.Data, pt); err != nil {
+		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", msg.MsgName)
+		return nil
+	}
+	return pt
 }
 
 func NewEventMessage(actEvent interface{}) *EventMessage {
