@@ -22,26 +22,30 @@ import (
 	"time"
 
 	"github.com/wwj31/dogactor/actor"
+	"github.com/wwj31/dogactor/tools"
 )
+
 type PingActor struct{ actor.Base }
 type PongActor struct{ actor.Base }
 
 func main() {
-	system, _ := actor.System()
+	system, _ := actor.NewSystem()
 	ping := actor.New("ping", &PingActor{})
 	pong := actor.New("pong", &PongActor{})
-	system.Regist(ping)
-	system.Regist(pong)
-	select {}
+	system.Add(ping)
+	system.Add(pong)
+
+	<-system.CStop
+	fmt.Println("stop")
 }
 
-// PingActor
-func (s *PingActor) Init() {
-	s.AddTimer(2*time.Second, -1, func(dt int64) {
+// OnInit PingActor
+func (s *PingActor) OnInit() {
+	s.AddTimer("5h4j3kg4a3v9", tools.NowTime()+int64(1*time.Second), func(dt int64) {
 		s.Send("pong", "this is data")
-	})
+	}, -1)
 }
-func (s *PingActor) HandleMessage(sourceId, targetId string, msg interface{}) {
+func (s *PingActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	switch msg {
 	case 99999:
 		fmt.Println(sourceId, targetId)
@@ -49,11 +53,12 @@ func (s *PingActor) HandleMessage(sourceId, targetId string, msg interface{}) {
 	}
 }
 
-//PongActor
-func (s *PongActor) HandleMessage(sourceId, targetId string, msg interface{}) {
+// OnHandleMessage PongActor
+func (s *PongActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	switch msg {
 	case "this is data":
 		fmt.Println(sourceId, targetId)
 		s.Send(sourceId, 99999)
 	}
 }
+

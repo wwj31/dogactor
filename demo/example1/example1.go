@@ -41,7 +41,7 @@ func (s *PingActor) OnHandleMessage(sourceId, targetId string, msg interface{}) 
 func (s *PongActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	switch msg {
 	case "this is data":
-		//fmt.Println(sourceId, targetId)
+		fmt.Println(sourceId, targetId)
 		s.Send(sourceId, 99999)
 	}
 }
