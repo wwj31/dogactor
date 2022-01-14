@@ -23,8 +23,8 @@ import (
 
 	"github.com/wwj31/dogactor/actor"
 )
-type PingActor struct{ actor.ActorHanlerBase }
-type PongActor struct{ actor.ActorHanlerBase }
+type PingActor struct{ actor.Base }
+type PongActor struct{ actor.Base }
 
 func main() {
 	system, _ := actor.System()
