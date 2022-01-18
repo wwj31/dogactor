@@ -108,7 +108,7 @@ func (s *actor) doneRequest(requestId string, resp interface{}) {
 		return
 	}
 
-	s.CancelTimer(req.timeoutId)
+	s.CancelTimer(req.timeoutId,true)
 	delete(s.requests, requestId)
 
 	switch r := resp.(type) {

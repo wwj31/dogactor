@@ -149,6 +149,7 @@ func (s *System) Add(actor *actor) error {
 	return nil
 }
 
+// Send msg send to target,if target not exist in local cache msg shall send to cluster
 func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) error {
 	var atr *actor
 	if localActor, ok := s.actorCache.Load(targetId); ok {

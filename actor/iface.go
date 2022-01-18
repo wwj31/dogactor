@@ -24,7 +24,7 @@ type (
 	Timer interface {
 		AddTimer(timeId string, endAt int64, callback func(dt int64), trigger_times ...int32) string
 		UpdateTimer(timeId string, endAt int64) error
-		CancelTimer(timerId string)
+		CancelTimer(timerId string,del ...bool)
 	}
 
 	Sender interface {

@@ -115,8 +115,8 @@ func (s *actor) UpdateTimer(timeId string, endAt int64) error {
 }
 
 // 删除一个定时器
-func (s *actor) CancelTimer(timerId string) {
-	s.timerMgr.CancelTimer(timerId)
+func (s *actor) CancelTimer(timerId string,del ...bool) {
+	s.timerMgr.CancelTimer(timerId,del...)
 	s.resetTime()
 }
 
