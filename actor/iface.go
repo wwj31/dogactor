@@ -10,7 +10,6 @@ type (
 		//core
 		ID() string
 		System() *System
-		LatestLive() int64
 		Exit()
 
 		Timer
