@@ -17,10 +17,11 @@ type (
 	actor  struct {
 		system *System
 
-		id      string
-		handler actorHandler
-		mailBox chan actor_msg.Message
-		remote  bool
+		id         string
+		handler    actorHandler
+		mailBox    chan actor_msg.Message
+		latestLive int64
+		remote     bool
 
 		// timer
 		timerMgr jtimer.TimerMgr
@@ -40,12 +41,13 @@ type (
 // id is invalid if contain '@' or '$'
 func New(id string, handler spawnActor, op ...Option) *actor {
 	a := &actor{
-		id:       id,
-		handler:  handler,
-		mailBox:  make(chan actor_msg.Message, 100),
-		remote:   true, // 默认都能被远端发现
-		timerMgr: jtimer.NewTimerMgr(),
-		requests: make(map[string]*request),
+		id:         id,
+		handler:    handler,
+		mailBox:    make(chan actor_msg.Message, 100),
+		latestLive: tools.NowTime(),
+		remote:     true, // 默认都能被远端发现
+		timerMgr:   jtimer.NewTimerMgr(),
+		requests:   make(map[string]*request),
 	}
 
 	handler.initActor(a)
@@ -115,8 +117,8 @@ func (s *actor) UpdateTimer(timeId string, endAt int64) error {
 }
 
 // 删除一个定时器
-func (s *actor) CancelTimer(timerId string,del ...bool) {
-	s.timerMgr.CancelTimer(timerId,del...)
+func (s *actor) CancelTimer(timerId string, del ...bool) {
+	s.timerMgr.CancelTimer(timerId, del...)
 	s.resetTime()
 }
 
@@ -167,6 +169,7 @@ func (s *actor) run(ok chan<- struct{}) {
 				return
 			}
 
+			s.latestLive = tools.NowTime()
 			tools.Try(func() {
 				s.handleMsg(msg)
 
@@ -249,6 +252,10 @@ func (s *actor) RegistCmd(cmd string, fn func(...string), usage ...string) {
 	if s.system.cmd != nil {
 		s.system.cmd.RegistCmd(s.id, cmd, fn, usage...)
 	}
+}
+
+func (s *actor) LatestLive() int64 {
+	return s.latestLive
 }
 
 // Extra Option
