@@ -153,9 +153,9 @@ func (s *actor) run(ok chan<- struct{}) {
 		ok <- struct{}{}
 	}
 
-	s.system.DispatchEvent(s.id, &EvNewactor{ActorId: s.id, Publish: s.remote})
+	s.system.DispatchEvent(s.id, EvNewactor{ActorId: s.id, Publish: s.remote})
 	defer func() {
-		s.system.DispatchEvent(s.id, &EvDelactor{ActorId: s.id, Publish: s.remote})
+		s.system.DispatchEvent(s.id, EvDelactor{ActorId: s.id, Publish: s.remote})
 	}()
 
 	for {
