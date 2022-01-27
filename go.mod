@@ -6,6 +6,7 @@ require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.3.0
+	github.com/klauspost/pgzip v1.2.5
 	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc
 	github.com/satori/go.uuid v1.2.0
 	github.com/shirou/gopsutil v3.21.10+incompatible
@@ -25,6 +26,7 @@ require (
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
 	github.com/go-ole/go-ole v1.2.5 // indirect
+	github.com/klauspost/compress v1.14.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.9 // indirect
 	github.com/tklauser/numcpus v0.3.0 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.1 // indirect

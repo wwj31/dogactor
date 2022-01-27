@@ -10,7 +10,7 @@ import (
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 )
 
-type listener map[string]map[string]bool // map[evType][actorId]bool
+type listener map[string]map[string]struct{} // map[evType][actorId]bool
 
 type evDispatcher struct {
 	sync.RWMutex
@@ -26,7 +26,7 @@ func newEvent(s *System) evDispatcher {
 func (ed *evDispatcher) RegistEvent(actorId string, events ...interface{}) error {
 	for _, event := range events {
 		rtype := reflect.TypeOf(event)
-		if rtype.Kind() != reflect.Ptr {
+		if rtype.Kind() == reflect.Ptr {
 			return fmt.Errorf("%w actorId:%v,event:%v", actorerr.RegisterEventErr, actorId, event)
 		}
 	}
@@ -35,12 +35,11 @@ func (ed *evDispatcher) RegistEvent(actorId string, events ...interface{}) error
 	defer ed.Unlock()
 
 	for _, event := range events {
-		rtype := reflect.TypeOf(event)
-		etype := rtype.Elem().Name()
-		if ed.listeners[etype] == nil {
-			ed.listeners[etype] = make(map[string]bool)
+		rtype := reflect.TypeOf(event).String()
+		if ed.listeners[rtype] == nil {
+			ed.listeners[rtype] = make(map[string]struct{})
 		}
-		ed.listeners[etype][actorId] = true
+		ed.listeners[rtype][actorId] = struct{}{}
 	}
 	return nil
 }
@@ -49,7 +48,7 @@ func (ed *evDispatcher) RegistEvent(actorId string, events ...interface{}) error
 func (ed *evDispatcher) CancelEvent(actorId string, events ...interface{}) error {
 	for _, event := range events {
 		rtype := reflect.TypeOf(event)
-		if rtype.Kind() != reflect.Ptr {
+		if rtype.Kind() == reflect.Ptr {
 			return fmt.Errorf(" %w,actorId:%v,event:%v", actorerr.CancelEventErr, actorId, event)
 		}
 	}
@@ -57,9 +56,8 @@ func (ed *evDispatcher) CancelEvent(actorId string, events ...interface{}) error
 	defer ed.Unlock()
 
 	for _, event := range events {
-		rtype := reflect.TypeOf(event)
-		etype := rtype.Elem().Name()
-		delete(ed.listeners[etype], actorId)
+		rtype := reflect.TypeOf(event).String()
+		delete(ed.listeners[rtype], actorId)
 	}
 	return nil
 }
@@ -77,8 +75,8 @@ func (ed *evDispatcher) CancelAll(actorId string) {
 // DispatchEvent 事件触发
 func (ed *evDispatcher) DispatchEvent(sourceId string, event interface{}) {
 	rtype := reflect.TypeOf(event)
-	if rtype.Kind() != reflect.Ptr {
-		log.SysLog.Errorw("dispatch event type of event is not ptr",
+	if rtype.Kind() == reflect.Ptr {
+		log.SysLog.Errorw("dispatch event type of event is ptr",
 			"err", actorerr.DispatchEventErr,
 			"actorId", sourceId,
 			"event", event,
@@ -86,7 +84,7 @@ func (ed *evDispatcher) DispatchEvent(sourceId string, event interface{}) {
 		return
 	}
 
-	etype := rtype.Elem().Name()
+	etype := rtype.String()
 	wrap := actor_msg.NewEventMessage(event)
 
 	ed.RLock()
