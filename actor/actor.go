@@ -209,7 +209,7 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 	}
 
 	//message
-	if event, ok := msg.Message().(*actor_msg.EventMessage); ok {
+	if event, ok := message.(*actor_msg.EventMessage); ok {
 		s.handler.OnHandleEvent(event.ActEvent())
 		return
 	}
