@@ -5,7 +5,7 @@ import (
 	"github.com/wwj31/dogactor/log"
 )
 
-// create actor by Anonymous Base,example:
+// create actor by Base anonymously,example:
 // type MyActor struct{
 // 	 Base
 // }
