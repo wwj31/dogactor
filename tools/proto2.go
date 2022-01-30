@@ -44,7 +44,7 @@ func (s *ProtoIndex) UnmarshalPbMsg(msgId int32, data []byte) proto.Message {
 	}
 
 	v,ok := s.structByName(ptName)
-	if ok{
+	if !ok{
 		log.SysLog.Errorw("not found ptName", "msgId", msgId, "ptName", ptName)
 		return nil
 	}
@@ -78,12 +78,16 @@ func (s *ProtoIndex) MsgNameToId(msgName string) (msgId int32, ok bool) {
 func convertMsgName(msgName string) (name string) {
 	words := strings.Split(msgName, "_")
 	for _, word := range words {
-		name += strings.ToLower(word)
-		if len(name) > 0{
-			runes := []rune(name)
-			runes[0] -= 32
-			name = string(runes)
+		word = strings.ToLower(word)
+		if len(words) > 0{
+			runes := []rune(word)
+			if 97 <= runes[0] && runes[0] <= 122{
+				runes[0] -= 32
+				name = string(runes)
+			}
+			word = string(runes)
 		}
+		name += word
 	}
 	return
 }
