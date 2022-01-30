@@ -79,6 +79,11 @@ func convertMsgName(msgName string) (name string) {
 	words := strings.Split(msgName, "_")
 	for _, word := range words {
 		name += strings.ToLower(word)
+		if len(name) > 0{
+			runes := []rune(name)
+			runes[0] -= 32
+			name = string(runes)
+		}
 	}
 	return
 }
