@@ -1,11 +1,10 @@
 package tools
 
 import (
-	"reflect"
-	"strings"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/wwj31/dogactor/log"
+	"reflect"
+	"strings"
 )
 
 type GetProtoByName func(name string) (interface{},bool)
@@ -78,16 +77,15 @@ func (s *ProtoIndex) MsgNameToId(msgName string) (msgId int32, ok bool) {
 func convertMsgName(msgName string) (name string) {
 	words := strings.Split(msgName, "_")
 	for _, word := range words {
-		word = strings.ToLower(word)
+		lower := strings.ToLower(word)
 		if len(words) > 0{
-			runes := []rune(word)
+			runes := []rune(lower)
 			if 97 <= runes[0] && runes[0] <= 122{
 				runes[0] -= 32
-				name = string(runes)
 			}
-			word = string(runes)
+			lower = string(runes)
 		}
-		name += word
+		name += lower
 	}
 	return
 }
