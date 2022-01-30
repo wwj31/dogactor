@@ -193,6 +193,10 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 	return nil
 }
 
+func (s *System) ProtoIndex() *tools.ProtoIndex{
+	return s.protoIndex
+}
+
 // ProtoIndex index proto struct
 func ProtoIndex(pi *tools.ProtoIndex) SystemOption{
 	return func(system *System) error {
