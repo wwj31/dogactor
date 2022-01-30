@@ -48,12 +48,6 @@ type ActorMessage struct {
 }
 
 func (s *ActorMessage) Message() interface{} {
-	if msg, ok := s.message.(*ActorMessage); ok {
-		if msg.Data != nil && msg.MsgName != "" {
-			defer msg.Free()
-			return msg.fill()
-		}
-	}
 	return s.message
 }
 
@@ -78,15 +72,18 @@ func (s *ActorMessage) SetMessage(v interface{}) {
 	s.message = v
 }
 
-func (msg *ActorMessage) fill() proto.Message {
-	tp, err := tools.FindMsgByName(msg.MsgName)
-	if err != nil {
-		log.SysLog.Errorf("msg name not find", "err", err, "MsgName", msg.MsgName, "msg", msg.String())
+func (msg *ActorMessage) Fill(pi *tools.ProtoIndex) interface{} {
+	if pi == nil {
+		log.SysLog.Errorf("protoIndex is nil")
+		return nil
+	}
+	pt ,ok := pi.FindMsgByName(msg.MsgName)
+	if !ok{
+		log.SysLog.Errorf("msg not found",  "MsgName", msg.MsgName)
 		return nil
 	}
 
-	pt := tp.New().Interface().(proto.Message)
-	if err = proto.Unmarshal(msg.Data, pt); err != nil {
+	if err := proto.Unmarshal(msg.Data, pt.(proto.Message)); err != nil {
 		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", msg.MsgName)
 		return nil
 	}

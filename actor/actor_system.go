@@ -31,6 +31,8 @@ type System struct {
 
 	cluster *actor
 
+	protoIndex *tools.ProtoIndex
+
 	// extra
 	cmd Cmder
 	evDispatcher
@@ -48,6 +50,9 @@ func NewSystem(op ...SystemOption) (*System, error) {
 		if e := f(s); e != nil {
 			return nil, fmt.Errorf("%w %v", actorerr.ActorSystemOptionErr, e.Error())
 		}
+	}
+	if &s.protoIndex == nil {
+		log.SysLog.Warnw("without protobuf index,can't find ptoro struct")
 	}
 
 	// SystemOption maybe regist actor
@@ -166,7 +171,7 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 			actorMsg.SourceId = sourceId
 			actorMsg.TargetId = targetId
 			actorMsg.RequestId = requestId
-			actorMsg.MsgName = tools.MsgName(pt)
+			actorMsg.MsgName = s.protoIndex.MsgName(pt)
 			actorMsg.Data = bytes
 			msg, _ = actorMsg.Marshal()
 		}
@@ -186,6 +191,14 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 		return errFormat(err, sourceId, targetId, requestId)
 	}
 	return nil
+}
+
+// ProtoIndex index proto struct
+func ProtoIndex(pi *tools.ProtoIndex) SystemOption{
+	return func(system *System) error {
+		system.protoIndex = pi
+		return nil
+	}
 }
 
 func Addr(addr string) SystemOption {

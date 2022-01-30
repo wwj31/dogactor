@@ -1,0 +1,327 @@
+2022-01-29T00:01:06.510+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5000"}
+2022-01-29T00:01:06.510+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-29T00:01:06.511+0800	INFO	actor/actor_system.go:72	System Start
+2022-01-29T00:01:06.511+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5001"}
+2022-01-29T00:01:06.511+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-29T00:01:06.511+0800	INFO	actor/actor_system.go:72	System Start
+2022-01-29T00:01:06.631+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228296964}
+2022-01-29T00:01:06.631+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:01:06.631+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 355, "put": true}
+2022-01-29T00:01:06.631+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-29T00:01:06.631+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 356, "put": true}
+2022-01-29T00:01:06.631+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:01:06.631+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 357, "put": true}
+2022-01-29T00:01:06.631+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:01:06.631+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-29T00:01:06.739+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228296966}
+2022-01-29T00:01:06.739+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": true}
+2022-01-29T00:01:06.739+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:01:38.525+0800	ERROR	etcd/etcd.go:141	etcd keepAlive create lease failed	{"actorerr": "context deadline exceeded"}
+github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd.(*Etcd).keepAlive
+	/Users/mac/Desktop/dogactor/dogactor/actor/cluster/servmesh_provider/etcd/etcd.go:141
+github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd.(*Etcd).run
+	/Users/mac/Desktop/dogactor/dogactor/actor/cluster/servmesh_provider/etcd/etcd.go:199
+github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd.(*Etcd).Start.func1
+	/Users/mac/Desktop/dogactor/dogactor/actor/cluster/servmesh_provider/etcd/etcd.go:69
+github.com/wwj31/dogactor/tools.Try
+	/Users/mac/Desktop/dogactor/dogactor/tools/go.go:19
+2022-01-29T00:01:38.527+0800	ERROR	etcd/etcd.go:141	etcd keepAlive create lease failed	{"actorerr": "context deadline exceeded"}
+github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd.(*Etcd).keepAlive
+	/Users/mac/Desktop/dogactor/dogactor/actor/cluster/servmesh_provider/etcd/etcd.go:141
+github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd.(*Etcd).run
+	/Users/mac/Desktop/dogactor/dogactor/actor/cluster/servmesh_provider/etcd/etcd.go:199
+github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd.(*Etcd).Start.func1
+	/Users/mac/Desktop/dogactor/dogactor/actor/cluster/servmesh_provider/etcd/etcd.go:69
+github.com/wwj31/dogactor/tools.Try
+	/Users/mac/Desktop/dogactor/dogactor/tools/go.go:19
+2022-01-29T00:01:38.528+0800	ERROR	tools/go.go:13	panic recover:reflect.Value.Interface: cannot return value obtained from unexported field or method
+goroutine 37 [running]:
+runtime/debug.Stack()
+	/usr/local/go/src/runtime/debug/stack.go:24 +0x7c
+github.com/wwj31/dogactor/tools.Try.func1({0x0, 0x0, 0x0})
+	/Users/mac/Desktop/dogactor/dogactor/tools/go.go:12 +0x50
+panic({0x100ca5aa0, 0x100da0260})
+	/usr/local/go/src/runtime/panic.go:1052 +0x2b0
+reflect.valueInterface({0x100ce1040, 0x1012614e0, 0x36}, 0x1)
+	/usr/local/go/src/reflect/value.go:1362 +0x1f0
+reflect.Value.Interface({0x100ce1040, 0x1012614e0, 0x36})
+	/usr/local/go/src/reflect/value.go:1351 +0x44
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct(0x1011e845c, 0x140001a83e0, {0x100cdab00, 0x1012614e0, 0x1b9})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:470 +0x1070
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeAny(0x1011e845c, 0x140001a83e0, {0x100cdab00, 0x1012614e0, 0x1b9}, 0x14000528700)
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:606 +0x1168
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct(0x1011e845c, 0x140001a83e0, {0x100d56d20, 0x1012614e0, 0x1b9})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:453 +0xeb0
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeAny(0x1011e845c, 0x140001a83e0, {0x100d56d20, 0x1012614e0, 0x1b9}, 0x14000566400)
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:606 +0x1168
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct(0x1011e845c, 0x140001a83e0, {0x100d60ca0, 0x14000626000, 0x199})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:453 +0xeb0
+github.com/gogo/protobuf/proto.(*TextMarshaler).Marshal(0x1011e845c, {0x100da4260, 0x14000617020}, {0x100daf5b0, 0x14000626000})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:896 +0x4e0
+github.com/gogo/protobuf/proto.(*TextMarshaler).Text(0x1011e845c, {0x100daf5b0, 0x14000626000})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:908 +0xa8
+github.com/gogo/protobuf/proto.CompactTextString({0x100daf5b0, 0x14000626000})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:930 +0x40
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).String(0x14000626000)
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.pb.go:30 +0x3c
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).fill(0x14000626000)
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.go:84 +0xb0
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).Message(0x14000626080)
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.go:54 +0x10c
+github.com/wwj31/dogactor/actor.(*actor).handleMsg(0x1400022f9a0, {0x100dbc670, 0x14000626080})
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:182 +0x3c
+github.com/wwj31/dogactor/actor.(*actor).run.func2()
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:171 +0x48
+github.com/wwj31/dogactor/tools.Try(0x14000185ec0, {0x0, 0x0, 0x0})
+	/Users/mac/Desktop/dogactor/dogactor/tools/go.go:19 +0x6c
+github.com/wwj31/dogactor/actor.(*actor).run(0x1400022f9a0, 0x0)
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:170 +0x380
+github.com/wwj31/dogactor/actor.(*System).runActor.func1(0x1400022f9a0, 0x0, 0x1400022f540)
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor_system.go:83 +0x30
+created by github.com/wwj31/dogactor/actor.(*System).runActor
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor_system.go:82 +0xbc
+
+github.com/wwj31/dogactor/tools.Try.func1
+	/Users/mac/Desktop/dogactor/dogactor/tools/go.go:13
+runtime.gopanic
+	/usr/local/go/src/runtime/panic.go:1052
+reflect.valueInterface
+	/usr/local/go/src/reflect/value.go:1362
+reflect.Value.Interface
+	/usr/local/go/src/reflect/value.go:1351
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:470
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeAny
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:606
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:453
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeAny
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:606
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:453
+github.com/gogo/protobuf/proto.(*TextMarshaler).Marshal
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:896
+github.com/gogo/protobuf/proto.(*TextMarshaler).Text
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:908
+github.com/gogo/protobuf/proto.CompactTextString
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:930
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).String
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.pb.go:30
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).fill
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.go:84
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).Message
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.go:54
+github.com/wwj31/dogactor/actor.(*actor).handleMsg
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:182
+github.com/wwj31/dogactor/actor.(*actor).run.func2
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:171
+github.com/wwj31/dogactor/tools.Try
+	/Users/mac/Desktop/dogactor/dogactor/tools/go.go:19
+github.com/wwj31/dogactor/actor.(*actor).run
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:170
+github.com/wwj31/dogactor/actor.(*System).runActor.func1
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor_system.go:83
+2022-01-29T00:01:39.664+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228296981}
+2022-01-29T00:01:39.664+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 361, "put": true}
+2022-01-29T00:01:39.664+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": true}
+2022-01-29T00:01:39.664+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:01:39.664+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:01:39.665+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228296980}
+2022-01-29T00:01:39.665+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:01:39.665+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-29T00:01:55.650+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5000"}
+2022-01-29T00:01:55.651+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-29T00:01:55.651+0800	INFO	actor/actor_system.go:72	System Start
+2022-01-29T00:01:55.651+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5001"}
+2022-01-29T00:01:55.651+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-29T00:01:55.651+0800	INFO	actor/actor_system.go:72	System Start
+2022-01-29T00:01:55.694+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228296989}
+2022-01-29T00:01:55.694+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228296990}
+2022-01-29T00:01:55.755+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": true}
+2022-01-29T00:01:55.755+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:01:55.755+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 364, "put": true}
+2022-01-29T00:01:55.755+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 364, "put": true}
+2022-01-29T00:01:55.755+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": true}
+2022-01-29T00:01:55.771+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 365, "put": true}
+2022-01-29T00:01:55.771+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:01:55.771+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 365, "put": true}
+2022-01-29T00:01:55.771+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-29T00:01:55.771+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:01:55.771+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:01:55.771+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-29T00:01:57.654+0800	ERROR	tools/go.go:13	panic recover:reflect.Value.Interface: cannot return value obtained from unexported field or method
+goroutine 66 [running]:
+runtime/debug.Stack()
+	/usr/local/go/src/runtime/debug/stack.go:24 +0x7c
+github.com/wwj31/dogactor/tools.Try.func1({0x0, 0x0, 0x0})
+	/Users/mac/Desktop/dogactor/dogactor/tools/go.go:12 +0x50
+panic({0x100bf9aa0, 0x100cf4260})
+	/usr/local/go/src/runtime/panic.go:1052 +0x2b0
+reflect.valueInterface({0x100c35040, 0x1011b54e0, 0x36}, 0x1)
+	/usr/local/go/src/reflect/value.go:1362 +0x1f0
+reflect.Value.Interface({0x100c35040, 0x1011b54e0, 0x36})
+	/usr/local/go/src/reflect/value.go:1351 +0x44
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct(0x10113c45c, 0x14000194100, {0x100c2eb00, 0x1011b54e0, 0x1b9})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:470 +0x1070
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeAny(0x10113c45c, 0x14000194100, {0x100c2eb00, 0x1011b54e0, 0x1b9}, 0x1400023a900)
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:606 +0x1168
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct(0x10113c45c, 0x14000194100, {0x100caad20, 0x1011b54e0, 0x1b9})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:453 +0xeb0
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeAny(0x10113c45c, 0x14000194100, {0x100caad20, 0x1011b54e0, 0x1b9}, 0x1400023a000)
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:606 +0x1168
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct(0x10113c45c, 0x14000194100, {0x100cb4ca0, 0x1400015b680, 0x199})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:453 +0xeb0
+github.com/gogo/protobuf/proto.(*TextMarshaler).Marshal(0x10113c45c, {0x100cf8260, 0x140000c8270}, {0x100d035b0, 0x1400015b680})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:896 +0x4e0
+github.com/gogo/protobuf/proto.(*TextMarshaler).Text(0x10113c45c, {0x100d035b0, 0x1400015b680})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:908 +0xa8
+github.com/gogo/protobuf/proto.CompactTextString({0x100d035b0, 0x1400015b680})
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:930 +0x40
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).String(0x1400015b680)
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.pb.go:30 +0x3c
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).fill(0x1400015b680)
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.go:84 +0xb0
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).Message(0x1400015b700)
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.go:54 +0x10c
+github.com/wwj31/dogactor/actor.(*actor).handleMsg(0x1400022d9a0, {0x100d10670, 0x1400015b700})
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:182 +0x3c
+github.com/wwj31/dogactor/actor.(*actor).run.func2()
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:171 +0x48
+github.com/wwj31/dogactor/tools.Try(0x14000188ec0, {0x0, 0x0, 0x0})
+	/Users/mac/Desktop/dogactor/dogactor/tools/go.go:19 +0x6c
+github.com/wwj31/dogactor/actor.(*actor).run(0x1400022d9a0, 0x0)
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:170 +0x380
+github.com/wwj31/dogactor/actor.(*System).runActor.func1(0x1400022d9a0, 0x0, 0x1400022d540)
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor_system.go:83 +0x30
+created by github.com/wwj31/dogactor/actor.(*System).runActor
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor_system.go:82 +0xbc
+
+github.com/wwj31/dogactor/tools.Try.func1
+	/Users/mac/Desktop/dogactor/dogactor/tools/go.go:13
+runtime.gopanic
+	/usr/local/go/src/runtime/panic.go:1052
+reflect.valueInterface
+	/usr/local/go/src/reflect/value.go:1362
+reflect.Value.Interface
+	/usr/local/go/src/reflect/value.go:1351
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:470
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeAny
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:606
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:453
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeAny
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:606
+github.com/gogo/protobuf/proto.(*TextMarshaler).writeStruct
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:453
+github.com/gogo/protobuf/proto.(*TextMarshaler).Marshal
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:896
+github.com/gogo/protobuf/proto.(*TextMarshaler).Text
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:908
+github.com/gogo/protobuf/proto.CompactTextString
+	/Users/mac/go/pkg/mod/github.com/gogo/protobuf@v1.3.2/proto/text.go:930
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).String
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.pb.go:30
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).fill
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.go:84
+github.com/wwj31/dogactor/actor/internal/actor_msg.(*ActorMessage).Message
+	/Users/mac/Desktop/dogactor/dogactor/actor/internal/actor_msg/actor_msg.go:54
+github.com/wwj31/dogactor/actor.(*actor).handleMsg
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:182
+github.com/wwj31/dogactor/actor.(*actor).run.func2
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:171
+github.com/wwj31/dogactor/tools.Try
+	/Users/mac/Desktop/dogactor/dogactor/tools/go.go:19
+github.com/wwj31/dogactor/actor.(*actor).run
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor.go:170
+github.com/wwj31/dogactor/actor.(*System).runActor.func1
+	/Users/mac/Desktop/dogactor/dogactor/actor/actor_system.go:83
+2022-01-29T00:02:24.905+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5000"}
+2022-01-29T00:02:24.905+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-29T00:02:24.905+0800	INFO	actor/actor_system.go:72	System Start
+2022-01-29T00:02:24.906+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5001"}
+2022-01-29T00:02:24.906+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-29T00:02:24.906+0800	INFO	actor/actor_system.go:72	System Start
+2022-01-29T00:02:24.955+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228297001}
+2022-01-29T00:02:24.955+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 367, "put": true}
+2022-01-29T00:02:24.971+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228297004}
+2022-01-29T00:02:25.029+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 368, "put": true}
+2022-01-29T00:02:25.029+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 368, "put": true}
+2022-01-29T00:02:25.029+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:02:25.029+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-29T00:02:25.029+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-29T00:02:25.044+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": true}
+2022-01-29T00:02:25.044+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:02:25.044+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:02:25.044+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:02:25.044+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 369, "put": true}
+2022-01-29T00:02:25.044+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:02:25.044+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 369, "put": true}
+2022-01-29T00:02:25.044+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": true}
+2022-01-29T00:04:21.269+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5000"}
+2022-01-29T00:04:21.269+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-29T00:04:21.270+0800	INFO	actor/actor_system.go:72	System Start
+2022-01-29T00:04:21.270+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5001"}
+2022-01-29T00:04:21.270+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-29T00:04:21.270+0800	INFO	actor/actor_system.go:72	System Start
+2022-01-29T00:04:21.357+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228297016}
+2022-01-29T00:04:21.357+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228297015}
+2022-01-29T00:04:21.357+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 373, "put": true}
+2022-01-29T00:04:21.374+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 374, "put": true}
+2022-01-29T00:04:21.374+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:04:21.374+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-29T00:04:21.374+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-29T00:04:21.391+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 375, "put": true}
+2022-01-29T00:04:21.392+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:04:21.392+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:04:21.392+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:04:21.392+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:04:21.392+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": true}
+2022-01-29T00:04:54.400+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 376, "put": false}
+2022-01-29T00:04:54.400+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 377, "put": false}
+2022-01-29T00:04:54.400+0800	INFO	network/tcpsession.go:119	tcp read buff failed	{"sessionId": 1604210001, "err": "read tcp 127.0.0.1:5000->127.0.0.1:64469: i/o timeout"}
+2022-01-29T00:04:54.400+0800	INFO	network/tcpclient.go:73	tcp client stop	{"addr": "127.0.0.1:5000"}
+2022-01-29T00:05:03.931+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5000"}
+2022-01-29T00:05:03.931+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-29T00:05:03.932+0800	INFO	actor/actor_system.go:72	System Start
+2022-01-29T00:05:03.932+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5001"}
+2022-01-29T00:05:03.932+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-29T00:05:03.932+0800	INFO	actor/actor_system.go:72	System Start
+2022-01-29T00:05:04.077+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228297036}
+2022-01-29T00:05:04.077+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:05:04.077+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 382, "put": true}
+2022-01-29T00:05:04.077+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-29T00:05:04.077+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 383, "put": true}
+2022-01-29T00:05:04.077+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-29T00:05:04.077+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:05:04.094+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228297037}
+2022-01-29T00:05:04.141+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 384, "put": true}
+2022-01-29T00:05:04.141+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-29T00:05:04.141+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-29T00:05:04.142+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": true}
+2022-01-30T16:09:04.406+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5000"}
+2022-01-30T16:09:04.406+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-30T16:09:04.406+0800	INFO	actor/actor_system.go:74	System Start
+2022-01-30T16:09:04.406+0800	INFO	network/tcplisten.go:38	tcp listen success	{"addr": "127.0.0.1:5001"}
+2022-01-30T16:09:04.406+0800	INFO	etcd/etcd.go:52	etcd start	{"endpoints": "127.0.0.1:2379", "prefix": "demo/"}
+2022-01-30T16:09:04.407+0800	INFO	actor/actor_system.go:74	System Start
+2022-01-30T16:09:04.451+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228297055}
+2022-01-30T16:09:04.452+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 388, "put": true}
+2022-01-30T16:09:04.469+0800	INFO	etcd/etcd.go:164	etcd keepAlive success!	{"lease": 7587860143228297056}
+2022-01-30T16:09:04.587+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 389, "put": true}
+2022-01-30T16:09:04.587+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-30T16:09:04.587+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-30T16:09:04.587+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-30T16:09:04.587+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": true}
+2022-01-30T16:09:04.587+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": true}
+2022-01-30T16:09:04.587+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-30T16:09:04.587+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 390, "put": true}
+2022-01-30T16:09:04.587+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": false}
+2022-01-30T16:09:04.588+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 389, "put": true}
+2022-01-30T16:09:04.588+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 390, "put": true}
+2022-01-30T16:09:04.588+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5000", "actorId": "LiLei", "ready": false}
+2022-01-30T16:09:04.588+0800	INFO	cluster/cluster.go:170	remote actor regist	{"host": "127.0.0.1:5001", "actorId": "HanMeimei", "ready": true}
+2022-01-30T16:09:06.409+0800	INFO	actor/actor_system.go:87	actor done	{"actorId": "wait_f8bdec28-95fc-4b00-a4e8-e1ced50b9c50"}
+2022-01-30T16:10:05.352+0800	INFO	network/tcpsession.go:119	tcp read buff failed	{"sessionId": 809040002, "err": "read tcp 127.0.0.1:5000->127.0.0.1:59186: i/o timeout"}
+2022-01-30T16:10:05.352+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "HanMeimei", "revision": 391, "put": false}
+2022-01-30T16:10:05.865+0800	INFO	etcd/etcd.go:241	watch etcd	{"actorId": "LiLei", "revision": 392, "put": false}

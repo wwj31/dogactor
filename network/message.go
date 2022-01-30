@@ -34,7 +34,7 @@ func (s *Message) Buffer() []byte {
 func (s *Message) MsgId() int32         { return s.msgId }
 func (s *Message) Proto() proto.Message { return s.pb }
 
-func (s *Message) parse(data []byte, mm *tools.ProtoParser) *Message {
+func (s *Message) parse(data []byte, mm *tools.ProtoIndex) *Message {
 	dlen := len(data)
 	if dlen < 4 {
 		log.SysLog.Errorw("actorerr msg length", "data", data)
@@ -63,7 +63,7 @@ func CombineMsgWithId(msgId int32, data []byte) []byte {
 }
 
 // 远端actor通信主要使用接口
-func NewBytesMessageParse(data []byte, mm *tools.ProtoParser) *Message {
+func NewBytesMessageParse(data []byte, mm *tools.ProtoIndex) *Message {
 	msg := &Message{}
 	return msg.parse(data, mm)
 }

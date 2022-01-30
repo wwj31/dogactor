@@ -38,11 +38,20 @@ func main() {
 		DisplayConsole: true,
 		Skip:           1,
 	})
-	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:5000"), cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.WithCMD(cmd.New()))
+	pi := tools.NewProtoIndex(func(name string) (interface{}, bool) {
+		return interval.Spawner(name)
+	},tools.EnumIdx{})
+
+	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:5000"),
+		cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX),
+		actor.WithCMD(cmd.New()),
+		actor.ProtoIndex(pi))
 	lilei := actor.New("LiLei", &Student{Name: "LiLei", Age: 19})
 	system1.Add(lilei)
 
-	system2, _ := actor.NewSystem(actor.Addr("127.0.0.1:5001"), cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX))
+	system2, _ := actor.NewSystem(actor.Addr("127.0.0.1:5001"),
+		cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX),
+		actor.ProtoIndex(pi))
 	hanmeimei := actor.New("HanMeimei", &Student{Name: "HanMeimei", Age: 15})
 	system2.Add(hanmeimei)
 

@@ -180,6 +180,13 @@ func (s *actor) run(ok chan<- struct{}) {
 
 func (s *actor) handleMsg(msg actor_msg.Message) {
 	var message = msg.Message()
+	// message is ActorMessage when msg from remote OnRecv
+	if actMsg,ok := message.(*actor_msg.ActorMessage);ok{
+		if actMsg.Data != nil && actMsg.MsgName != "" {
+			defer msg.Free()
+			message = actMsg.Fill(s.system.protoIndex)
+		}
+	}
 	if message == nil {
 		return
 	}
