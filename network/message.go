@@ -3,7 +3,7 @@ package network
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"

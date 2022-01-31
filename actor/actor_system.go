@@ -2,7 +2,7 @@ package actor
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"github.com/wwj31/dogactor/log"
 	"runtime"
 	"sync"

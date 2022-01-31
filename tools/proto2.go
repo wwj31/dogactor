@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"github.com/golang/protobuf/proto"
+	"github.com/gogo/protobuf/proto"
 	"github.com/wwj31/dogactor/log"
 	"reflect"
 	"strings"
