@@ -193,6 +193,11 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 	return nil
 }
 
+func(s *System) Exist(actorId string) bool{
+	_,exist := s.actorCache.Load(actorId)
+	return exist
+}
+
 func (s *System) ProtoIndex() *tools.ProtoIndex{
 	return s.protoIndex
 }
