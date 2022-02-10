@@ -1,7 +1,6 @@
 package l
 
 import (
-	"bufio"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -23,8 +22,8 @@ type Option struct {
 
 func New(opt Option) *Logger {
 	var (
-		output *bufio.Writer
-		lj     *lumberjack.Logger
+		//output *bufio.Writer
+		lj *lumberjack.Logger
 	)
 	//lumberjack
 	lj = &lumberjack.Logger{
@@ -38,12 +37,13 @@ func New(opt Option) *Logger {
 	if opt.DisplayConsole {
 		writers = append(writers, os.Stdout)
 	}
-	output = bufio.NewWriter(io.MultiWriter(writers...))
+	//output = bufio.NewWriter(io.MultiWriter(writers...))
 
 	// zap
 	encoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
 	//encoder := zapcore.NewJSONEncoder(zap.NewDevelopmentEncoderConfig())
-	core := zapcore.NewCore(encoder, &sync{Writer: output}, opt.Level)
+	//core := zapcore.NewCore(encoder, &sync{Writer: output}, opt.Level)
+	core := zapcore.NewCore(encoder, zapcore.AddSync(io.MultiWriter(writers...)), opt.Level)
 	sugar := zap.New(core,
 		zap.AddStacktrace(zap.ErrorLevel),
 		zap.AddCallerSkip(opt.Skip),
@@ -58,14 +58,6 @@ func New(opt Option) *Logger {
 
 	loggers = append(loggers, logger)
 	return logger
-}
-
-type sync struct {
-	*bufio.Writer
-}
-
-func (s *sync) Sync() error {
-	return s.Writer.Flush()
 }
 
 type Logger struct {

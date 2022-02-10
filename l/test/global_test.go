@@ -23,6 +23,7 @@ func GOGO() {
 	})
 
 	for {
+		//time.Sleep(1 * time.Second)
 		ln.Errorw("this is error",
 			"k", "v",
 			"val", 123,
