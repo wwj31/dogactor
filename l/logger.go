@@ -6,7 +6,6 @@ import (
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"io"
-	"log"
 	"os"
 	"path"
 )
@@ -39,8 +38,7 @@ func New(opt Option) *Logger {
 	if opt.DisplayConsole {
 		writers = append(writers, os.Stdout)
 	}
-	log.SetOutput(io.MultiWriter(writers...))
-	output = bufio.NewWriter(log.Writer())
+	output = bufio.NewWriter(io.MultiWriter(writers...))
 
 	// zap
 	encoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())

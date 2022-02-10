@@ -17,16 +17,15 @@ func GOGO() {
 		LogPath:        "./testLog",
 		FileName:       "test.log",
 		FileMaxAge:     1,
-		FileMaxSize:    1,
-		FileMaxBackups: 3,
+		FileMaxSize:    10,
+		FileMaxBackups: 30,
 		DisplayConsole: true,
 	})
 
-	ln.DefaultMsg("default msg").Errorw("this is error",
-		"k", "v",
-		"val", 123,
-		"uuid", tools.UUID())
-
-	ln.Color(l.Gray).Errorf("this is error %v %v",
-		"uuid", tools.UUID())
+	for {
+		ln.Errorw("this is error",
+			"k", "v",
+			"val", 123,
+			"uuid", tools.UUID())
+	}
 }

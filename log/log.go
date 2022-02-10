@@ -9,8 +9,8 @@ var SysLog = l.New(l.Option{
 	LogPath:        "./syslog",
 	FileName:       "sys.log",
 	FileMaxAge:     15,
-	FileMaxSize:    512,
-	FileMaxBackups: 10,
+	FileMaxSize:    100,
+	FileMaxBackups: 50,
 	DisplayConsole: true,
 	Skip:           1,
 })
