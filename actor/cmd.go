@@ -24,18 +24,18 @@ func WithCMD(cmd Cmder) SystemOption {
 func (s *System) actorInfo(param ...string) {
 	actors := []string{}
 	s.actorCache.Range(func(key, value interface{}) bool {
-		actors = append(actors, fmt.Sprintf("┃%-46v┃%10v%6v", key, len(value.(*actor).mailBox), "┃"))
+		actors = append(actors, fmt.Sprintf("┃%-48v┃%10v     ┃%8v    ┃", key, len(value.(*actor).mailBox),cap(value.(*actor).mailBox)))
 		return true
 	})
 	sort.SliceStable(actors, func(i, j int) bool {
 		return actors[i] < actors[j]
 	})
 	format := `
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━local actor━━━━━━━━━┳━━━━━━━━━━━━━━━┓
-┃                   actorId                    ┃ mail-box size ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━┫
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ local actor ━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃                   actorId                      ┃ mail-box size ┃  max size  ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
 %s
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━local actor━━━━━━━━━┻━━━━━━━━━━━━━━━┛
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ local actor ━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
 `
 	fmt.Println(fmt.Sprintf(format, strings.Join(actors, "\n")))
 }
