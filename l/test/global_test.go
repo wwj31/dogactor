@@ -27,6 +27,6 @@ func GOGO() {
 		ln.Errorw("this is error",
 			"k", "v",
 			"val", 123,
-			"uuid", tools.UUID())
+			"uuid", tools.XUID())
 	}
 }
