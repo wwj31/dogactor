@@ -23,7 +23,7 @@ func WithCMD(cmd Cmder) SystemOption {
 
 func (s *System) actorInfo(param ...string) {
 	var actors []string
-	
+
 	s.actorCache.Range(func(key, value interface{}) bool {
 		obj := value.(*actor)
 		actors = append(actors, fmt.Sprintf("┃%-48v┃%10v     ┃%8v    ┃", key, len(obj.mailBox), cap(obj.mailBox)))
