@@ -65,7 +65,7 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 		interval = timeout[0]
 	}
 
-	req.timeoutId = s.AddTimer(tools.UUID(), tools.NowTime()+int64(interval), func(dt int64) {
+	req.timeoutId = s.AddTimer(tools.XUID(), tools.NowTime()+int64(interval), func(dt int64) {
 		expect.Nil(s.Response(req.id, &actor_msg.RequestDeadLetter{Err: "Request timeout"}))
 	})
 	return req
@@ -80,7 +80,7 @@ func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Du
 
 	waitRsp := make(chan result)
 	waiter := New(
-		"wait_"+tools.UUID(),
+		"wait_"+tools.XUID(),
 		&waitActor{c: waitRsp, msg: msg, targetId: targetId, timeout: t},
 		SetLocalized(),
 	)
@@ -108,7 +108,7 @@ func (s *actor) doneRequest(requestId string, resp interface{}) {
 		return
 	}
 
-	s.CancelTimer(req.timeoutId,true)
+	s.CancelTimer(req.timeoutId, true)
 	delete(s.requests, requestId)
 
 	switch r := resp.(type) {

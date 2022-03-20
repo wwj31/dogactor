@@ -40,7 +40,7 @@ func main() {
 	})
 	pi := tools.NewProtoIndex(func(name string) (interface{}, bool) {
 		return interval.Spawner(name)
-	},tools.EnumIdx{})
+	}, tools.EnumIdx{})
 
 	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:5000"),
 		cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX),
@@ -67,7 +67,7 @@ func main() {
 }
 func (s *Student) OnInit() {
 	if s.Name == "LiLei" {
-		s.AddTimer(tools.UUID(), tools.NowTime()+int64(2*time.Second), func(dt int64) {
+		s.AddTimer(tools.XUID(), tools.NowTime()+int64(2*time.Second), func(dt int64) {
 			s.Send("HanMeimei", &interval.LileiSay{Data: "hello, I'm Li Lei"})
 		})
 	}
@@ -96,7 +96,7 @@ func (s *Student) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 			log.Infof(resp.(*interval.HanMeimeiSay).Data)
 		})
 
-		s.AddTimer(tools.UUID(), tools.NowTime()+int64(1*time.Second), func(dt int64) {
+		s.AddTimer(tools.XUID(), tools.NowTime()+int64(1*time.Second), func(dt int64) {
 			s.Request(sourceId, &interval.LileiSay{
 				Data: "please~",
 			}).Handle(func(resp interface{}, err error) {

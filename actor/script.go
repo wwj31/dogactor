@@ -61,7 +61,7 @@ func (s *actor) LAddTimer(l *lua.LState) int {
 		return 0
 	}
 
-	id := s.AddTimer(tools.UUID(), tools.NowTime()+interval, func(dt int64) {
+	id := s.AddTimer(tools.XUID(), tools.NowTime()+interval, func(dt int64) {
 		err := l.CallByParam(lua.P{
 			Fn:      callback,
 			NRet:    0,

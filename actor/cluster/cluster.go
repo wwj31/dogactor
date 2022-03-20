@@ -19,7 +19,7 @@ import (
 func WithRemote(ectd_addr, prefix string) actor.SystemOption {
 	return func(system *actor.System) error {
 		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_tcp.NewRemoteMgr())
-		clusterActor := actor.New("cluster_"+tools.UUID(), cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
+		clusterActor := actor.New("cluster_"+tools.XUID(), cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
 		if e := system.Add(clusterActor); e != nil {
 			return fmt.Errorf("%w %v", actorerr.RegistClusterErr, e)
 		}
