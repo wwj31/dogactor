@@ -4,7 +4,8 @@ import (
 	"time"
 )
 
-//谨慎使用，可能带来死锁问题
+// WARN: Deadlock cause by multiple actor RequestWait to each other
+
 type waitActor struct {
 	Base
 

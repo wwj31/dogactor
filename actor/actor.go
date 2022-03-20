@@ -56,33 +56,12 @@ func New(id string, handler spawnActor, op ...Option) *actor {
 	return a
 }
 
-// ID get actorID
-func (s *actor) ID() string {
-	return s.id
-}
+func (s *actor) ID() string      { return s.id }
+func (s *actor) System() *System { return s.system }
+func (s *actor) Exit()           { _ = s.push(actorStopMsg) }
 
-func (s *actor) isWaitActor() bool {
-	_, ok := s.handler.(*waitActor)
-	return ok
-}
-
-// actor done
-func (s *actor) Exit() {
-	_ = s.push(actorStopMsg)
-}
-
-// system close
-func (s *actor) stop() {
-	var stop bool
-	tools.Try(func() {
-		stop = s.handler.OnStop()
-	}, func(ex interface{}) {
-		stop = true
-	})
-
-	if stop {
-		_ = s.push(actorStopMsg)
-	}
+func (s *actor) Send(targetId string, msg interface{}) error {
+	return s.system.Send(s.id, targetId, "", msg)
 }
 
 // AddTimer default value of timeId is uuid.
@@ -93,16 +72,24 @@ func (s *actor) AddTimer(timeId string, endAt int64, callback func(dt int64), co
 	if len(count) > 0 {
 		c = count[0]
 	}
+	var (
+		err      error
+		newTimer *jtimer.Timer
+	)
 
-	newTimer, e := jtimer.NewTimer(now, endAt, c, callback, timeId)
-	if e != nil {
-		log.SysLog.Errorw("AddTimer failed", "err", e)
+	newTimer, err = jtimer.NewTimer(now, endAt, c, callback, timeId)
+	if err != nil {
+		log.SysLog.Errorw("AddTimer new timer failed", "err", err)
 		return ""
 	}
 
-	timerId := s.timerMgr.AddTimer(newTimer)
+	timeId, err = s.timerMgr.AddTimer(newTimer)
+	if err != nil {
+		log.SysLog.Errorw("AddTimer add failed", "err", err)
+		return ""
+	}
 	s.resetTime()
-	return timerId
+	return timeId
 }
 
 func (s *actor) UpdateTimer(timeId string, endAt int64) error {
@@ -181,7 +168,7 @@ func (s *actor) run(ok chan<- struct{}) {
 func (s *actor) handleMsg(msg actor_msg.Message) {
 	var message = msg.Message()
 	// message is ActorMessage when msg from remote OnRecv
-	if actMsg,ok := message.(*actor_msg.ActorMessage);ok{
+	if actMsg, ok := message.(*actor_msg.ActorMessage); ok {
 		if actMsg.Data != nil && actMsg.MsgName != "" {
 			defer msg.Free()
 			message = actMsg.Fill(s.system.protoIndex)
@@ -230,6 +217,25 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 	s.handler.OnHandleMessage(msg.GetSourceId(), msg.GetTargetId(), message)
 }
 
+func (s *actor) isWaitActor() bool {
+	_, ok := s.handler.(*waitActor)
+	return ok
+}
+
+// system close
+func (s *actor) stop() {
+	var stop bool
+	tools.Try(func() {
+		stop = s.handler.OnStop()
+	}, func(ex interface{}) {
+		stop = true
+	})
+
+	if stop {
+		_ = s.push(actorStopMsg)
+	}
+}
+
 func (s *actor) resetTime() {
 	nextAt := s.timerMgr.NextAt()
 	if nextAt > 0 {
@@ -248,10 +254,6 @@ func (s *actor) isStop(msg actor_msg.Message) bool {
 	return false
 }
 
-func (s *actor) System() *System { return s.system }
-func (s *actor) Send(targetId string, msg interface{}) error {
-	return s.system.Send(s.id, targetId, "", msg)
-}
 func (s *actor) RegistCmd(cmd string, fn func(...string), usage ...string) {
 	if s.system.cmd != nil {
 		s.system.cmd.RegistCmd(s.id, cmd, fn, usage...)

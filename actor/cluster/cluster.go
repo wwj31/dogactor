@@ -68,7 +68,7 @@ func (c *Cluster) OnInit() {
 		log.SysLog.Errorw("serviceMesh start error", "err", err)
 	}
 
-	c.RegistCmd("clusterinfo", c.clusterinfo, "所有远端actor信息")
+	c.RegistCmd("clusterinfo", c.clusterinfo, "information of all cluster actor")
 	c.ready[c.System().Address()] = true
 }
 

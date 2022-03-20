@@ -103,7 +103,7 @@ func (s *System) SetCluster(act *actor) {
 func (s *System) Stop() {
 	if atomic.CompareAndSwapInt32(&s.exiting, 0, 1) {
 		go func() {
-			// notify all of actor to stop
+			// notify all actor to stop
 			s.actorCache.Range(func(key, value interface{}) bool {
 				value.(*actor).stop()
 				return true
@@ -193,17 +193,17 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 	return nil
 }
 
-func(s *System) Exist(actorId string) bool{
-	_,exist := s.actorCache.Load(actorId)
+func (s *System) Exist(actorId string) bool {
+	_, exist := s.actorCache.Load(actorId)
 	return exist
 }
 
-func (s *System) ProtoIndex() *tools.ProtoIndex{
+func (s *System) ProtoIndex() *tools.ProtoIndex {
 	return s.protoIndex
 }
 
 // ProtoIndex index proto struct
-func ProtoIndex(pi *tools.ProtoIndex) SystemOption{
+func ProtoIndex(pi *tools.ProtoIndex) SystemOption {
 	return func(system *System) error {
 		system.protoIndex = pi
 		return nil
