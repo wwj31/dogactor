@@ -2,6 +2,8 @@ package actor
 
 import (
 	"github.com/wwj31/jtimer"
+	"math"
+	"sync/atomic"
 	"time"
 
 	"github.com/wwj31/dogactor/actor/actorerr"
@@ -11,6 +13,14 @@ import (
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )
+
+const (
+	idle    = 1
+	running = 2
+	stop    = 3
+)
+
+const idleTimeout = time.Minute
 
 type (
 	Option func(*actor)
@@ -33,6 +43,9 @@ type (
 
 		// record Request msg and del in done
 		requests map[string]*request
+
+		status    atomic.Value
+		idleTimer *time.Timer
 	}
 )
 
@@ -47,6 +60,7 @@ func New(id string, handler spawnActor, op ...Option) *actor {
 		timerMgr: jtimer.NewTimerMgr(),
 		requests: make(map[string]*request),
 	}
+	a.status.Store(idle)
 
 	handler.initActor(a)
 
@@ -89,6 +103,7 @@ func (s *actor) AddTimer(timeId string, endAt int64, callback func(dt int64), co
 		return ""
 	}
 	s.resetTime()
+	s.activate()
 	return timeId
 }
 
@@ -121,6 +136,7 @@ func (s *actor) push(msg actor_msg.Message) error {
 	}
 
 	s.mailBox <- msg
+	s.activate()
 	return nil
 }
 
@@ -129,11 +145,11 @@ var (
 	actorStopMsg = &actor_msg.ActorMessage{} // actor stop msg
 )
 
-func (s *actor) run(ok chan<- struct{}) {
-	s.timer = time.NewTimer(0)
-	if !s.timer.Stop() {
-		<-s.timer.C
-	}
+func (s *actor) init(ok chan<- struct{}) {
+	s.timer = time.NewTimer(math.MaxInt)
+	s.idleTimer = time.NewTimer(math.MaxInt)
+	s.timer.Stop()
+	s.idleTimer.Stop()
 
 	tools.Try(s.handler.OnInit)
 	if ok != nil {
@@ -141,26 +157,52 @@ func (s *actor) run(ok chan<- struct{}) {
 	}
 
 	s.system.DispatchEvent(s.id, EvNewactor{ActorId: s.id, Publish: s.remote})
-	defer func() {
-		s.system.DispatchEvent(s.id, EvDelactor{ActorId: s.id, Publish: s.remote})
-	}()
+}
 
+func (s *actor) activate() {
+	if s.status.CompareAndSwap(idle, running) {
+		log.SysLog.Warnw("gogogo")
+		go s.run()
+	}
+}
+
+func (s *actor) run() {
+	s.resetIdleTime()
 	for {
 		select {
-		case <-s.timer.C:
-			_ = s.push(timerTickMsg)
 		case msg := <-s.mailBox:
 			if s.isStop(msg) {
+				s.exit()
 				return
 			}
 
 			tools.Try(func() {
 				s.handleMsg(msg)
 
+				// upset timer
 				s.timerMgr.Update(tools.NowTime())
-				s.resetTime()
 			})
+
 			msg.Free()
+			s.resetTime()
+			s.resetIdleTime()
+
+		case <-s.timer.C:
+			_ = s.push(timerTickMsg)
+
+		case <-s.idleTimer.C:
+			if !s.timerMgr.Empty() {
+				s.resetIdleTime()
+				break
+			}
+			s.status.Store(idle)
+
+			// check sent after the timeout
+			if len(s.mailBox) > 0 {
+				s.activate()
+			}
+			// there are the return just for idle with the mailBox was empty and the timerMgr was empty
+			return
 		}
 	}
 }
@@ -236,22 +278,49 @@ func (s *actor) stop() {
 	}
 }
 
+func (s *actor) resetIdleTime() {
+	if !s.idleTimer.Stop() {
+		select {
+		case <-s.idleTimer.C:
+		default:
+		}
+	}
+	s.idleTimer.Reset(idleTimeout)
+}
+
 func (s *actor) resetTime() {
 	nextAt := s.timerMgr.NextAt()
 	if nextAt > 0 {
 		d := tools.Maxi64(nextAt-tools.NowTime(), 1)
 		if d > 0 && d != s.nextAt {
+			if !s.timer.Stop() {
+				select {
+				case <-s.timer.C:
+				default:
+				}
+			}
 			s.timer.Reset(time.Duration(d))
+
 			s.nextAt = nextAt
 		}
 	}
 }
+
 func (s *actor) isStop(msg actor_msg.Message) bool {
 	message, ok := msg.(*actor_msg.ActorMessage)
 	if ok && message == actorStopMsg {
 		return true
 	}
 	return false
+}
+
+func (s *actor) exit() {
+	log.SysLog.Infow("actor done", "actorId", s.ID())
+	s.status.Store(stop)
+
+	s.system.DispatchEvent(s.id, EvDelactor{ActorId: s.id, Publish: s.remote})
+	s.system.actorCache.Delete(s.ID())
+	s.system.waitStop.Done()
 }
 
 func (s *actor) RegistCmd(cmd string, fn func(...string), usage ...string) {
