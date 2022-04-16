@@ -44,6 +44,7 @@ type (
 		// record Request msg and del in done
 		requests map[string]*request
 
+		// actor status control
 		status    atomic.Value
 		idleTimer *time.Timer
 	}
@@ -53,14 +54,18 @@ type (
 // id is invalid if contain '@' or '$'
 func New(id string, handler spawnActor, op ...Option) *actor {
 	a := &actor{
-		id:       id,
-		handler:  handler,
-		mailBox:  make(chan actor_msg.Message, 100),
-		remote:   true, // 默认都能被远端发现
-		timerMgr: jtimer.NewTimerMgr(),
-		requests: make(map[string]*request),
+		id:        id,
+		handler:   handler,
+		mailBox:   make(chan actor_msg.Message, 100),
+		remote:    true, // 默认都能被远端发现
+		timerMgr:  jtimer.NewTimerMgr(),
+		timer:     time.NewTimer(math.MaxInt),
+		requests:  make(map[string]*request),
+		idleTimer: time.NewTimer(math.MaxInt),
 	}
 	a.status.Store(idle)
+	a.timer.Stop()
+	a.idleTimer.Stop()
 
 	handler.initActor(a)
 
@@ -146,11 +151,6 @@ var (
 )
 
 func (s *actor) init(ok chan<- struct{}) {
-	s.timer = time.NewTimer(math.MaxInt)
-	s.idleTimer = time.NewTimer(math.MaxInt)
-	s.timer.Stop()
-	s.idleTimer.Stop()
-
 	tools.Try(s.handler.OnInit)
 	if ok != nil {
 		ok <- struct{}{}
@@ -161,7 +161,6 @@ func (s *actor) init(ok chan<- struct{}) {
 
 func (s *actor) activate() {
 	if s.status.CompareAndSwap(idle, running) {
-		log.SysLog.Warnw("gogogo")
 		go s.run()
 	}
 }
@@ -278,6 +277,7 @@ func (s *actor) stop() {
 	}
 }
 
+// resetIdleTime reset idleTimer
 func (s *actor) resetIdleTime() {
 	if !s.idleTimer.Stop() {
 		select {
@@ -288,21 +288,24 @@ func (s *actor) resetIdleTime() {
 	s.idleTimer.Reset(idleTimeout)
 }
 
+// resetTime reset timer of timerMgr
 func (s *actor) resetTime() {
 	nextAt := s.timerMgr.NextAt()
 	if nextAt > 0 {
-		d := tools.Maxi64(nextAt-tools.NowTime(), 1)
-		if d > 0 && d != s.nextAt {
-			if !s.timer.Stop() {
-				select {
-				case <-s.timer.C:
-				default:
-				}
-			}
-			s.timer.Reset(time.Duration(d))
+		return
+	}
 
-			s.nextAt = nextAt
+	d := tools.Maxi64(nextAt-tools.NowTime(), 1)
+	if d > 0 && d != s.nextAt {
+		if !s.timer.Stop() {
+			select {
+			case <-s.timer.C:
+			default:
+			}
 		}
+		s.timer.Reset(time.Duration(d))
+
+		s.nextAt = nextAt
 	}
 }
 
@@ -329,7 +332,8 @@ func (s *actor) RegistCmd(cmd string, fn func(...string), usage ...string) {
 	}
 }
 
-// Extra Option
+// Extra Option //////////
+
 func SetMailBoxSize(boxSize int) Option {
 	return func(a *actor) {
 		a.mailBox = make(chan actor_msg.Message, boxSize)
