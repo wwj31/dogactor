@@ -1,17 +1,17 @@
 package main
 
 import (
-	"github.com/wwj31/dogactor/actor/cluster"
-	"github.com/wwj31/dogactor/actor/cmd"
-	"github.com/wwj31/dogactor/demo/example2/interval"
-	"github.com/wwj31/dogactor/l"
-	"github.com/wwj31/dogactor/tools"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/wwj31/dogactor/actor"
+	"github.com/wwj31/dogactor/actor/cluster"
+	"github.com/wwj31/dogactor/actor/cmd"
+	"github.com/wwj31/dogactor/demo/example2/msg"
+	"github.com/wwj31/dogactor/l"
+	"github.com/wwj31/dogactor/tools"
 )
 
 var (
@@ -39,7 +39,7 @@ func main() {
 		Skip:           1,
 	})
 	pi := tools.NewProtoIndex(func(name string) (interface{}, bool) {
-		return interval.Spawner(name)
+		return msg.Spawner(name)
 	}, tools.EnumIdx{})
 
 	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:5000"),
@@ -68,49 +68,49 @@ func main() {
 func (s *Student) OnInit() {
 	if s.Name == "LiLei" {
 		s.AddTimer(tools.XUID(), tools.Now().Add(2*time.Second), func(dt time.Duration) {
-			s.Send("HanMeimei", &interval.LileiSay{Data: "hello, I'm Li Lei"})
+			s.Send("HanMeimei", &msg.LileiSay{Data: "hello, I'm Li Lei"})
 		})
 	}
 }
 
-func (s *Student) OnHandleMessage(sourceId, targetId string, msg interface{}) {
-	switch m := msg.(type) {
-	case *interval.LileiSay:
+func (s *Student) OnHandleMessage(sourceId, targetId string, v interface{}) {
+	switch m := v.(type) {
+	case *msg.LileiSay:
 		log.Infof(m.Data)
 
-		s.Send(sourceId, &interval.HanMeimeiSay{
+		s.Send(sourceId, &msg.HanMeimeiSay{
 			Data: "hi~! Li Lei, I'm HanMeimei",
 		})
-	case *interval.HanMeimeiSay:
+	case *msg.HanMeimeiSay:
 		log.Infof(m.Data)
 
-		resp, _ := s.RequestWait(sourceId, &interval.LileiSay{
+		resp, _ := s.RequestWait(sourceId, &msg.LileiSay{
 			Data: "Be my grilfriend?",
 		})
 		// waiting....
-		log.Infof(resp.(*interval.HanMeimeiSay).Data)
+		log.Infof(resp.(*msg.HanMeimeiSay).Data)
 
-		s.Request(sourceId, &interval.LileiSay{
+		s.Request(sourceId, &msg.LileiSay{
 			Data: "it's ok! I will protect you.",
 		}).Handle(func(resp interface{}, err error) {
-			log.Infof(resp.(*interval.HanMeimeiSay).Data)
+			log.Infof(resp.(*msg.HanMeimeiSay).Data)
 		})
 
 		s.AddTimer(tools.XUID(), tools.Now().Add(time.Second), func(dt time.Duration) {
-			s.Request(sourceId, &interval.LileiSay{
+			s.Request(sourceId, &msg.LileiSay{
 				Data: "please~",
 			}).Handle(func(resp interface{}, err error) {
-				log.Infof(resp.(*interval.HanMeimeiSay).Data)
+				log.Infof(resp.(*msg.HanMeimeiSay).Data)
 			})
 		}, -1)
 	}
 }
-func (s *Student) OnHandleRequest(sourceId, targetId string, requestId string, msg interface{}) error {
-	switch m := msg.(type) {
-	case *interval.LileiSay:
+func (s *Student) OnHandleRequest(sourceId, targetId string, requestId string, v interface{}) error {
+	switch m := v.(type) {
+	case *msg.LileiSay:
 		log.Infof(m.Data)
 
-		s.Response(requestId, &interval.HanMeimeiSay{
+		s.Response(requestId, &msg.HanMeimeiSay{
 			Data: "no!",
 		})
 	}

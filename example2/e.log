@@ -1,0 +1,26 @@
+2022-04-24T21:37:39.646+0800	INFO	example2/example2.go:79	hello, I'm Li Lei
+2022-04-24T21:37:39.648+0800	INFO	example2/example2.go:85	hi~! Li Lei, I'm HanMeimei
+2022-04-24T21:37:39.648+0800	INFO	example2/example2.go:111	Be my grilfriend?
+2022-04-24T21:37:39.648+0800	INFO	example2/example2.go:91	no!
+2022-04-24T21:37:39.648+0800	INFO	example2/example2.go:111	it's ok! I will protect you.
+2022-04-24T21:37:39.648+0800	INFO	example2/example2.go:96	no!
+2022-04-24T21:37:44.649+0800	INFO	example2/example2.go:111	please~
+2022-04-24T21:37:44.649+0800	INFO	example2/example2.go:103	no!
+2022-04-24T21:37:45.649+0800	INFO	example2/example2.go:111	please~
+2022-04-24T21:37:45.650+0800	INFO	example2/example2.go:103	no!
+2022-04-24T21:37:46.648+0800	INFO	example2/example2.go:111	please~
+2022-04-24T21:37:46.649+0800	INFO	example2/example2.go:103	no!
+2022-04-24T21:37:47.648+0800	INFO	example2/example2.go:111	please~
+2022-04-24T21:37:47.649+0800	INFO	example2/example2.go:103	no!
+2022-04-24T21:44:47.973+0800	INFO	example2/example2.go:79	hello, I'm Li Lei
+2022-04-24T21:44:47.975+0800	INFO	example2/example2.go:85	hi~! Li Lei, I'm HanMeimei
+2022-04-24T21:44:47.975+0800	INFO	example2/example2.go:111	Be my grilfriend?
+2022-04-24T21:44:47.975+0800	INFO	example2/example2.go:91	no!
+2022-04-24T21:44:47.975+0800	INFO	example2/example2.go:111	it's ok! I will protect you.
+2022-04-24T21:44:47.975+0800	INFO	example2/example2.go:96	no!
+2022-04-24T21:44:52.976+0800	INFO	example2/example2.go:111	please~
+2022-04-24T21:44:52.976+0800	INFO	example2/example2.go:103	no!
+2022-04-24T21:44:53.977+0800	INFO	example2/example2.go:111	please~
+2022-04-24T21:44:53.977+0800	INFO	example2/example2.go:103	no!
+2022-04-24T21:44:54.976+0800	INFO	example2/example2.go:111	please~
+2022-04-24T21:44:54.977+0800	INFO	example2/example2.go:103	no!
