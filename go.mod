@@ -7,9 +7,9 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/uuid v1.3.0
 	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc
-	github.com/rs/xid v1.3.0
+	github.com/rs/xid v1.4.0
 	github.com/satori/go.uuid v1.2.0
-	github.com/wwj31/jtimer v1.1.9
+	github.com/wwj31/jtimer v1.2.4
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 	go.etcd.io/etcd/api/v3 v3.5.1
 	go.etcd.io/etcd/client/v3 v3.5.1

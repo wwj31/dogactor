@@ -67,7 +67,7 @@ func main() {
 }
 func (s *Student) OnInit() {
 	if s.Name == "LiLei" {
-		s.AddTimer(tools.XUID(), tools.NowTime()+int64(2*time.Second), func(dt int64) {
+		s.AddTimer(tools.XUID(), tools.Now().Add(2*time.Second), func(dt time.Duration) {
 			s.Send("HanMeimei", &interval.LileiSay{Data: "hello, I'm Li Lei"})
 		})
 	}
@@ -96,7 +96,7 @@ func (s *Student) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 			log.Infof(resp.(*interval.HanMeimeiSay).Data)
 		})
 
-		s.AddTimer(tools.XUID(), tools.NowTime()+int64(1*time.Second), func(dt int64) {
+		s.AddTimer(tools.XUID(), tools.Now().Add(time.Second), func(dt time.Duration) {
 			s.Request(sourceId, &interval.LileiSay{
 				Data: "please~",
 			}).Handle(func(resp interface{}, err error) {

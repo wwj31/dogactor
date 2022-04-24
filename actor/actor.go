@@ -1,7 +1,6 @@
 package actor
 
 import (
-	"github.com/wwj31/jtimer"
 	"math"
 	"sync/atomic"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
+	"github.com/wwj31/jtimer"
 )
 
 const (
@@ -33,9 +33,9 @@ type (
 		remote  bool
 
 		// timer
-		timerMgr jtimer.TimerMgr
+		timerMgr *jtimer.Manager
 		timer    *time.Timer
-		nextAt   int64
+		nextAt   time.Time
 
 		//lua
 		lua     script.ILua
@@ -58,7 +58,7 @@ func New(id string, handler spawnActor, op ...Option) *actor {
 		handler:   handler,
 		mailBox:   make(chan actor_msg.Message, 100),
 		remote:    true, // 默认都能被远端发现
-		timerMgr:  jtimer.NewTimerMgr(),
+		timerMgr:  jtimer.New(),
 		timer:     time.NewTimer(math.MaxInt),
 		requests:  make(map[string]*request),
 		idleTimer: time.NewTimer(math.MaxInt),
@@ -85,49 +85,26 @@ func (s *actor) Send(targetId string, msg interface{}) error {
 
 // AddTimer default value of timeId is uuid.
 // if count == -1 timer will repack in timer system infinitely util call CancelTimer,
-func (s *actor) AddTimer(timeId string, endAt int64, callback func(dt int64), count ...int32) string {
-	now := tools.NowTime()
-	c := int32(1)
+// when timeId is existed the timer will update with endAt and callback and count.
+func (s *actor) AddTimer(timeId string, endAt time.Time, callback func(dt time.Duration), count ...int) string {
+	c := 1
 	if len(count) > 0 {
 		c = count[0]
 	}
-	var (
-		err      error
-		newTimer *jtimer.Timer
-	)
 
-	newTimer, err = jtimer.NewTimer(now, endAt, c, callback, timeId)
-	if err != nil {
-		log.SysLog.Errorw("AddTimer new timer failed", "err", err)
-		return ""
-	}
+	timeId = s.timerMgr.Add(tools.Now(), endAt, callback, c, timeId)
 
-	timeId, err = s.timerMgr.AddTimer(newTimer)
-	if err != nil {
-		log.SysLog.Errorw("AddTimer add failed", "err", err)
-		return ""
-	}
 	s.resetTime()
 	s.activate()
 	return timeId
 }
 
-func (s *actor) UpdateTimer(timeId string, endAt int64) error {
-	err := s.timerMgr.UpdateTimer(timeId, endAt)
-	if err != nil {
-		return err
-	}
-	s.resetTime()
-	return nil
-}
-
-// 删除一个定时器
-func (s *actor) CancelTimer(timerId string, del ...bool) {
-	s.timerMgr.CancelTimer(timerId, del...)
+// CancelTimer remote a timer with
+func (s *actor) CancelTimer(timerId string) {
+	s.timerMgr.Remove(timerId)
 	s.resetTime()
 }
 
-// Push一个消息
 func (s *actor) push(msg actor_msg.Message) error {
 	if msg == nil {
 		return actorerr.ActorPushMsgErr
@@ -179,7 +156,7 @@ func (s *actor) run() {
 				s.handleMsg(msg)
 
 				// upset timer
-				s.timerMgr.Update(tools.NowTime())
+				s.timerMgr.Update(tools.Now())
 			})
 
 			msg.Free()
@@ -190,7 +167,7 @@ func (s *actor) run() {
 			_ = s.push(timerTickMsg)
 
 		case <-s.idleTimer.C:
-			if !s.timerMgr.Empty() {
+			if s.timerMgr.Len() > 0 {
 				s.resetIdleTime()
 				break
 			}
@@ -290,21 +267,19 @@ func (s *actor) resetIdleTime() {
 
 // resetTime reset timer of timerMgr
 func (s *actor) resetTime() {
-	nextAt := s.timerMgr.NextAt()
-	if nextAt > 0 {
+	nextAt := s.timerMgr.NextUpdateAt()
+	if nextAt.Unix() == 0 {
 		return
 	}
 
-	d := tools.Maxi64(nextAt-tools.NowTime(), 1)
-	if d > 0 && d != s.nextAt {
+	if nextAt.After(s.nextAt) {
 		if !s.timer.Stop() {
 			select {
 			case <-s.timer.C:
 			default:
 			}
 		}
-		s.timer.Reset(time.Duration(d))
-
+		s.timer.Reset(nextAt.Sub(tools.Now()))
 		s.nextAt = nextAt
 	}
 }

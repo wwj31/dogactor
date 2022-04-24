@@ -25,7 +25,7 @@ func main() {
 
 // OnInit PingActor
 func (s *PingActor) OnInit() {
-	s.AddTimer(tools.XUID(), tools.NowTime()+int64(1*time.Second), func(dt int64) {
+	s.AddTimer(tools.XUID(), tools.Now().Add(time.Second), func(dt time.Duration) {
 		s.Send("pong", "this is data")
 	}, -1)
 }
