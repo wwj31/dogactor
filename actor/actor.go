@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	idle    = 1
-	running = 2
-	stop    = 3
+	starting = iota + 1
+	idle
+	running
+	stop
 )
 
 const idleTimeout = time.Minute
@@ -63,7 +64,7 @@ func New(id string, handler spawnActor, op ...Option) *actor {
 		requests:  make(map[string]*request),
 		idleTimer: time.NewTimer(math.MaxInt),
 	}
-	a.status.Store(idle)
+	a.status.Store(starting)
 	a.timer.Stop()
 	a.idleTimer.Stop()
 
@@ -132,8 +133,9 @@ func (s *actor) init(ok chan<- struct{}) {
 	if ok != nil {
 		ok <- struct{}{}
 	}
-
+	s.status.CompareAndSwap(starting, idle)
 	s.system.DispatchEvent(s.id, EvNewactor{ActorId: s.id, Publish: s.remote})
+	s.activate()
 }
 
 func (s *actor) activate() {
