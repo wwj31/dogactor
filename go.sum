@@ -146,8 +146,8 @@ github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81P
 github.com/stretchr/testify v1.5.1/go.mod h1:5W2xD1RspED5o8YsWQXVCued0rvSQ+mT+I5cxcmMvtA=
 github.com/stretchr/testify v1.7.0 h1:nwc3DEeHmmLAfoZucVR881uASk0Mfjw8xYJ99tb5CcY=
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/wwj31/jtimer v1.2.4 h1:WjW0RorA/OFI2g7sNHwjJFpoBH6JtBwSHeS3TmGa0X8=
-github.com/wwj31/jtimer v1.2.4/go.mod h1:q6lBv/TewFQ4l+ahsO9gdErPAlSI8jPs/nb2Z/l2ZNc=
+github.com/wwj31/jtimer v1.2.6 h1:7u9lq1agaIiwJog8lzV9Z+5uHTDKOj7lsqwNJUaoYM8=
+github.com/wwj31/jtimer v1.2.6/go.mod h1:GP0k/io5C3wpu11DS42YLL5UWJ3k9WAApIYUE/2bvwA=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.3.5/go.mod h1:mwnBkeHKe2W/ZEtQ+71ViKU8L12m81fl3OWwC1Zlc8k=
