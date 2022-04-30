@@ -16,9 +16,9 @@ import (
 	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd"
 )
 
-func WithRemote(ectd_addr, prefix string) actor.SystemOption {
+func WithRemote(ectdAddr, prefix string) actor.SystemOption {
 	return func(system *actor.System) error {
-		cluster := newCluster(etcd.NewEtcd(ectd_addr, prefix), remote_tcp.NewRemoteMgr())
+		cluster := newCluster(etcd.NewEtcd(ectdAddr, prefix), remote_tcp.NewRemoteMgr())
 		clusterActor := actor.New("cluster_"+tools.XUID(), cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
 		if e := system.Add(clusterActor); e != nil {
 			return fmt.Errorf("%w %v", actorerr.RegistClusterErr, e)
