@@ -84,13 +84,7 @@ func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 		return
 	}
 
-	go func() {
-		actor.run(ok)
-		// exit
-		log.SysLog.Infow("actor done", "actorId", actor.ID())
-		s.actorCache.Delete(actor.ID())
-		s.waitStop.Done()
-	}()
+	go actor.init(ok)
 }
 
 func (s *System) Address() string {

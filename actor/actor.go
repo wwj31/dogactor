@@ -1,7 +1,8 @@
 package actor
 
 import (
-	"github.com/wwj31/jtimer"
+	"math"
+	"sync/atomic"
 	"time"
 
 	"github.com/wwj31/dogactor/actor/actorerr"
@@ -10,7 +11,17 @@ import (
 	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
+	"github.com/wwj31/jtimer"
 )
+
+const (
+	starting = iota + 1
+	idle
+	running
+	stop
+)
+
+const idleTimeout = time.Minute
 
 type (
 	Option func(*actor)
@@ -23,9 +34,9 @@ type (
 		remote  bool
 
 		// timer
-		timerMgr jtimer.TimerMgr
+		timerMgr *jtimer.Manager
 		timer    *time.Timer
-		nextAt   int64
+		nextAt   time.Time
 
 		//lua
 		lua     script.ILua
@@ -33,6 +44,10 @@ type (
 
 		// record Request msg and del in done
 		requests map[string]*request
+
+		// actor status control
+		status    atomic.Value
+		idleTimer *time.Timer
 	}
 )
 
@@ -40,13 +55,18 @@ type (
 // id is invalid if contain '@' or '$'
 func New(id string, handler spawnActor, op ...Option) *actor {
 	a := &actor{
-		id:       id,
-		handler:  handler,
-		mailBox:  make(chan actor_msg.Message, 100),
-		remote:   true, // 默认都能被远端发现
-		timerMgr: jtimer.NewTimerMgr(),
-		requests: make(map[string]*request),
+		id:        id,
+		handler:   handler,
+		mailBox:   make(chan actor_msg.Message, 100),
+		remote:    true, // 默认都能被远端发现
+		timerMgr:  jtimer.New(),
+		timer:     time.NewTimer(math.MaxInt),
+		requests:  make(map[string]*request),
+		idleTimer: time.NewTimer(math.MaxInt),
 	}
+	a.status.Store(starting)
+	a.timer.Stop()
+	a.idleTimer.Stop()
 
 	handler.initActor(a)
 
@@ -66,48 +86,26 @@ func (s *actor) Send(targetId string, msg interface{}) error {
 
 // AddTimer default value of timeId is uuid.
 // if count == -1 timer will repack in timer system infinitely util call CancelTimer,
-func (s *actor) AddTimer(timeId string, endAt int64, callback func(dt int64), count ...int32) string {
-	now := tools.NowTime()
-	c := int32(1)
+// when timeId is existed the timer will update with endAt and callback and count.
+func (s *actor) AddTimer(timeId string, endAt time.Time, callback func(dt time.Duration), count ...int) string {
+	c := 1
 	if len(count) > 0 {
 		c = count[0]
 	}
-	var (
-		err      error
-		newTimer *jtimer.Timer
-	)
 
-	newTimer, err = jtimer.NewTimer(now, endAt, c, callback, timeId)
-	if err != nil {
-		log.SysLog.Errorw("AddTimer new timer failed", "err", err)
-		return ""
-	}
+	timeId = s.timerMgr.Add(tools.Now(), endAt, callback, c, timeId)
 
-	timeId, err = s.timerMgr.AddTimer(newTimer)
-	if err != nil {
-		log.SysLog.Errorw("AddTimer add failed", "err", err)
-		return ""
-	}
 	s.resetTime()
+	s.activate()
 	return timeId
 }
 
-func (s *actor) UpdateTimer(timeId string, endAt int64) error {
-	err := s.timerMgr.UpdateTimer(timeId, endAt)
-	if err != nil {
-		return err
-	}
-	s.resetTime()
-	return nil
-}
-
-// 删除一个定时器
-func (s *actor) CancelTimer(timerId string, del ...bool) {
-	s.timerMgr.CancelTimer(timerId, del...)
+// CancelTimer remote a timer with
+func (s *actor) CancelTimer(timerId string) {
+	s.timerMgr.Remove(timerId)
 	s.resetTime()
 }
 
-// Push一个消息
 func (s *actor) push(msg actor_msg.Message) error {
 	if msg == nil {
 		return actorerr.ActorPushMsgErr
@@ -121,6 +119,7 @@ func (s *actor) push(msg actor_msg.Message) error {
 	}
 
 	s.mailBox <- msg
+	s.activate()
 	return nil
 }
 
@@ -129,38 +128,59 @@ var (
 	actorStopMsg = &actor_msg.ActorMessage{} // actor stop msg
 )
 
-func (s *actor) run(ok chan<- struct{}) {
-	s.timer = time.NewTimer(0)
-	if !s.timer.Stop() {
-		<-s.timer.C
-	}
-
+func (s *actor) init(ok chan<- struct{}) {
 	tools.Try(s.handler.OnInit)
 	if ok != nil {
 		ok <- struct{}{}
 	}
-
+	s.status.CompareAndSwap(starting, idle)
 	s.system.DispatchEvent(s.id, EvNewactor{ActorId: s.id, Publish: s.remote})
-	defer func() {
-		s.system.DispatchEvent(s.id, EvDelactor{ActorId: s.id, Publish: s.remote})
-	}()
+	s.activate()
+}
 
+func (s *actor) activate() {
+	if s.status.CompareAndSwap(idle, running) {
+		go s.run()
+	}
+}
+
+func (s *actor) run() {
+	s.resetIdleTime()
 	for {
 		select {
-		case <-s.timer.C:
-			_ = s.push(timerTickMsg)
 		case msg := <-s.mailBox:
 			if s.isStop(msg) {
+				s.exit()
 				return
 			}
 
 			tools.Try(func() {
 				s.handleMsg(msg)
 
-				s.timerMgr.Update(tools.NowTime())
-				s.resetTime()
+				// upset timer
+				s.timerMgr.Update(tools.Now())
 			})
+
 			msg.Free()
+			s.resetTime()
+			s.resetIdleTime()
+
+		case <-s.timer.C:
+			_ = s.push(timerTickMsg)
+
+		case <-s.idleTimer.C:
+			if s.timerMgr.Len() > 0 {
+				s.resetIdleTime()
+				break
+			}
+			s.status.Store(idle)
+
+			// check sent after the timeout
+			if len(s.mailBox) > 0 {
+				s.activate()
+			}
+			// there are the return just for idle with the mailBox was empty and the timerMgr was empty
+			return
 		}
 	}
 }
@@ -236,16 +256,36 @@ func (s *actor) stop() {
 	}
 }
 
-func (s *actor) resetTime() {
-	nextAt := s.timerMgr.NextAt()
-	if nextAt > 0 {
-		d := tools.Maxi64(nextAt-tools.NowTime(), 1)
-		if d > 0 && d != s.nextAt {
-			s.timer.Reset(time.Duration(d))
-			s.nextAt = nextAt
+// resetIdleTime reset idleTimer
+func (s *actor) resetIdleTime() {
+	if !s.idleTimer.Stop() {
+		select {
+		case <-s.idleTimer.C:
+		default:
 		}
 	}
+	s.idleTimer.Reset(idleTimeout)
 }
+
+// resetTime reset timer of timerMgr
+func (s *actor) resetTime() {
+	nextAt := s.timerMgr.NextUpdateAt()
+	if nextAt.Unix() == 0 {
+		return
+	}
+
+	if nextAt.After(s.nextAt) {
+		if !s.timer.Stop() {
+			select {
+			case <-s.timer.C:
+			default:
+			}
+		}
+		s.timer.Reset(nextAt.Sub(tools.Now()))
+		s.nextAt = nextAt
+	}
+}
+
 func (s *actor) isStop(msg actor_msg.Message) bool {
 	message, ok := msg.(*actor_msg.ActorMessage)
 	if ok && message == actorStopMsg {
@@ -254,13 +294,23 @@ func (s *actor) isStop(msg actor_msg.Message) bool {
 	return false
 }
 
+func (s *actor) exit() {
+	log.SysLog.Infow("actor done", "actorId", s.ID())
+	s.status.Store(stop)
+
+	s.system.DispatchEvent(s.id, EvDelactor{ActorId: s.id, Publish: s.remote})
+	s.system.actorCache.Delete(s.ID())
+	s.system.waitStop.Done()
+}
+
 func (s *actor) RegistCmd(cmd string, fn func(...string), usage ...string) {
 	if s.system.cmd != nil {
 		s.system.cmd.RegistCmd(s.id, cmd, fn, usage...)
 	}
 }
 
-// Extra Option
+// Extra Option //////////
+
 func SetMailBoxSize(boxSize int) Option {
 	return func(a *actor) {
 		a.mailBox = make(chan actor_msg.Message, boxSize)

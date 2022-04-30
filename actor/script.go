@@ -6,6 +6,7 @@ import (
 	"github.com/wwj31/dogactor/tools"
 	lua "github.com/yuin/gopher-lua"
 	"runtime"
+	"time"
 )
 
 func (s *actor) CallLua(name string, ret int, args ...lua.LValue) []lua.LValue {
@@ -61,14 +62,14 @@ func (s *actor) LAddTimer(l *lua.LState) int {
 		return 0
 	}
 
-	id := s.AddTimer(tools.XUID(), tools.NowTime()+interval, func(dt int64) {
+	id := s.AddTimer(tools.XUID(), tools.Now().Add(time.Duration(interval)), func(dt time.Duration) {
 		err := l.CallByParam(lua.P{
 			Fn:      callback,
 			NRet:    0,
 			Protect: true,
 		})
 		expect.Nil(err)
-	}, int32(count))
+	}, count)
 	l.Push(lua.LString(id))
 	return 1
 }
