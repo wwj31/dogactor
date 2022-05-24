@@ -46,7 +46,7 @@ func (s *EchoCode) Encode(data []byte) []byte {
 	┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 	┃ head(body size) ┃               body (data)                ┃
 	┗━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-    ├──────────── MAX Size:StreamCode.MaxDecode ────────────────┤
+    ├──────────── MAX Size:StreamCode.MaxDecode ─────────────────┤
 */
 type StreamCode struct {
 	MaxDecode int

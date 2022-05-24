@@ -9,9 +9,9 @@ import (
 type SessionType int
 
 const (
-	TYPE_TCP SessionType = 1
-	TYPE_UDP SessionType = 2
-	TYPE_WS  SessionType = 3
+	TypeTCP SessionType = 1
+	TypeUDP SessionType = 2
+	TypeWS  SessionType = 3
 )
 
 type Listener interface {
@@ -21,8 +21,8 @@ type Listener interface {
 
 type Client interface {
 	SendMsg([]byte) error
-	AddLast(hander func() NetSessionHandler)
-	Start(reconect bool) error
+	AddLast(handler func() NetSessionHandler)
+	Start(reconnect bool) error
 	Stop()
 }
 
@@ -45,10 +45,10 @@ type NetSessionHandler interface {
 	OnRecv([]byte)
 }
 
-var GenNetSessionId = _gen_net_session_id()
+var GenNetSessionId = genNetSessionId()
 
-func _gen_net_session_id() func() uint32 {
+func genNetSessionId() func() uint32 {
 	now := tools.Now()
-	_session_gen_id := uint32(now.Hour()*100000000 + now.Minute()*1000000 + now.Second()*10000)
-	return func() uint32 { return atomic.AddUint32(&_session_gen_id, 1) }
+	sessionGenId := uint32(now.Hour()*100000000 + now.Minute()*1000000 + now.Second()*10000)
+	return func() uint32 { return atomic.AddUint32(&sessionGenId, 1) }
 }

@@ -41,7 +41,7 @@ type TcpSession struct {
 	sendQue chan []byte
 }
 
-func (s *TcpSession) Type() SessionType    { return TYPE_TCP }
+func (s *TcpSession) Type() SessionType    { return TypeTcp }
 func (s *TcpSession) Id() uint32           { return s.id }
 func (s *TcpSession) LocalAddr() net.Addr  { return s.conn.LocalAddr() }
 func (s *TcpSession) RemoteAddr() net.Addr { return s.conn.RemoteAddr() }
