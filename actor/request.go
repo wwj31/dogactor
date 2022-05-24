@@ -135,15 +135,15 @@ func ParseRequestId(requestId string) (sourceId string, targetId string, sourceA
 	if len(requestId) == 0 {
 		return
 	}
-	strs := strings.Split(requestId, "#")
-	if len(strs) != 2 {
+	split := strings.Split(requestId, "#")
+	if len(split) != 2 {
 		return
 	}
-	sourceAddr = strs[1]
-	strs = strings.Split(strs[0], "@")
-	if len(strs) != 3 {
+	sourceAddr = split[1]
+	split = strings.Split(split[0], "@")
+	if len(split) != 3 {
 		return
 	}
 	ok = true
-	return strs[0], strs[2], sourceAddr, ok
+	return split[0], split[2], sourceAddr, ok
 }

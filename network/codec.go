@@ -51,43 +51,43 @@ func (s *EchoCode) Encode(data []byte) []byte {
 type StreamCode struct {
 	MaxDecode int
 
-	msglen  uint32
+	msgLen  uint32
 	context bytes.Buffer
 }
 
-const STREAM_HEADLEN = 4
+const StreamHeadlen = 4
 
 func (s *StreamCode) Decode(data []byte) ([][]byte, error) {
 	s.context.Write(data)
 
 	var ret [][]byte = nil
-	for s.context.Len() >= STREAM_HEADLEN {
-		if s.msglen == 0 {
+	for s.context.Len() >= StreamHeadlen {
+		if s.msgLen == 0 {
 			d := s.context.Bytes()
-			s.msglen = binary.BigEndian.Uint32(d[:STREAM_HEADLEN])
-			if s.MaxDecode > 0 && int(s.msglen) > s.MaxDecode {
+			s.msgLen = binary.BigEndian.Uint32(d[:StreamHeadlen])
+			if s.MaxDecode > 0 && int(s.msgLen) > s.MaxDecode {
 				return nil, ErrRecvLen
 			}
 		}
 
-		if int(s.msglen)+STREAM_HEADLEN > s.context.Len() {
+		if int(s.msgLen)+StreamHeadlen > s.context.Len() {
 			break
 		}
 
-		d := make([]byte, s.msglen+STREAM_HEADLEN)
+		d := make([]byte, s.msgLen+StreamHeadlen)
 		n, err := s.context.Read(d)
-		if n != int(s.msglen)+STREAM_HEADLEN || err != nil {
-			s.msglen = 0
+		if n != int(s.msgLen)+StreamHeadlen || err != nil {
+			s.msgLen = 0
 			continue
 		}
-		s.msglen = 0
-		ret = append(ret, d[STREAM_HEADLEN:])
+		s.msgLen = 0
+		ret = append(ret, d[StreamHeadlen:])
 	}
 	return ret, nil
 }
 
 func (s *StreamCode) Encode(data []byte) []byte {
-	d := make([]byte, STREAM_HEADLEN)
+	d := make([]byte, StreamHeadlen)
 	binary.BigEndian.PutUint32(d, uint32(len(data)))
 	data = append(d, data...)
 	return data

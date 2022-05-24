@@ -7,7 +7,6 @@ import (
 
 type (
 	Actor interface {
-		//core
 		ID() string
 		System() *System
 		Exit()
@@ -15,10 +14,9 @@ type (
 		Timer
 		Sender
 
-		//lua
 		CallLua(name string, ret int, args ...lua.LValue) []lua.LValue
-		//cmd
-		RegistCmd(cmd string, fn func(...string), usage ...string)
+
+		RegistryCmd(cmd string, fn func(...string), usage ...string)
 	}
 
 	Timer interface {

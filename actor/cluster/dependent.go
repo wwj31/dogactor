@@ -5,14 +5,14 @@ import (
 	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider"
 )
 
-type IServiceMeshProvider interface {
+type ServiceMeshProvider interface {
 	Start(servmesh_provider.ServMeshHander) error
 	Stop()
 	RegisterService(key string, value string) error
 	UnregisterService(key string) error
 }
 
-type IRemoteProvider interface {
+type RemoteProvider interface {
 	Start(remote_provider.RemoteHandler) error
 	Stop()
 	NewClient(host string)

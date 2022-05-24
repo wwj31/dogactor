@@ -35,11 +35,11 @@ func (ed *evDispatcher) RegistEvent(actorId string, events ...interface{}) error
 	defer ed.Unlock()
 
 	for _, event := range events {
-		rtype := reflect.TypeOf(event).String()
-		if ed.listeners[rtype] == nil {
-			ed.listeners[rtype] = make(map[string]struct{})
+		typ := reflect.TypeOf(event).String()
+		if ed.listeners[typ] == nil {
+			ed.listeners[typ] = make(map[string]struct{})
 		}
-		ed.listeners[rtype][actorId] = struct{}{}
+		ed.listeners[typ][actorId] = struct{}{}
 	}
 	return nil
 }

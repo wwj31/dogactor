@@ -134,7 +134,7 @@ func (s *actor) init(ok chan<- struct{}) {
 		ok <- struct{}{}
 	}
 	s.status.CompareAndSwap(starting, idle)
-	s.system.DispatchEvent(s.id, EvNewactor{ActorId: s.id, Publish: s.remote})
+	s.system.DispatchEvent(s.id, EvNewActor{ActorId: s.id, Publish: s.remote})
 	s.activate()
 }
 
@@ -298,12 +298,12 @@ func (s *actor) exit() {
 	log.SysLog.Infow("actor done", "actorId", s.ID())
 	s.status.Store(stop)
 
-	s.system.DispatchEvent(s.id, EvDelactor{ActorId: s.id, Publish: s.remote})
+	s.system.DispatchEvent(s.id, EvDelActor{ActorId: s.id, Publish: s.remote})
 	s.system.actorCache.Delete(s.ID())
 	s.system.waitStop.Done()
 }
 
-func (s *actor) RegistCmd(cmd string, fn func(...string), usage ...string) {
+func (s *actor) RegistryCmd(cmd string, fn func(...string), usage ...string) {
 	if s.system.cmd != nil {
 		s.system.cmd.RegistCmd(s.id, cmd, fn, usage...)
 	}
@@ -329,7 +329,7 @@ func SetLua(path string) Option {
 		a.register2Lua()
 		a.luapath = path
 		a.lua.Load(a.luapath)
-		a.RegistCmd("loadlua", func(s ...string) {
+		a.RegistryCmd("loadlua", func(s ...string) {
 			a.lua.Load(path)
 		}, "load lua")
 	}

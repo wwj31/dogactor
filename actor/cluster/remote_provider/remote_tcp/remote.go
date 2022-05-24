@@ -13,7 +13,6 @@ import (
 	"github.com/wwj31/dogactor/network"
 )
 
-// 管理所有远端的session
 type RemoteMgr struct {
 	remoteHandler remote_provider.RemoteHandler
 	listener      network.Listener
@@ -22,8 +21,8 @@ type RemoteMgr struct {
 	sessions cmap.ConcurrentMap //host=>session
 	clients  cmap.ConcurrentMap //host=>client
 
-	ping   []byte
-	regist []byte
+	ping     []byte
+	registry []byte
 }
 
 func NewRemoteMgr() *RemoteMgr {
@@ -47,22 +46,22 @@ func (s *RemoteMgr) Start(h remote_provider.RemoteHandler) error {
 		return err
 	}
 
-	pingmsg := actor_msg.NewActorMessage() // ping message
-	pingmsg.MsgName = "$ping"
-	s.ping, err = pingmsg.Marshal()
+	ping := actor_msg.NewActorMessage() // ping message
+	ping.MsgName = "$ping"
+	s.ping, err = ping.Marshal()
 	if err != nil {
 		return err
 	}
-	pingmsg.Free()
+	ping.Free()
 
-	regmsg := actor_msg.NewActorMessage() // registry message
-	regmsg.MsgName = "$regist"
-	regmsg.Data = []byte(s.remoteHandler.Address())
-	s.regist, err = regmsg.Marshal()
+	reg := actor_msg.NewActorMessage() // registry message
+	reg.MsgName = "$registry"
+	reg.Data = []byte(s.remoteHandler.Address())
+	s.registry, err = reg.Marshal()
 	if err != nil {
 		return err
 	}
-	regmsg.Free()
+	reg.Free()
 
 	s.listener = listener
 	go s.keepAlive()
@@ -115,7 +114,6 @@ func (s *RemoteMgr) keepAlive() {
 	}
 }
 
-// 远端actor发送消息
 func (s *RemoteMgr) SendMsg(addr string, bytes []byte) error {
 	session, ok := s.sessions.Get(addr)
 	if !ok {
@@ -134,7 +132,7 @@ type remoteHandler struct {
 
 func (s *remoteHandler) OnSessionCreated(sess network.NetSession) {
 	s.NetSession = sess
-	err := sess.SendMsg(s.remote.regist)
+	err := sess.SendMsg(s.remote.registry)
 	if err != nil {
 		log.SysLog.Errorw("OnSessionCreated error", "err", err)
 	}
@@ -161,7 +159,7 @@ func (s *remoteHandler) OnRecv(data []byte) {
 	}
 
 	switch msg.MsgName {
-	case "$regist":
+	case "$registry":
 		s.peerHost = string(msg.Data)
 		s.remote.sessions.Set(s.peerHost, s)
 		s.remote.remoteHandler.OnSessionOpened(s.peerHost)
@@ -169,7 +167,7 @@ func (s *remoteHandler) OnRecv(data []byte) {
 
 	default:
 		if s.peerHost == "" {
-			log.SysLog.Errorf("has not regist", "msg", msg.MsgName)
+			log.SysLog.Errorf("has not registry", "msg", msg.MsgName)
 			return
 		}
 
