@@ -52,7 +52,7 @@ func (s *Message) parse(data []byte, mm *tools.ProtoIndex) *Message {
 	return s
 }
 
-// 业务逻辑层主要使用接口
+// NewPbMessage 业务逻辑层主要使用接口
 func NewPbMessage(pb proto.Message, msgId int32) *Message {
 	msg := &Message{msgId: msgId, pb: pb}
 	return msg
@@ -62,7 +62,7 @@ func CombineMsgWithId(msgId int32, data []byte) []byte {
 	return append(Uint32ToByte4(uint32(msgId)), data...)
 }
 
-// 远端actor通信主要使用接口
+// NewBytesMessageParse 远端actor通信主要使用接口
 func NewBytesMessageParse(data []byte, mm *tools.ProtoIndex) *Message {
 	msg := &Message{}
 	return msg.parse(data, mm)

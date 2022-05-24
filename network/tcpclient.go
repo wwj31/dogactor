@@ -18,33 +18,33 @@ type TcpClient struct {
 	newCodec    func() DecodeEncoder
 	handlersFun []func() NetSessionHandler
 
-	session     *TcpSession
-	reconnTimes int
-	reconn      chan struct{}
+	session    *TcpSession
+	reconTimes int
+	recon      chan struct{}
 
 	connMux sync.Mutex
 }
 
-func NewTcpClient(addr string, newCodec func() DecodeEncoder, op ...OptionClient) Client {
+func NewTcpClient(addr string, newCodec func() DecodeEncoder, opt ...OptionClient) Client {
 	c := &TcpClient{
 		addr:        addr,
 		running:     1,
 		newCodec:    newCodec,
 		handlersFun: make([]func() NetSessionHandler, 0),
-		reconn:      make(chan struct{}, 1),
+		recon:       make(chan struct{}, 1),
 	}
 	h := func() NetSessionHandler {
-		return &tcpReconnectHandler{reconnect: c.reconn}
+		return &tcpReconnectHandler{reconnect: c.recon}
 	}
 	c.AddLast(h)
 
-	for _, f := range op {
+	for _, f := range opt {
 		f(c)
 	}
 	return c
 }
 
-// add handler to last of list
+// AddLast add handler to last of list
 func (s *TcpClient) AddLast(hander func() NetSessionHandler) {
 	s.handlersFun = append(s.handlersFun, hander)
 }
@@ -89,32 +89,32 @@ func (s *TcpClient) connect() error {
 		return err
 	}
 
-	handers := []NetSessionHandler{}
+	var handlers []NetSessionHandler
 	for _, f := range s.handlersFun {
-		handers = append(handers, f())
+		handlers = append(handlers, f())
 	}
-	s.session = newTcpSession(conn, s.newCodec(), handers...)
+	s.session = newTcpSession(conn, s.newCodec(), handlers...)
 	s.session.start()
 	return nil
 }
 
 func (s *TcpClient) reconnect() {
-	s.reconn <- struct{}{}
+	s.recon <- struct{}{}
 	for {
 		select {
-		case <-s.reconn:
+		case <-s.recon:
 			if !s.isRunning() {
 				return
 			}
 
 			if err := s.connect(); err == nil {
-				s.reconnTimes = 0
+				s.reconTimes = 0
 				break
 			}
 
-			time.Sleep(time.Second * time.Duration(s.reconnTimes))
-			s.reconnTimes++
-			s.reconn <- struct{}{}
+			time.Sleep(time.Second * time.Duration(s.reconTimes))
+			s.reconTimes++
+			s.recon <- struct{}{}
 		}
 	}
 }
