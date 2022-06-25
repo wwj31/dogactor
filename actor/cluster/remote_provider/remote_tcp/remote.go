@@ -80,7 +80,7 @@ func (s *RemoteMgr) Stop() {
 
 func (s *RemoteMgr) NewClient(host string) {
 	c := network.NewTcpClient(host, func() network.DecodeEncoder { return &network.StreamCode{} })
-	c.AddLast(func() network.NetSessionHandler { return &remoteHandler{remote: s, peerHost: host} })
+	c.AddHandler(func() network.NetSessionHandler { return &remoteHandler{remote: s, peerHost: host} })
 	s.clients.Set(host, c)
 	expect.Nil(c.Start(true))
 }

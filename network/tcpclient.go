@@ -36,7 +36,7 @@ func NewTcpClient(addr string, newCodec func() DecodeEncoder, opt ...OptionClien
 	h := func() NetSessionHandler {
 		return &tcpReconnectHandler{reconnect: c.recon}
 	}
-	c.AddLast(h)
+	c.AddHandler(h)
 
 	for _, f := range opt {
 		f(c)
@@ -44,8 +44,8 @@ func NewTcpClient(addr string, newCodec func() DecodeEncoder, opt ...OptionClien
 	return c
 }
 
-// AddLast add handler to last of list
-func (s *TcpClient) AddLast(hander func() NetSessionHandler) {
+// AddHandler add handler to tail of list
+func (s *TcpClient) AddHandler(hander func() NetSessionHandler) {
 	s.handlersFun = append(s.handlersFun, hander)
 }
 

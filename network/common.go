@@ -21,7 +21,7 @@ type Listener interface {
 
 type Client interface {
 	SendMsg([]byte) error
-	AddLast(handler func() NetSessionHandler)
+	AddHandler(handler func() NetSessionHandler)
 	Start(reconnect bool) error
 	Stop()
 }
