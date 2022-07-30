@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	ETCD_TIMEOUT   = 5 * time.Second //etcd连接超时
-	ETCD_GRANT_TTL = 6               //etcd timer to live
-	InValidLeaseId = -1
+	timeout        = 5 * time.Second //etcd连接超时
+	grantTTL       = 6               //etcd timer to live
+	invalidLeaseId = -1
 )
 
 type Etcd struct {
@@ -41,7 +41,7 @@ func NewEtcd(endpoints, prefix string) *Etcd {
 		endpoints: endpoints,
 		prefix:    prefix,
 	}
-	nEtcd.setLeaseID(InValidLeaseId)
+	nEtcd.setLeaseID(invalidLeaseId)
 	return nEtcd
 }
 
@@ -51,7 +51,7 @@ func (s *Etcd) Start(h servmesh_provider.ServMeshHander) error {
 	logInfo := []interface{}{"endpoints", s.endpoints, "prefix", s.prefix}
 	log.SysLog.Infow("etcd start", logInfo...)
 
-	client, err := etcd.New(etcd.Config{Endpoints: strings.Split(s.endpoints, "_"), DialTimeout: ETCD_TIMEOUT})
+	client, err := etcd.New(etcd.Config{Endpoints: strings.Split(s.endpoints, "_"), DialTimeout: timeout})
 	if err != nil {
 		log.SysLog.Errorw("new etcd client failed", append(logInfo, "err", err)...)
 		return err
@@ -91,7 +91,7 @@ func (s *Etcd) RegisterService(key, value string) error {
 		return s.registErr
 	}
 	leaseId := s.getLeaseID()
-	for leaseId == InValidLeaseId {
+	for leaseId == invalidLeaseId {
 		time.Sleep(100 * time.Millisecond)
 		leaseId = s.getLeaseID()
 	}
@@ -133,10 +133,10 @@ func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelF
 		return nil, nil, nil, nil, false
 	}
 
-	s.setLeaseID(InValidLeaseId)
+	s.setLeaseID(invalidLeaseId)
 
-	ctx, _ := context.WithTimeout(context.TODO(), ETCD_TIMEOUT)
-	lease, err := s.etcdCliet.Grant(ctx, ETCD_GRANT_TTL)
+	ctx, _ := context.WithTimeout(context.TODO(), timeout)
+	lease, err := s.etcdCliet.Grant(ctx, grantTTL)
 	if err != nil {
 		log.SysLog.Errorw("etcd keepAlive create lease failed", "actorerr", err)
 		return nil, nil, nil, nil, false
