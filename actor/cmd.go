@@ -11,7 +11,6 @@ type Cmder interface {
 	RegistCmd(actorId, cmd string, f func(...string), usage ...string)
 }
 
-// WithCMD 设置Actor监听的端口
 func WithCMD(cmd Cmder) SystemOption {
 	return func(system *System) error {
 		system.cmd = cmd
