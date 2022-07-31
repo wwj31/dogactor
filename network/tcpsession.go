@@ -31,7 +31,7 @@ func newTcpSession(conn net.Conn, coder DecodeEncoder, handler ...NetSessionHand
 }
 
 type TcpSession struct {
-	id      uint32
+	id      uint64
 	conn    net.Conn
 	storage sync.Map
 
@@ -42,7 +42,7 @@ type TcpSession struct {
 }
 
 func (s *TcpSession) Type() SessionType    { return TypeTCP }
-func (s *TcpSession) Id() uint32           { return s.id }
+func (s *TcpSession) Id() uint64           { return s.id }
 func (s *TcpSession) LocalAddr() net.Addr  { return s.conn.LocalAddr() }
 func (s *TcpSession) RemoteAddr() net.Addr { return s.conn.RemoteAddr() }
 func (s *TcpSession) RemoteIP() string {

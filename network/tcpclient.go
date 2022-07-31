@@ -3,6 +3,7 @@ package network
 import (
 	"errors"
 	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -52,10 +53,8 @@ func (s *TcpClient) AddHandler(hander func() NetSessionHandler) {
 func (s *TcpClient) Start(reconnect bool) error {
 	if reconnect {
 		go s.reconnect()
-	} else {
-		return s.connect()
 	}
-	return nil
+	return s.connect()
 }
 
 func (s *TcpClient) SendMsg(data []byte) error {
@@ -99,22 +98,24 @@ func (s *TcpClient) connect() error {
 }
 
 func (s *TcpClient) reconnect() {
-	s.recon <- struct{}{}
-	for {
-		select {
-		case <-s.recon:
-			if !s.isRunning() {
-				return
-			}
+	for range s.recon {
+		if !s.isRunning() {
+			return
+		}
 
-			if err := s.connect(); err == nil {
-				s.reconTimes = 0
-				break
-			}
+		if err := s.connect(); err != nil {
+			log.SysLog.Warnw("tcp client try reconnect",
+				"recon times", s.reconTimes, "addr", s.addr, "connect err", err)
 
 			time.Sleep(time.Second * time.Duration(s.reconTimes))
-			s.reconTimes++
-			s.recon <- struct{}{}
+			s.reconTimes = tools.Min(20, s.reconTimes+1)
+			if len(s.recon) == 0 {
+				s.recon <- struct{}{}
+			}
+			continue
 		}
+
+		// success reconnect
+		s.reconTimes = 0
 	}
 }

@@ -1,7 +1,6 @@
 package network
 
 import (
-	"github.com/wwj31/dogactor/tools"
 	"net"
 	"sync/atomic"
 )
@@ -27,7 +26,7 @@ type Client interface {
 }
 
 type NetSession interface {
-	Id() uint32
+	Id() uint64
 	LocalAddr() net.Addr
 	RemoteAddr() net.Addr
 	RemoteIP() string
@@ -45,10 +44,8 @@ type NetSessionHandler interface {
 	OnRecv([]byte)
 }
 
-var GenNetSessionId = genNetSessionId()
+var sessionGenId uint64
 
-func genNetSessionId() func() uint32 {
-	now := tools.Now()
-	sessionGenId := uint32(now.Hour()*100000000 + now.Minute()*1000000 + now.Second()*10000)
-	return func() uint32 { return atomic.AddUint32(&sessionGenId, 1) }
+func GenNetSessionId() uint64 {
+	return atomic.AddUint64(&sessionGenId, 1)
 }
