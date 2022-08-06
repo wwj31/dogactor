@@ -69,7 +69,7 @@ func (c *Commands) loop() {
 
 			ins, exist := c.cmds.Load(cmdName)
 			if !exist {
-				log.SysLog.Warnw("dog-cli not exists", "cmdName", cmdName)
+				log.SysLog.Warnw("dogctl not exists", "cmdName", cmdName)
 			} else {
 				cmd := ins.(Cmd)
 				param := args[1:]
