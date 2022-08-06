@@ -17,7 +17,6 @@ var connectCmd = &cobra.Command{
 	Long:  `connect to actor cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		client.Startup(cmd.Flag("addr").Value.String(), cmd.Flag("prefix").Value.String())
-		//fmt.Println("connect called", "args", args, " addr", cmd.Flag("addr"))
 	},
 }
 
