@@ -16,7 +16,7 @@ import (
 
 var (
 	ETCD_ADDR   = "127.0.0.1:2379"
-	ETCD_PREFIX = "demo/"
+	ETCD_PREFIX = "dog"
 )
 
 type Student struct {

@@ -40,9 +40,10 @@ type System struct {
 
 func NewSystem(op ...SystemOption) (*System, error) {
 	s := &System{
-		CStop:    make(chan struct{}, 1),
-		waitStop: &sync.WaitGroup{},
-		newList:  make(chan *actor, 100),
+		actorAddr: ":8760",
+		CStop:     make(chan struct{}, 1),
+		waitStop:  &sync.WaitGroup{},
+		newList:   make(chan *actor, 100),
 	}
 	s.evDispatcher = newEvent(s)
 

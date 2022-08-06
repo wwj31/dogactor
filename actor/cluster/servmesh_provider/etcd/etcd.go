@@ -6,6 +6,7 @@ import (
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	etcd "go.etcd.io/etcd/client/v3"
 	"go.uber.org/atomic"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -25,10 +26,10 @@ type Etcd struct {
 	endpoints string
 	prefix    string
 
-	etcdCliet *etcd.Client
-	leaseId   atomic.Int64 // 租约
-	revision  int64        // 当前监听版本号
-	registErr error        // 注册错误(当任意注册发生错误，则全部推倒重来)
+	etcdClient *etcd.Client
+	leaseId    atomic.Int64 // 租约
+	revision   int64        // 当前监听版本号
+	registErr  error        // 注册错误(当任意注册发生错误，则全部推倒重来)
 
 	localActors sync.Map //
 	hander      servmesh_provider.ServMeshHander
@@ -57,13 +58,13 @@ func (s *Etcd) Start(h servmesh_provider.ServMeshHander) error {
 		return err
 	}
 
-	s.etcdCliet = client
+	s.etcdClient = client
 	s.wg.Add(1)
 	go tools.Try(func() {
 		defer s.wg.Done()
 		for {
 			if s.IsStop() {
-				log.SysLog.Infow("ectd stop", logInfo...)
+				log.SysLog.Infow("etcd stop", logInfo...)
 				return
 			}
 			s.run()
@@ -87,7 +88,7 @@ func (s *Etcd) IsStop() bool {
 func (s *Etcd) RegisterService(key, value string) error {
 	s.localActors.Store(key, value)
 	if s.IsStop() {
-		s.registErr = errors.New("etcd has stoped")
+		s.registErr = errors.New("etcd has stopped")
 		return s.registErr
 	}
 	leaseId := s.getLeaseID()
@@ -96,7 +97,9 @@ func (s *Etcd) RegisterService(key, value string) error {
 		leaseId = s.getLeaseID()
 	}
 
-	resp, err := s.etcdCliet.Put(context.TODO(), s.prefix+key, value, etcd.WithLease(leaseId))
+	resp, err := s.etcdClient.Put(context.TODO(),
+		path.Join(s.prefix, key), value, etcd.WithLease(leaseId))
+
 	if err != nil {
 		log.SysLog.Errorf("RegisterService etcd failed",
 			"error", err,
@@ -115,7 +118,7 @@ func (s *Etcd) UnregisterService(key string) error {
 		s.registErr = errors.New("etcd has stoped")
 		return s.registErr
 	}
-	resp, err := s.etcdCliet.Delete(context.TODO(), s.prefix+key)
+	resp, err := s.etcdClient.Delete(context.TODO(), path.Join(s.prefix, key))
 	if err != nil {
 		log.SysLog.Errorf("UnregisterService etcd failed",
 			"error", err,
@@ -136,14 +139,14 @@ func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelF
 	s.setLeaseID(invalidLeaseId)
 
 	ctx, _ := context.WithTimeout(context.TODO(), timeout)
-	lease, err := s.etcdCliet.Grant(ctx, grantTTL)
+	lease, err := s.etcdClient.Grant(ctx, grantTTL)
 	if err != nil {
-		log.SysLog.Errorw("etcd keepAlive create lease failed", "actorerr", err)
+		log.SysLog.Errorw("etcd keepAlive create lease failed", "err", err)
 		return nil, nil, nil, nil, false
 	}
 
 	ctx, cancelAlive := context.WithCancel(context.TODO())
-	alive, err := s.etcdCliet.KeepAlive(ctx, lease.ID)
+	alive, err := s.etcdClient.KeepAlive(ctx, lease.ID)
 	if err != nil {
 		log.SysLog.Errorw("etcd keepAlive failed", "err", err)
 		return alive, cancelAlive, nil, nil, false
@@ -158,7 +161,7 @@ func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelF
 	}
 
 	ctx, cancelWatch := context.WithCancel(context.TODO())
-	watch := s.etcdCliet.Watch(ctx, s.prefix, etcd.WithPrefix(), etcd.WithPrevKV())
+	watch := s.etcdClient.Watch(ctx, s.prefix, etcd.WithPrefix(), etcd.WithPrevKV())
 	s.initAlreadyInEtcd()
 
 	log.SysLog.Infow("etcd keepAlive success!", "lease", s.getLeaseID())
@@ -174,7 +177,7 @@ func (s *Etcd) setLeaseID(leaseID etcd.LeaseID) {
 }
 
 func (s *Etcd) initAlreadyInEtcd() {
-	resp, err := etcd.NewKV(s.etcdCliet).Get(context.Background(), s.prefix, etcd.WithPrefix())
+	resp, err := etcd.NewKV(s.etcdClient).Get(context.Background(), s.prefix, etcd.WithPrefix())
 	if err != nil {
 		return
 	}
@@ -246,8 +249,7 @@ func (s *Etcd) run() {
 }
 
 func (s *Etcd) shiftStruct(kv *mvccpb.KeyValue) (k, v string) {
-	k = string(kv.Key)
+	_, k = path.Split(string(kv.Key))
 	v = string(kv.Value)
-	k = strings.Replace(k, s.prefix, "", 1)
 	return
 }
