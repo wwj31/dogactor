@@ -33,3 +33,7 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 )
+
+replace (
+	github.com/wwj31/dogactor => ../
+)

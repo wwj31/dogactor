@@ -91,8 +91,13 @@ func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 func (s *System) Address() string {
 	return s.actorAddr
 }
+
 func (s *System) SetCluster(act *actor) {
 	s.cluster = act
+}
+
+func (s *System) Cluster() *actor {
+	return s.cluster
 }
 
 func (s *System) Stop() {

@@ -68,7 +68,7 @@ func (c *Cluster) OnInit() {
 		log.SysLog.Errorw("serviceMesh start error", "err", err)
 	}
 
-	c.RegistryCmd("clusterinfo", c.clusterinfo, "information of all cluster actor")
+	//c.RegistryCmd("clusterinfo", c.clusterinfo, "information of all cluster actor")
 	c.ready[c.System().Address()] = true
 }
 
@@ -88,6 +88,22 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg inte
 			return err
 		}
 		return
+	}
+
+	str, ok := msg.(string)
+	if ok {
+		switch str {
+		case "stop":
+			c.System().CancelAll(c.ID())
+			c.serviceMesh.Stop()
+			c.remote.Stop()
+			c.Exit()
+
+		case "nodeinfo":
+			respErr = c.Response(requestId, c.clusterInfo())
+		default:
+			log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
+		}
 	}
 	return
 }
@@ -245,8 +261,8 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 	}
 }
 
-func (c *Cluster) clusterinfo(params ...string) {
-	actors := []string{}
+func (c *Cluster) clusterInfo() string {
+	var actors []string
 	for id, host := range c.actors {
 		actors = append(actors, fmt.Sprintf("┃%-47v┃%15v%2v", id, host, "┃"))
 	}
@@ -260,5 +276,5 @@ func (c *Cluster) clusterinfo(params ...string) {
 %s
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━remote actor━━━━━━━━━┻━━━━━━━━━━━━━━━━┛
 `
-	fmt.Println(fmt.Sprintf(format, strings.Join(actors, "\n")))
+	return fmt.Sprintf(format, strings.Join(actors, "\n"))
 }

@@ -13,10 +13,10 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "dogctl [command]",
+	Use:   "dog-cli [command]",
 	Short: "dog actor CLI developed with cobra",
 	Long: `
-           dogctl is a CLI interactions for dogactor cluster,
+           dog-cli is a CLI interactions for dogactor cluster,
            this application is a tool to connect cluster to  
            quickly show actors info.`,
 	// Uncomment the following line if your bare application
