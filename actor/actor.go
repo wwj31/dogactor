@@ -51,7 +51,7 @@ type (
 	}
 )
 
-// New new actor
+// New spawn a new actor
 // id is invalid if contain '@' or '$'
 func New(id string, handler spawnActor, op ...Option) *actor {
 	a := &actor{

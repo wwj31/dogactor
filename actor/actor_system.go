@@ -26,7 +26,7 @@ type System struct {
 	waitStop  *sync.WaitGroup // stop wait
 	exiting   int32           // state of stopping
 
-	actorCache sync.Map    // all of local actor
+	actorCache sync.Map    // all local actor
 	newList    chan *actor // new list
 
 	cluster *actor
@@ -55,7 +55,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 		log.SysLog.Warnw("without protobuf index,can't find ptoro struct")
 	}
 
-	// SystemOption maybe regist actor
+	// SystemOption maybe register actor
 	for len(s.newList) > 0 {
 		cluster := <-s.newList
 		wait := make(chan struct{})
@@ -78,7 +78,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 	return s, nil
 }
 
-// if ok != nil, caller wait to actor inited
+// if ok != nil, caller wait for actor call init to finish
 func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
 		return
