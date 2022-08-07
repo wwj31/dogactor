@@ -19,16 +19,20 @@ import (
 	actor system
 */
 
-const DefaultAddr = ":8760"
+const (
+	DefaultSysAddr     = ":8888"
+	DefaultProfileAddr = ":8760"
+)
 
 type SystemOption func(*System) error
 
 type System struct {
 	CStop chan struct{}
 
-	actorAddr string          // cluster listen addr
-	waitStop  *sync.WaitGroup // stop wait
-	exiting   int32           // state of stopping
+	sysAddr     string          // cluster listen addr
+	profileAddr string          // profile listen addr
+	waitStop    *sync.WaitGroup // stop wait
+	exiting     int32           // state of stopping
 
 	actorCache sync.Map    // all local actor
 	newList    chan *actor // new list
@@ -42,10 +46,11 @@ type System struct {
 
 func NewSystem(op ...SystemOption) (*System, error) {
 	s := &System{
-		actorAddr: DefaultAddr,
-		CStop:     make(chan struct{}, 1),
-		waitStop:  &sync.WaitGroup{},
-		newList:   make(chan *actor, 100),
+		sysAddr:     DefaultSysAddr,
+		profileAddr: DefaultProfileAddr,
+		CStop:       make(chan struct{}, 1),
+		waitStop:    &sync.WaitGroup{},
+		newList:     make(chan *actor, 100),
 	}
 	s.evDispatcher = newEvent(s)
 
@@ -77,6 +82,10 @@ func NewSystem(op ...SystemOption) (*System, error) {
 			}
 		}
 	}()
+
+	// start pprof http server
+	profileHttp(s)
+
 	log.SysLog.Infof("System Start")
 	return s, nil
 }
@@ -91,7 +100,7 @@ func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 }
 
 func (s *System) Address() string {
-	return s.actorAddr
+	return s.sysAddr
 }
 
 func (s *System) SetCluster(act *actor) {
@@ -237,7 +246,14 @@ func ProtoIndex(pi *tools.ProtoIndex) SystemOption {
 
 func Addr(addr string) SystemOption {
 	return func(system *System) error {
-		system.actorAddr = addr
+		system.sysAddr = addr
+		return nil
+	}
+}
+
+func ProfileAddr(addr string) SystemOption {
+	return func(system *System) error {
+		system.profileAddr = addr
 		return nil
 	}
 }
