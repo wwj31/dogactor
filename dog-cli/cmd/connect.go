@@ -7,7 +7,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/wwj31/dogactor/actor/command"
+	"github.com/wwj31/dogactor/dog-cli/command"
 )
 
 // connectCmd represents the connect command
