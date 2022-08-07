@@ -7,16 +7,19 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/wwj31/dogactor/dog-cli/client"
+	"github.com/wwj31/dogactor/actor/command"
 )
 
 // connectCmd represents the connect command
 var connectCmd = &cobra.Command{
-	Use:   "connect",
+	Use:   "con",
 	Short: "connect to actor cluster",
 	Long:  `connect to actor cluster.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		client.Startup(cmd.Flag("addr").Value.String(), cmd.Flag("prefix").Value.String())
+		command.StartCmd(
+			cmd.Flag("addr").Value.String(),
+			cmd.Flag("prefix").Value.String(),
+		)
 	},
 }
 
@@ -27,6 +30,7 @@ func init() {
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
+
 	connectCmd.Flags().StringP("addr", "a", "127.0.0.1:2379", "connect to etcd addr")
 	connectCmd.Flags().StringP("prefix", "p", "dog", "etcd key with matching prefix")
 

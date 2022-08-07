@@ -303,12 +303,6 @@ func (s *actor) exit() {
 	s.system.waitStop.Done()
 }
 
-func (s *actor) RegistryCmd(cmd string, fn func(...string), usage ...string) {
-	if s.system.cmd != nil {
-		s.system.cmd.RegistCmd(s.id, cmd, fn, usage...)
-	}
-}
-
 // Extra Option //////////
 
 func SetMailBoxSize(boxSize int) Option {
@@ -329,8 +323,5 @@ func SetLua(path string) Option {
 		a.register2Lua()
 		a.luapath = path
 		a.lua.Load(a.luapath)
-		a.RegistryCmd("loadlua", func(s ...string) {
-			a.lua.Load(path)
-		}, "load lua")
 	}
 }

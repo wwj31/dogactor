@@ -15,8 +15,6 @@ type (
 		Sender
 
 		CallLua(name string, ret int, args ...lua.LValue) []lua.LValue
-
-		RegistryCmd(cmd string, fn func(...string), usage ...string)
 	}
 
 	Timer interface {

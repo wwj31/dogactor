@@ -17,6 +17,8 @@ import (
 	actor system
 */
 
+const DefaultAddr = ":8760"
+
 type SystemOption func(*System) error
 
 type System struct {
@@ -33,14 +35,12 @@ type System struct {
 
 	protoIndex *tools.ProtoIndex
 
-	// extra
-	cmd Cmder
 	evDispatcher
 }
 
 func NewSystem(op ...SystemOption) (*System, error) {
 	s := &System{
-		actorAddr: ":8760",
+		actorAddr: DefaultAddr,
 		CStop:     make(chan struct{}, 1),
 		waitStop:  &sync.WaitGroup{},
 		newList:   make(chan *actor, 100),
