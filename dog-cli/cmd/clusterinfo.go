@@ -14,13 +14,13 @@ import (
 	"github.com/wwj31/dogactor/tools"
 )
 
-var actorInfoCmd = &cobra.Command{
-	Use:   "actorinfo [flags]",
-	Short: "show profile of actor by specified actor id",
-	Long:  `show profile of actor by specified actor id.`,
+var clusterInfoCmd = &cobra.Command{
+	Use:   "clusterinfo [flags]",
+	Short: "show all cluster actor and host",
+	Long:  `show all cluster actor and host.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		addr := cmd.Flag("addr").Value.String()
-		b, err := tools.HttpGet("http://" + path.Join(addr, "actorinfo"))
+		b, err := tools.HttpGet("http://" + path.Join(addr, "clusterinfo"))
 		if err != nil {
 			fmt.Println("http get", err)
 			return
@@ -30,14 +30,14 @@ var actorInfoCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(actorInfoCmd)
+	rootCmd.AddCommand(clusterInfoCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 
-	actorInfoCmd.Flags().StringP("addr", "a",
+	clusterInfoCmd.Flags().StringP("addr", "a",
 		actor.DefaultProfileAddr,
 		"show profile actor specified id",
 	)
