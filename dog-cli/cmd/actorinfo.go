@@ -7,10 +7,11 @@ package cmd
 
 import (
 	"fmt"
+	"path"
+
 	"github.com/spf13/cobra"
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/tools"
-	"path"
 )
 
 // connectCmd represents the connect command
@@ -37,9 +38,8 @@ func init() {
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 
-	url := fmt.Sprintf("http://127.0.0.1%v/actorinfo", actor.DefaultProfileAddr)
 	profileCmd.Flags().StringP("addr", "a",
-		url,
+		actor.DefaultProfileAddr,
 		"show profile actor specified id",
 	)
 

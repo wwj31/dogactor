@@ -3,8 +3,6 @@ package actor
 import (
 	"fmt"
 	"runtime"
-	"sort"
-	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -211,29 +209,6 @@ func (s *System) Exist(actorId string) bool {
 
 func (s *System) ProtoIndex() *tools.ProtoIndex {
 	return s.protoIndex
-}
-
-func (s *System) actorInfo() string {
-	var actors []string
-
-	s.actorCache.Range(func(key, value interface{}) bool {
-		obj := value.(*actor)
-		actors = append(actors, fmt.Sprintf("┃%-48v┃%10v     ┃%8v    ┃", key, len(obj.mailBox), cap(obj.mailBox)))
-		return true
-	})
-
-	sort.SliceStable(actors, func(i, j int) bool {
-		return actors[i] < actors[j]
-	})
-
-	format := `
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ local actor ━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
-┃                   actorId                      ┃ mail-box size ┃  max size  ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
-%s
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ local actor ━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
-`
-	return fmt.Sprintf(format, strings.Join(actors, "\n"))
 }
 
 // ProtoIndex index proto struct

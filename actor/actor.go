@@ -2,6 +2,7 @@ package actor
 
 import (
 	"math"
+	"reflect"
 	"sync/atomic"
 	"time"
 
@@ -30,8 +31,9 @@ type (
 
 		id      string
 		handler actorHandler
-		mailBox chan actor_msg.Message
-		remote  bool
+		mailBox mailBox
+
+		remote bool
 
 		// timer
 		timerMgr *jtimer.Manager
@@ -55,9 +57,11 @@ type (
 // id is invalid if contain '@' or '$'
 func New(id string, handler spawnActor, op ...Option) *actor {
 	a := &actor{
-		id:        id,
-		handler:   handler,
-		mailBox:   make(chan actor_msg.Message, 100),
+		id:      id,
+		handler: handler,
+		mailBox: mailBox{
+			ch: make(chan actor_msg.Message, 100),
+		},
 		remote:    true, // 默认都能被远端发现
 		timerMgr:  jtimer.New(),
 		timer:     time.NewTimer(math.MaxInt),
@@ -111,21 +115,21 @@ func (s *actor) push(msg actor_msg.Message) error {
 		return actorerr.ActorPushMsgErr
 	}
 
-	if l, c := len(s.mailBox), cap(s.mailBox); l > c*2/3 {
+	if l, c := len(s.mailBox.ch), cap(s.mailBox.ch); l > c*2/3 {
 		log.SysLog.Warnw("mail box will quickly full",
 			"len", l,
 			"cap", c,
 			"actorId", s.id)
 	}
 
-	s.mailBox <- msg
+	s.mailBox.ch <- msg
 	s.activate()
 	return nil
 }
 
 var (
-	timerTickMsg = &actor_msg.ActorMessage{} // timer tick msg
-	actorStopMsg = &actor_msg.ActorMessage{} // actor stop msg
+	timerTickMsg = &actor_msg.ActorMessage{MsgName: "timerTickMsg"} // timer tick msg
+	actorStopMsg = &actor_msg.ActorMessage{MsgName: "actorStopMsg"} // actor stop msg
 )
 
 func (s *actor) init(ok chan<- struct{}) {
@@ -148,7 +152,7 @@ func (s *actor) run() {
 	s.resetIdleTime()
 	for {
 		select {
-		case msg := <-s.mailBox:
+		case msg := <-s.mailBox.ch:
 			if s.isStop(msg) {
 				s.exit()
 				return
@@ -176,7 +180,7 @@ func (s *actor) run() {
 			s.status.Store(idle)
 
 			// check sent after the timeout
-			if len(s.mailBox) > 0 {
+			if len(s.mailBox.ch) > 0 {
 				s.activate()
 			}
 			// there are the return just for idle with the mailBox was empty and the timerMgr was empty
@@ -186,11 +190,16 @@ func (s *actor) run() {
 }
 
 func (s *actor) handleMsg(msg actor_msg.Message) {
-	var message = msg.Message()
+
+	message := msg.Message()
+
+	var msgType string
 	// message is ActorMessage when msg from remote OnRecv
 	if actMsg, ok := message.(*actor_msg.ActorMessage); ok {
 		if actMsg.Data != nil && actMsg.MsgName != "" {
 			defer msg.Free()
+
+			msgType = actMsg.GetMsgName()
 			message = actMsg.Fill(s.system.protoIndex)
 		}
 	}
@@ -198,19 +207,16 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 		return
 	}
 
-	// recording slow processed of message
-	beginTime := tools.Milliseconds()
-	defer func() {
-		endTime := tools.Milliseconds()
-		dur := endTime - beginTime
-		if dur > int64(100*time.Millisecond) {
-			log.SysLog.Warnw("too long to process time", "msg", msg)
-		}
-	}()
+	if msgType == "" {
+		msgType = reflect.TypeOf(message).String()
+	}
+
+	s.mailBox.processingTime = 0
+	defer s.mailBox.recording(time.Now(), msgType)
 
 	reqSourceId, _, _, reqOK := ParseRequestId(msg.GetRequestId())
 	if reqOK {
-		//recv Response
+		//rev Response
 		if s.id == reqSourceId {
 			s.doneRequest(msg.GetRequestId(), message)
 			return
@@ -307,7 +313,7 @@ func (s *actor) exit() {
 
 func SetMailBoxSize(boxSize int) Option {
 	return func(a *actor) {
-		a.mailBox = make(chan actor_msg.Message, boxSize)
+		a.mailBox.ch = make(chan actor_msg.Message, boxSize)
 	}
 }
 
