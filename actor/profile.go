@@ -1,8 +1,7 @@
 package actor
 
 import (
-	"fmt"
-	"github.com/liushuochen/gotable"
+	"encoding/json"
 	"github.com/spf13/cast"
 	"github.com/wwj31/dogactor/log"
 	"net/http"
@@ -20,38 +19,35 @@ func profileHttp(sys *System) {
 	}()
 }
 
+type Profile struct {
+	ActorId     string
+	Len         int
+	Cap         int
+	LastMsg     string
+	ProcessTime string
+}
+
 func ActorInfo(sys *System) func(writer http.ResponseWriter, r *http.Request) {
 	return func(writer http.ResponseWriter, r *http.Request) {
-
-		table, err := gotable.Create("actorId", "len", "cap", "last msg", "process time")
-		if err != nil {
-			errStr := fmt.Sprintf("Create table failed: %v", err.Error())
-			log.SysLog.Errorf(errStr)
-			_, _ = writer.Write([]byte(errStr))
-			return
-		}
-
-		var actors []map[string]string
+		var actors []Profile
 		sys.actorCache.Range(func(key, value interface{}) bool {
 			obj := value.(*actor)
-			actors = append(actors, map[string]string{
-				"actorId":      cast.ToString(key),
-				"len":          cast.ToString(len(obj.mailBox.ch)),
-				"cap":          cast.ToString(cap(obj.mailBox.ch)),
-				"last msg":     obj.mailBox.lastMsgName,
-				"process time": obj.mailBox.processingTime.String(),
+			actors = append(actors, Profile{
+				ActorId:     cast.ToString(key),
+				Len:         len(obj.mailBox.ch),
+				Cap:         cap(obj.mailBox.ch),
+				LastMsg:     obj.mailBox.lastMsgName,
+				ProcessTime: obj.mailBox.processingTime.String(),
 			})
 			return true
 		})
 
 		sort.SliceStable(actors, func(i, j int) bool {
-			return actors[i]["actorId"] < actors[j]["actorId"]
+			return actors[i].ActorId < actors[j].ActorId
 		})
 
-		table.AddRows(actors)
-
-		str := table.String()
-		if _, err := writer.Write([]byte(str)); err != nil {
+		bytes, _ := json.Marshal(actors)
+		if _, err := writer.Write(bytes); err != nil {
 			log.SysLog.Errorf("ActorInfo write err:%v", err)
 		}
 	}

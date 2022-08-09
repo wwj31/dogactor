@@ -6,12 +6,14 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"path"
 
 	"github.com/spf13/cobra"
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/tools"
+	"github.com/wwj31/dogtb"
 )
 
 var actorInfoCmd = &cobra.Command{
@@ -25,7 +27,21 @@ var actorInfoCmd = &cobra.Command{
 			fmt.Println("http get", err)
 			return
 		}
-		fmt.Println(string(b))
+		var actorProfile []actor.Profile
+
+		err = json.Unmarshal(b, &actorProfile)
+		if err != nil {
+			fmt.Println("json err", err)
+			return
+		}
+
+		tb, err := dogtb.Create(actorProfile)
+		if err != nil {
+			fmt.Println("dogtb err", err)
+			return
+		}
+
+		fmt.Println(tb.String())
 	},
 }
 
