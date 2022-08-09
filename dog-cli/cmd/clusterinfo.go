@@ -15,12 +15,12 @@ import (
 )
 
 var clusterInfoCmd = &cobra.Command{
-	Use:   "clusterinfo [flags]",
+	Use:   "cluster [flags]",
 	Short: "show all cluster actor and host",
 	Long:  `show all cluster actor and host.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		addr := cmd.Flag("addr").Value.String()
-		b, err := tools.HttpGet("http://" + path.Join(addr, "clusterinfo"))
+		b, err := tools.HttpGet("http://" + path.Join(addr, "cluster"))
 		if err != nil {
 			fmt.Println("http get", err)
 			return

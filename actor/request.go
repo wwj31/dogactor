@@ -73,22 +73,7 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 
 // RequestWait sync request
 func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (resp interface{}, err error) {
-	var t time.Duration
-	if len(timeout) > 0 && timeout[0] > 0 {
-		t = timeout[0]
-	}
-
-	waitRsp := make(chan result)
-	waiter := New(
-		"wait_"+tools.XUID(),
-		&waitActor{c: waitRsp, msg: msg, targetId: targetId, timeout: t},
-		SetLocalized(),
-	)
-	expect.Nil(s.System().Add(waiter))
-
-	// wait to result
-	r := <-waitRsp
-	return r.result, r.err
+	return s.System().RequestWait(targetId, msg, timeout...)
 }
 
 // Response response a result

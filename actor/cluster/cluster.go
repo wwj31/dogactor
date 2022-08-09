@@ -1,19 +1,18 @@
 package cluster
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/wwj31/dogactor/actor"
+	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_tcp"
+	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 	"reflect"
 	"sort"
-	"strings"
-
-	"github.com/wwj31/dogactor/actor"
-	"github.com/wwj31/dogactor/actor/actorerr"
-	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd"
 )
 
 func WithRemote(ectdAddr, prefix string) actor.SystemOption {
@@ -269,12 +268,9 @@ func (c *Cluster) clusterInfo() string {
 	sort.SliceStable(actors, func(i, j int) bool {
 		return actors[i] < actors[j]
 	})
-	format := `
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━remote actor━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
-┃                   actorId                     ┃     host       ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━┫
-%s
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━remote actor━━━━━━━━━┻━━━━━━━━━━━━━━━━┛
-`
-	return fmt.Sprintf(format, strings.Join(actors, "\n"))
+	bytes, err := json.Marshal(actors)
+	if err != nil {
+		return fmt.Errorf("json marshal err:%v", err).Error()
+	}
+	return string(bytes)
 }

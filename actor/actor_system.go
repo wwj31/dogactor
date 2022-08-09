@@ -2,9 +2,11 @@ package actor
 
 import (
 	"fmt"
+	"github.com/wwj31/dogactor/expect"
 	"runtime"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/wwj31/dogactor/actor/actorerr"
@@ -200,6 +202,26 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 		return errFormat(err, sourceId, targetId, requestId)
 	}
 	return nil
+}
+
+// RequestWait sync request
+func (s *System) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (resp interface{}, err error) {
+	var t time.Duration
+	if len(timeout) > 0 && timeout[0] > 0 {
+		t = timeout[0]
+	}
+
+	waitRsp := make(chan result)
+	waiter := New(
+		"wait_"+tools.XUID(),
+		&waitActor{c: waitRsp, msg: msg, targetId: targetId, timeout: t},
+		SetLocalized(),
+	)
+	expect.Nil(s.Add(waiter))
+
+	// wait to result
+	r := <-waitRsp
+	return r.result, r.err
 }
 
 func (s *System) Exist(actorId string) bool {

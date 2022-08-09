@@ -10,7 +10,8 @@ import (
 
 func profileHttp(sys *System) {
 	var mux = http.NewServeMux()
-	mux.HandleFunc("/actorinfo", ActorInfo(sys))
+	mux.HandleFunc("/local", ActorInfo(sys))
+	mux.HandleFunc("/cluster", ClusterInfo(sys))
 
 	go func() {
 		if err := http.ListenAndServe(sys.profileAddr, mux); err != nil {
@@ -48,6 +49,15 @@ func ActorInfo(sys *System) func(writer http.ResponseWriter, r *http.Request) {
 
 		bytes, _ := json.Marshal(actors)
 		if _, err := writer.Write(bytes); err != nil {
+			log.SysLog.Errorf("ActorInfo write err:%v", err)
+		}
+	}
+}
+
+func ClusterInfo(sys *System) func(writer http.ResponseWriter, r *http.Request) {
+	return func(writer http.ResponseWriter, r *http.Request) {
+		rsp, _ := sys.RequestWait(sys.cluster.ID(), "nodeinfo")
+		if _, err := writer.Write([]byte(rsp.(string))); err != nil {
 			log.SysLog.Errorf("ActorInfo write err:%v", err)
 		}
 	}
