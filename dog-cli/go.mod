@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/spf13/cobra v1.5.0
 	github.com/wwj31/dogactor v1.2.16
-	github.com/wwj31/dogtb v1.0.1
+	github.com/wwj31/dogtb v1.0.2
 )
 
 require (
