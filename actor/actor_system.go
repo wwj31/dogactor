@@ -213,6 +213,14 @@ func (s *System) RequestWait(targetId string, msg interface{}, timeout ...time.D
 	return r.result, r.err
 }
 
+func (s *System) LocalActor(actorId string) *actor {
+	v, ok := s.actorCache.Load(actorId)
+	if ok {
+		return v.(*actor)
+	}
+	return nil
+}
+
 // if ok != nil, caller wait for actor call init to finish
 func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
