@@ -81,7 +81,9 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg inte
 		if err := c.sendRemote(targetId, requestId, msg.([]byte)); err != nil {
 			log.SysLog.Errorw("remote actor send failed",
 				"id", c.ID(),
+				"sourceId", sourceId,
 				"targetId", targetId,
+				"requestId", requestId,
 				"err", err,
 			)
 			return err
@@ -113,6 +115,7 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 		if e := c.sendRemote(targetId, "", msg.([]byte)); e != nil {
 			log.SysLog.Errorw("cluster handle message",
 				"id", c.ID(),
+				"sourceId", sourceId,
 				"targetId", targetId,
 				"err", e,
 			)
