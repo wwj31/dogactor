@@ -225,6 +225,9 @@ func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 func (s *System) Address() string {
 	return s.sysAddr
 }
+func (s *System) ProfileAddr() string {
+	return s.profileAddr
+}
 
 func (s *System) SetCluster(act *actor) {
 	s.cluster = act

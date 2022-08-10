@@ -32,7 +32,7 @@ func newCluster(cluster ServiceMeshProvider, remote RemoteProvider) *Cluster {
 		serviceMesh: cluster,
 		remote:      remote,
 		actors:      make(map[string]string),
-		clients:     make(map[string]map[string]bool),
+		hosts:       make(map[string]map[string]bool),
 		ready:       make(map[string]bool),
 	}
 
@@ -45,9 +45,9 @@ type Cluster struct {
 	serviceMesh ServiceMeshProvider
 	remote      RemoteProvider
 
-	actors  map[string]string          //actorId=>host
-	clients map[string]map[string]bool //host=>actorIds
-	ready   map[string]bool            //host=>true
+	actors map[string]string          //actorId=>host
+	hosts  map[string]map[string]bool //host=>actorIds
+	ready  map[string]bool            //host=>true
 }
 
 func (c *Cluster) OnInit() {
@@ -194,7 +194,7 @@ func (c *Cluster) watchRemote(actorId, host string, add bool) {
 
 		if old := c.actors[actorId]; old == host { //重复put
 			return
-		} else if _, ok := c.clients[old]; ok {
+		} else if _, ok := c.hosts[old]; ok {
 			c.delRemoteActor(actorId)
 		}
 		c.actors[actorId] = host
@@ -202,13 +202,13 @@ func (c *Cluster) watchRemote(actorId, host string, add bool) {
 			return
 		}
 
-		actors := c.clients[host]
+		actors := c.hosts[host]
 		if len(actors) > 0 { //已有client
 			actors[actorId] = true
 			return
 		}
 
-		c.clients[host] = map[string]bool{actorId: true}
+		c.hosts[host] = map[string]bool{actorId: true}
 		c.remote.NewClient(host)
 	} else {
 		c.delRemoteActor(actorId)
@@ -221,10 +221,10 @@ func (c *Cluster) delRemoteActor(actorId string) {
 
 	c.System().DispatchEvent(c.ID(), actor.EvDelActor{ActorId: actorId, FromCluster: true})
 
-	if actors, ok := c.clients[old]; ok {
+	if actors, ok := c.hosts[old]; ok {
 		delete(actors, actorId)
 		if len(actors) == 0 {
-			delete(c.clients, old)
+			delete(c.hosts, old)
 			delete(c.ready, old)
 			c.remote.StopClient(old)
 		}
@@ -261,12 +261,20 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 }
 
 func (c *Cluster) clusterInfo() string {
-	var actors []string
-	for id, host := range c.actors {
-		actors = append(actors, fmt.Sprintf("┃%-47v┃%15v%2v", id, host, "┃"))
+	type Info struct {
+		Host  string
+		Actor string
+	}
+
+	var actors []Info
+	for a, host := range c.actors {
+		actors = append(actors, Info{
+			Host:  host,
+			Actor: a,
+		})
 	}
 	sort.SliceStable(actors, func(i, j int) bool {
-		return actors[i] < actors[j]
+		return actors[i].Host < actors[j].Host
 	})
 	bytes, err := json.Marshal(actors)
 	if err != nil {

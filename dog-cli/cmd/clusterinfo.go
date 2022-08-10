@@ -6,7 +6,9 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/wwj31/dogtb"
 	"path"
 
 	"github.com/spf13/cobra"
@@ -25,7 +27,24 @@ var clusterInfoCmd = &cobra.Command{
 			fmt.Println("http get", err)
 			return
 		}
-		fmt.Println(string(b))
+
+		type Info struct {
+			Host  string
+			Actor string
+		}
+
+		var infos []Info
+		if err := json.Unmarshal(b, &infos); err != nil {
+			fmt.Println("json unmarshal err", err)
+			return
+		}
+		tb, err := dogtb.Create(infos)
+		if err != nil {
+			fmt.Println("dogtb err", err)
+			return
+		}
+
+		fmt.Println(tb.String())
 	},
 }
 

@@ -18,8 +18,8 @@ import (
 
 var actorInfoCmd = &cobra.Command{
 	Use:   "local [flags]",
-	Short: "show profile of actor by specified actor id",
-	Long:  `show profile of actor by specified actor id.`,
+	Short: "show profile of local actor by specified host",
+	Long:  `show profile of local actor by specified host.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		addr := cmd.Flag("addr").Value.String()
 		b, err := tools.HttpGet("http://" + path.Join(addr, "local"))
