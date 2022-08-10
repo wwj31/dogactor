@@ -57,8 +57,6 @@ func ActorInfo(sys *System) func(writer http.ResponseWriter, r *http.Request) {
 func ClusterInfo(sys *System) func(writer http.ResponseWriter, r *http.Request) {
 	return func(writer http.ResponseWriter, r *http.Request) {
 		rsp, _ := sys.RequestWait(sys.cluster.ID(), "nodeinfo")
-		if _, err := writer.Write([]byte(rsp.(string))); err != nil {
-			log.SysLog.Errorf("ActorInfo write err:%v", err)
-		}
+		writer.Write([]byte(rsp.(string)))
 	}
 }

@@ -53,7 +53,7 @@ type (
 	}
 )
 
-// New spawn a new actor
+// New build a new actor
 // id is invalid if contain '@' or '$'
 func New(id string, handler spawnActor, op ...Option) *actor {
 	a := &actor{
@@ -190,7 +190,6 @@ func (s *actor) run() {
 }
 
 func (s *actor) handleMsg(msg actor_msg.Message) {
-
 	message := msg.Message()
 
 	var msgType string

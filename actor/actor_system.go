@@ -90,27 +90,6 @@ func NewSystem(op ...SystemOption) (*System, error) {
 	return s, nil
 }
 
-// if ok != nil, caller wait for actor call init to finish
-func (s *System) runActor(actor *actor, ok chan<- struct{}) {
-	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
-		return
-	}
-
-	go actor.init(ok)
-}
-
-func (s *System) Address() string {
-	return s.sysAddr
-}
-
-func (s *System) SetCluster(act *actor) {
-	s.cluster = act
-}
-
-func (s *System) Cluster() *actor {
-	return s.cluster
-}
-
 func (s *System) Stop() {
 	if atomic.CompareAndSwapInt32(&s.exiting, 0, 1) {
 		go func() {
@@ -144,6 +123,16 @@ func (s *System) Stop() {
 	}
 }
 
+// Spawn create a new actor with startup
+func (s *System) Spawn(id string, handler spawnActor, op ...Option) (Actor, error) {
+	newActor := New(id, handler, op...)
+	if err := s.Add(newActor); err != nil {
+		return nil, err
+	}
+	return newActor, nil
+}
+
+// Add startup a new actor
 func (s *System) Add(actor *actor) error {
 	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
 		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSystemErr, actor.ID())
@@ -224,9 +213,25 @@ func (s *System) RequestWait(targetId string, msg interface{}, timeout ...time.D
 	return r.result, r.err
 }
 
-func (s *System) Exist(actorId string) bool {
-	_, exist := s.actorCache.Load(actorId)
-	return exist
+// if ok != nil, caller wait for actor call init to finish
+func (s *System) runActor(actor *actor, ok chan<- struct{}) {
+	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
+		return
+	}
+
+	go actor.init(ok)
+}
+
+func (s *System) Address() string {
+	return s.sysAddr
+}
+
+func (s *System) SetCluster(act *actor) {
+	s.cluster = act
+}
+
+func (s *System) Cluster() *actor {
+	return s.cluster
 }
 
 func (s *System) ProtoIndex() *tools.ProtoIndex {
