@@ -10,7 +10,7 @@ import (
 )
 
 func TestRSAGenKey(t *testing.T) {
-	err := genRSAKey()
+	err := GenRSAKey()
 	assert.Nil(t, err)
 	TestRSACrypt(t)
 }

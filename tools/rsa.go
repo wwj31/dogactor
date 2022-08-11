@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func genRSAKey() error {
+func GenRSAKey() error {
 	private, _ := rsa.GenerateKey(rand.Reader, 512)
 	bytes := x509.MarshalPKCS1PrivateKey(private)
 	block := pem.Block{
