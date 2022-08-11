@@ -9,48 +9,71 @@ const (
 	A int = iota
 	B
 	C
+	D
 )
 
 func TestName(t *testing.T) {
-	stateABC := New()
-	stateABC.Add(&StateA{propertyA: "I'm State A"})
-	stateABC.Add(&StateB{propertyB: "I'm State B"})
-	stateABC.Add(&StateC{propertyC: "I'm State C"})
+	stateABCD := New()
+	stateABCD.Add(&StateA{property: "I'm State A"})
+	stateABCD.Add(&StateB{property: "I'm State B"})
+	stateABCD.Add(&StateC{property: "I'm State C"})
+	stateABCD.Add(&StateD{
+		property: "I'm State D",
+		StateFnHandler: StateFnHandler{
+			StateFn: D,
+			EnterFn: func(fsm *FSM) {
+				println("enter D")
+			},
+			LeaveFn: func(fsm *FSM) {
+				println("Leave D")
+			},
+			HandleFn: func(fsm *FSM, v ...interface{}) {
+				println("Handle D switch->A")
+				fsm.Switch(A)
+			},
+		},
+	})
 
-	stateABC.Switch(A)
+	stateABCD.Switch(A)
 	timer := time.NewTicker(1 * time.Second)
 
 	for range timer.C {
-		stateABC.Handle(nil)
+		stateABCD.Handle(nil)
 	}
 }
 
 // A
 type StateA struct {
-	propertyA string
+	property string
 }
 
-func (s *StateA) State() int                     { return A }
-func (s *StateA) Enter(fsm *FSM)                 { println("enter A") }
-func (s *StateA) Leave(fsm *FSM)                 { println("Leave A") }
-func (s *StateA) Handle(fsm *FSM, v interface{}) { println("Handle A swich->B"); fsm.Switch(B) }
+func (s *StateA) State() int                        { return A }
+func (s *StateA) Enter(fsm *FSM)                    { println("enter A"); println(s.propertyA) }
+func (s *StateA) Leave(fsm *FSM)                    { println("Leave A") }
+func (s *StateA) Handle(fsm *FSM, v ...interface{}) { println("Handle A switch->B"); fsm.Switch(B) }
 
 // B
 type StateB struct {
-	propertyB string
+	property string
 }
 
-func (s *StateB) State() int                     { return B }
-func (s *StateB) Enter(fsm *FSM)                 { println("enter B") }
-func (s *StateB) Leave(fsm *FSM)                 { println("Leave B") }
-func (s *StateB) Handle(fsm *FSM, v interface{}) { println("Handle B swich->C"); fsm.Switch(C) }
+func (s *StateB) State() int                        { return B }
+func (s *StateB) Enter(fsm *FSM)                    { println("enter B") }
+func (s *StateB) Leave(fsm *FSM)                    { println("Leave B") }
+func (s *StateB) Handle(fsm *FSM, v ...interface{}) { println("Handle B switch->C"); fsm.Switch(C) }
 
 // C
 type StateC struct {
-	propertyC string
+	property string
 }
 
-func (s *StateC) State() int                     { return C }
-func (s *StateC) Enter(fsm *FSM)                 { println("enter C") }
-func (s *StateC) Leave(fsm *FSM)                 { println("Leave C") }
-func (s *StateC) Handle(fsm *FSM, v interface{}) { println("Handle C swich->A"); fsm.Switch(A) }
+func (s *StateC) State() int                        { return C }
+func (s *StateC) Enter(fsm *FSM)                    { println("enter C") }
+func (s *StateC) Leave(fsm *FSM)                    { println("Leave C") }
+func (s *StateC) Handle(fsm *FSM, v ...interface{}) { println("Handle C switch->D"); fsm.Switch(D) }
+
+// C
+type StateD struct {
+	property string
+	StateFnHandler
+}

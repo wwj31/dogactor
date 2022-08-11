@@ -8,7 +8,7 @@ type StateHandler interface {
 	State() int
 	Enter(*FSM)
 	Leave(*FSM)
-	Handle(*FSM, interface{})
+	Handle(*FSM, ...interface{})
 }
 
 type (
