@@ -17,20 +17,17 @@ func TestName(t *testing.T) {
 	stateABCD.Add(&StateA{property: "I'm State A"})
 	stateABCD.Add(&StateB{property: "I'm State B"})
 	stateABCD.Add(&StateC{property: "I'm State C"})
-	stateABCD.Add(&StateD{
-		property: "I'm State D",
-		StateFnHandler: StateFnHandler{
-			StateFn: D,
-			EnterFn: func(fsm *FSM) {
-				println("enter D")
-			},
-			LeaveFn: func(fsm *FSM) {
-				println("Leave D")
-			},
-			HandleFn: func(fsm *FSM, v ...interface{}) {
-				println("Handle D switch->A")
-				fsm.Switch(A)
-			},
+	stateABCD.Add(&StateFnHandler{
+		StateFn: D,
+		EnterFn: func(fsm *FSM) {
+			println("enter D", "I'm State D")
+		},
+		LeaveFn: func(fsm *FSM) {
+			println("Leave D")
+		},
+		HandleFn: func(fsm *FSM, v ...interface{}) {
+			println("Handle D switch->A")
+			fsm.Switch(A)
 		},
 	})
 
@@ -48,7 +45,7 @@ type StateA struct {
 }
 
 func (s *StateA) State() int                        { return A }
-func (s *StateA) Enter(fsm *FSM)                    { println("enter A"); println(s.propertyA) }
+func (s *StateA) Enter(fsm *FSM)                    { println("enter A", s.property) }
 func (s *StateA) Leave(fsm *FSM)                    { println("Leave A") }
 func (s *StateA) Handle(fsm *FSM, v ...interface{}) { println("Handle A switch->B"); fsm.Switch(B) }
 
@@ -58,7 +55,7 @@ type StateB struct {
 }
 
 func (s *StateB) State() int                        { return B }
-func (s *StateB) Enter(fsm *FSM)                    { println("enter B") }
+func (s *StateB) Enter(fsm *FSM)                    { println("enter B", s.property) }
 func (s *StateB) Leave(fsm *FSM)                    { println("Leave B") }
 func (s *StateB) Handle(fsm *FSM, v ...interface{}) { println("Handle B switch->C"); fsm.Switch(C) }
 
@@ -68,7 +65,7 @@ type StateC struct {
 }
 
 func (s *StateC) State() int                        { return C }
-func (s *StateC) Enter(fsm *FSM)                    { println("enter C") }
+func (s *StateC) Enter(fsm *FSM)                    { println("enter C", s.property) }
 func (s *StateC) Leave(fsm *FSM)                    { println("Leave C") }
 func (s *StateC) Handle(fsm *FSM, v ...interface{}) { println("Handle C switch->D"); fsm.Switch(D) }
 
