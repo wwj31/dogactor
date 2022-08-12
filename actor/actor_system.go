@@ -3,6 +3,7 @@ package actor
 import (
 	"fmt"
 	"github.com/wwj31/dogactor/expect"
+	"reflect"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -155,30 +156,42 @@ func (s *System) Add(actor *actor) error {
 }
 
 // Send msg send to target,if target not exist in local cache msg shall send to cluster
-func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) error {
+func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) (err error) {
+	defer func() {
+		if err != nil {
+			err = errFormat(err, sourceId, targetId, requestId, reflect.TypeOf(msg).String())
+		}
+	}()
+
 	var atr *actor
 	if localActor, ok := s.actorCache.Load(targetId); ok {
 		atr = localActor.(*actor)
 	} else {
 		pt, canRemote := msg.(proto.Message)
 		if canRemote {
-			atr = s.cluster
-			bytes, err := proto.Marshal(pt)
-			if err != nil {
-				return errFormat(fmt.Errorf("%w %v", actorerr.ProtoMarshalErr, err), sourceId, targetId, requestId)
+			atr = s.Cluster()
+			bytes, marshalErr := proto.Marshal(pt)
+			if marshalErr != nil {
+				return fmt.Errorf("%w %v", actorerr.ProtoMarshalErr, err)
 			}
-			actorMsg := &actor_msg.ActorMessage{} // remote message
-			actorMsg.SourceId = sourceId
-			actorMsg.TargetId = targetId
-			actorMsg.RequestId = requestId
-			actorMsg.MsgName = s.protoIndex.MsgName(pt)
-			actorMsg.Data = bytes
+
+			// remote message
+			actorMsg := &actor_msg.ActorMessage{
+				SourceId:  sourceId,
+				TargetId:  targetId,
+				RequestId: requestId,
+				MsgName:   s.protoIndex.MsgName(pt),
+				Data:      bytes,
+			}
+
 			msg, _ = actorMsg.Marshal()
+		} else {
+			return actorerr.ActorMsgTypeCanNotRemoteErr
 		}
 	}
 
 	if atr == nil {
-		return errFormat(actorerr.ActorNotFoundErr, sourceId, targetId, requestId)
+		return actorerr.ActorNotFoundErr
 	}
 
 	localMsg := actor_msg.NewActorMessage() // local message
@@ -187,10 +200,7 @@ func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) err
 	localMsg.RequestId = requestId
 	localMsg.SetMessage(msg)
 
-	if err := atr.push(localMsg); err != nil {
-		return errFormat(err, sourceId, targetId, requestId)
-	}
-	return nil
+	return atr.push(localMsg)
 }
 
 // RequestWait sync request
@@ -271,6 +281,6 @@ func ProfileAddr(addr string) SystemOption {
 	}
 }
 
-func errFormat(err error, sourceId, targetId, requestId string) error {
-	return fmt.Errorf("%w s[%v] t[%v],r[%v]", err, sourceId, targetId, requestId)
+func errFormat(err error, sourceId, targetId, requestId, msg string) error {
+	return fmt.Errorf("%w s:[%v] t:[%v],r:[%v] msg:[%v]", err, sourceId, targetId, requestId, msg)
 }

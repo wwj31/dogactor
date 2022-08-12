@@ -19,7 +19,7 @@ var (
 	requestPool = sync.Pool{New: func() interface{} { return &request{} }}
 )
 
-const DefaultTimeout = time.Second * 5
+const DefaultTimeout = time.Second * 10
 
 type request struct {
 	id       string
