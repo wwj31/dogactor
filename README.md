@@ -3,8 +3,7 @@
 a actor model framework written in Go.
 it has implemented server discovery using ETCD.
 
-Getting Started
-===============
+# Getting Started
 
 # 1.Installation
 #### To start using dogactor, install Go and run `go get`:
@@ -13,7 +12,8 @@ $ go get -u github.com/wwj31/dogactor
 ```
 
 # 2.Quick Start
-Copy and paste the following code in your main files
+Code below is a simple impementation of dogactor,
+run it after copy to your main, or see [demo/example1](demo/example1)
 ```go
 package main
 
