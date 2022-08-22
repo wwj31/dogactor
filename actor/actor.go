@@ -55,7 +55,7 @@ type (
 
 // New build a new actor
 // id is invalid if contain '@' or '$'
-func New(id string, handler spawnActor, op ...Option) *actor {
+func New(id string, handler spawnActor, opt ...Option) *actor {
 	a := &actor{
 		id:      id,
 		handler: handler,
@@ -74,7 +74,7 @@ func New(id string, handler spawnActor, op ...Option) *actor {
 
 	handler.initActor(a)
 
-	for _, f := range op {
+	for _, f := range opt {
 		f(a)
 	}
 	return a
