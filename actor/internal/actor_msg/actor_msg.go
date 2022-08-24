@@ -40,11 +40,12 @@ type ActorMessage struct {
 	free    int32
 	message interface{}
 
-	SourceId  string `protobuf:"bytes,1,opt,name=SourceId,proto3" json:"SourceId,omitempty"`
-	TargetId  string `protobuf:"bytes,2,opt,name=TargetId,proto3" json:"TargetId,omitempty"`
-	RequestId string `protobuf:"bytes,3,opt,name=RequestId,proto3" json:"RequestId,omitempty"`
-	MsgName   string `protobuf:"bytes,4,opt,name=MsgName,proto3" json:"MsgName,omitempty"`
-	Data      []byte `protobuf:"bytes,5,opt,name=Data,proto3" json:"Data,omitempty"`
+	SourceId   string            `protobuf:"bytes,1,opt,name=SourceId,proto3" json:"SourceId,omitempty"`
+	TargetId   string            `protobuf:"bytes,2,opt,name=TargetId,proto3" json:"TargetId,omitempty"`
+	RequestId  string            `protobuf:"bytes,3,opt,name=RequestId,proto3" json:"RequestId,omitempty"`
+	MsgName    string            `protobuf:"bytes,4,opt,name=MsgName,proto3" json:"MsgName,omitempty"`
+	Data       []byte            `protobuf:"bytes,5,opt,name=Data,proto3" json:"Data,omitempty"`
+	MapCarrier map[string]string `protobuf:"bytes,6,rep,name=MapCarrier,proto3" json:"MapCarrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (s *ActorMessage) Message() interface{} {
@@ -77,9 +78,9 @@ func (msg *ActorMessage) Fill(pi *tools.ProtoIndex) interface{} {
 		log.SysLog.Errorf("protoIndex is nil")
 		return nil
 	}
-	pt ,ok := pi.FindMsgByName(msg.MsgName)
-	if !ok{
-		log.SysLog.Errorf("msg not found",  "MsgName", msg.MsgName)
+	pt, ok := pi.FindMsgByName(msg.MsgName)
+	if !ok {
+		log.SysLog.Errorf("msg not found", "MsgName", msg.MsgName)
 		return nil
 	}
 

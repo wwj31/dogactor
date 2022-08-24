@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"context"
 	"math"
 	"reflect"
 	"sync/atomic"
@@ -50,6 +51,9 @@ type (
 		// actor status control
 		status    atomic.Value
 		idleTimer *time.Timer
+
+		// span context
+		ctx context.Context
 	}
 )
 
@@ -220,7 +224,7 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 			s.doneRequest(msg.GetRequestId(), message)
 			return
 		}
-		// recv Request
+		// rev Request
 		if e := s.handler.OnHandleRequest(msg.GetSourceId(), msg.GetTargetId(), msg.GetRequestId(), message); e != nil {
 			expect.Nil(s.Response(msg.GetRequestId(), &actor_msg.RequestDeadLetter{Err: e.Error()}))
 		}

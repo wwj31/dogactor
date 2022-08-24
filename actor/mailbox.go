@@ -12,13 +12,13 @@ type mailBox struct {
 	processingTime time.Duration
 }
 
-// recording slow processed of message
+// recording record slow processed of message
 func (m *mailBox) recording(t time.Time, msgName string) {
 	dur := time.Now().Sub(t)
 	m.processingTime = dur
 	m.lastMsgName = msgName
 
-	if dur > 100*time.Millisecond {
+	if dur > 150*time.Millisecond {
 		log.SysLog.Warnw("too long to process time", "msg", msgName, "duration", dur)
 	}
 }
