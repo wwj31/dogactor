@@ -3,6 +3,7 @@ package etcd
 import (
 	"context"
 	"errors"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh_provider"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	etcd "go.etcd.io/etcd/client/v3"
 	"go.uber.org/atomic"
@@ -11,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )

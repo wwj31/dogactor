@@ -2,12 +2,12 @@ package remote_grpc
 
 import (
 	"errors"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider"
+	internal2 "github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider/remote_grpc/internal"
 
 	cmap "github.com/orcaman/concurrent-map"
 	"go.uber.org/atomic"
 
-	"github.com/wwj31/dogactor/actor/cluster/remote_provider"
-	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_grpc/internal"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
 )
@@ -15,7 +15,7 @@ import (
 // 管理所有远端的session
 type RemoteMgr struct {
 	remoteHandler remote_provider.RemoteHandler
-	listener      *internal.Server
+	listener      *internal2.Server
 
 	stop     atomic.Int32
 	sessions cmap.ConcurrentMap //host=>session
@@ -36,7 +36,7 @@ func NewRemoteMgr() *RemoteMgr {
 func (s *RemoteMgr) Start(actorSystem remote_provider.RemoteHandler) error {
 	s.remoteHandler = actorSystem
 
-	listener, err := internal.NewServer(s.remoteHandler.Address(), func() internal.Handler { return &remoteHandler{remote: s} }, s)
+	listener, err := internal2.NewServer(s.remoteHandler.Address(), func() internal2.Handler { return &remoteHandler{remote: s} }, s)
 	if err != nil {
 		return err
 	}
@@ -55,19 +55,19 @@ func (s *RemoteMgr) Stop() {
 		if s.listener != nil {
 			s.listener.Stop()
 		}
-		s.clients.IterCb(func(key string, v interface{}) { v.(*internal.Client).Stop() })
+		s.clients.IterCb(func(key string, v interface{}) { v.(*internal2.Client).Stop() })
 	}
 }
 
 func (s *RemoteMgr) NewClient(host string) {
-	c := internal.NewClient(host, func() internal.Handler { return &remoteHandler{remote: s, peerHost: host} })
+	c := internal2.NewClient(host, func() internal2.Handler { return &remoteHandler{remote: s, peerHost: host} })
 	s.clients.Set(host, c)
 	_ = c.Start(true)
 }
 
 func (s *RemoteMgr) StopClient(host string) {
 	if c, ok := s.clients.Pop(host); ok {
-		c.(*internal.Client).Stop()
+		c.(*internal2.Client).Stop()
 	}
 }
 
@@ -82,7 +82,7 @@ func (s *RemoteMgr) SendMsg(addr string, netMsg *actor_msg.ActorMessage) error {
 
 ///////////////////////////////////////// remoteHandler /////////////////////////////////////////////
 type remoteHandler struct {
-	internal.BaseHandler
+	internal2.BaseHandler
 
 	remote   *RemoteMgr
 	peerHost string

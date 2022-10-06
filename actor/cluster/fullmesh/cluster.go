@@ -1,4 +1,4 @@
-package cluster
+package fullmesh
 
 import (
 	"encoding/json"
@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/actorerr"
-	"github.com/wwj31/dogactor/actor/cluster/remote_provider/remote_tcp"
-	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider/etcd"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider/remote_tcp"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh_provider/etcd"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"

@@ -3,7 +3,7 @@ package remote_tcp
 import (
 	"errors"
 	cmap "github.com/orcaman/concurrent-map"
-	"github.com/wwj31/dogactor/actor/cluster/remote_provider"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider"
 	"github.com/wwj31/dogactor/expect"
 	"go.uber.org/atomic"
 	"time"

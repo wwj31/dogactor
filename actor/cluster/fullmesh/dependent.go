@@ -1,8 +1,8 @@
-package cluster
+package fullmesh
 
 import (
-	"github.com/wwj31/dogactor/actor/cluster/remote_provider"
-	"github.com/wwj31/dogactor/actor/cluster/servmesh_provider"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh_provider"
 )
 
 type ServiceMeshProvider interface {

@@ -1,13 +1,13 @@
 package main
 
 import (
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	"github.com/wwj31/dogactor/actor"
-	"github.com/wwj31/dogactor/actor/cluster"
 	"github.com/wwj31/dogactor/demo/example2/msg"
 	"github.com/wwj31/dogactor/l"
 	"github.com/wwj31/dogactor/tools"
@@ -42,9 +42,9 @@ func main() {
 	}, tools.EnumIdx{})
 
 	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:5000"),
-		cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.ProtoIndex(protoIndex))
+		fullmesh.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.ProtoIndex(protoIndex))
 	system2, _ := actor.NewSystem(actor.Addr("127.0.0.1:5001"),
-		cluster.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.ProfileAddr(":8761"), actor.ProtoIndex(protoIndex))
+		fullmesh.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.ProfileAddr(":8761"), actor.ProtoIndex(protoIndex))
 
 	lilei := actor.New("LiLei", &Student{Name: "LiLei", Age: 19})
 	hanmeimei := actor.New("HanMeimei", &Student{Name: "HanMeimei", Age: 15})
