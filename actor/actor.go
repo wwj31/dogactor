@@ -283,7 +283,7 @@ func (s *actor) resetTime() {
 		return
 	}
 
-	if nextAt.After(s.nextAt) {
+	if !nextAt.Equal(s.nextAt) {
 		if !s.timer.Stop() {
 			select {
 			case <-s.timer.C:
