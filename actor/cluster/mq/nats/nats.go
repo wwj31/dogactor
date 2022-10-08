@@ -9,15 +9,18 @@ import (
 // https://github.com/nats-io/nats.go
 
 func New() *Nats {
-	return &Nats{}
+	return &Nats{
+		subscribers: make(map[string]*nats.Subscription),
+	}
 }
 
 type Nats struct {
-	url string
-	nc  *nats.Conn
+	url         string
+	nc          *nats.Conn
+	subscribers map[string]*nats.Subscription
 }
 
-func (n Nats) Connect(url string) (err error) {
+func (n *Nats) Connect(url string) (err error) {
 	n.url = url
 
 	// Connect to a server with nats.GetDefaultOptions()
@@ -25,18 +28,22 @@ func (n Nats) Connect(url string) (err error) {
 	return
 }
 
-func (n Nats) Pub(msg interface{}) {
+func (n *Nats) Pub(msg interface{}) {
+	// todo .......
 }
 
-func (n Nats) SubASync(subject string, callback func(msg mq.MSG)) error {
-	_, err := n.nc.Subscribe(subject, func(m *nats.Msg) {
+func (n *Nats) SubASync(subject string, callback func(msg mq.MSG)) (err error) {
+	var newSub *nats.Subscription
+	newSub, err = n.nc.Subscribe(subject, func(m *nats.Msg) {
 		//fmt.Printf("Received a message: %s\n", string(m.Data))
 		callback(m.Data)
 	})
-	return err
+
+	n.subscribers[subject] = newSub
+	return
 }
 
-func (n Nats) SubSync(subject string) (mq.MSG, error) {
+func (n *Nats) SubSync(subject string) (mq.MSG, error) {
 	sub, err := n.nc.SubscribeSync(subject)
 	if err != nil {
 		return nil, err
@@ -47,4 +54,12 @@ func (n Nats) SubSync(subject string) (mq.MSG, error) {
 		return nil, err
 	}
 	return m.Data, nil
+}
+
+func (n *Nats) UnSub(subject string) (err error) {
+	sub, exist := n.subscribers[subject]
+	if !exist {
+		return
+	}
+	return sub.Unsubscribe()
 }

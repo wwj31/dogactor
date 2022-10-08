@@ -2,6 +2,8 @@ package mq
 
 import (
 	"fmt"
+	"github.com/wwj31/dogactor/expect"
+	"github.com/wwj31/dogactor/log"
 
 	"github.com/nats-io/nats.go"
 	"github.com/wwj31/dogactor/actor"
@@ -41,5 +43,36 @@ type Cluster struct {
 }
 
 func (s *Cluster) OnInit() {
+	err := s.mq.Connect(s.mqURL)
+	if err != nil {
+		log.SysLog.Errorf("nat connect failed!", "url", s.mqURL)
+		return
+	}
+}
 
+func (c *Cluster) OnHandleEvent(event interface{}) {
+	switch e := event.(type) {
+	case actor.EvNewActor:
+		if e.Publish {
+			err := c.mq.SubASync(subFormat(e.ActorId), func(msg MSG) {
+				expect.Nil(c.Send(e.ActorId, msg))
+			})
+
+			if err != nil {
+				log.SysLog.Errorf("mq cluster SubAsync failed!", "err", err, "event", e)
+			}
+		}
+
+	case actor.EvDelActor:
+		if e.Publish {
+			err := c.mq.UnSub(subFormat(e.ActorId))
+			if err != nil {
+				log.SysLog.Errorf("mq cluster UnSub failed!", "err", err, "event", e)
+			}
+		}
+	}
+}
+
+func subFormat(str string) string {
+	return "mq:" + str
 }

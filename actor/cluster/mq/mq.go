@@ -7,4 +7,5 @@ type MQ interface {
 	Pub(msg interface{})
 	SubASync(subject string, callback func(msg MSG)) error
 	SubSync(subject string) (MSG, error)
+	UnSub(subject string) (err error)
 }
