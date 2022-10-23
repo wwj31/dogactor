@@ -14,6 +14,8 @@ func New() *Nats {
 	}
 }
 
+var _ mq.MQ = &Nats{}
+
 type Nats struct {
 	url         string
 	nc          *nats.Conn
@@ -27,12 +29,23 @@ func (n *Nats) Connect(url string) (err error) {
 	n.nc, err = nats.Connect(n.url)
 	return
 }
-
-func (n *Nats) Pub(msg interface{}) {
-	// todo .......
+func (n *Nats) Close() {
+	n.nc.Close()
 }
 
-func (n *Nats) SubASync(subject string, callback func(msg mq.MSG)) (err error) {
+func (n *Nats) Pub(subj string, data []byte) error {
+	return n.nc.Publish(subj, data)
+}
+
+func (n *Nats) Req(subj string, data []byte) ([]byte, error) {
+	msg, err := n.nc.Request(subj, data, 10*time.Second)
+	if err != nil {
+		return nil, err
+	}
+	return msg.Data, nil
+}
+
+func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) {
 	var newSub *nats.Subscription
 	newSub, err = n.nc.Subscribe(subject, func(m *nats.Msg) {
 		//fmt.Printf("Received a message: %s\n", string(m.Data))
@@ -43,7 +56,7 @@ func (n *Nats) SubASync(subject string, callback func(msg mq.MSG)) (err error) {
 	return
 }
 
-func (n *Nats) SubSync(subject string) (mq.MSG, error) {
+func (n *Nats) SubSync(subject string) ([]byte, error) {
 	sub, err := n.nc.SubscribeSync(subject)
 	if err != nil {
 		return nil, err

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
+	"reflect"
 
 	"github.com/nats-io/nats.go"
 	"github.com/wwj31/dogactor/actor"
@@ -42,14 +43,41 @@ type Cluster struct {
 	mq    MQ
 }
 
-func (s *Cluster) OnInit() {
-	err := s.mq.Connect(s.mqURL)
+func (c *Cluster) OnInit() {
+	err := c.mq.Connect(c.mqURL)
 	if err != nil {
-		log.SysLog.Errorf("nat connect failed!", "url", s.mqURL)
+		log.SysLog.Errorf("nat connect failed!", "url", c.mqURL)
 		return
 	}
+
+	_ = c.System().RegistEvent(c.ID(),
+		actor.EvNewActor{},
+		actor.EvDelActor{},
+	)
 }
 
+func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
+	// cluster 只特殊处理 stop 消息，其余消息全部转发remote
+	if targetId != c.ID() {
+		if e := c.mq.Pub(subFormat(targetId), msg.([]byte)); e != nil {
+			log.SysLog.Errorw("cluster handle message",
+				"id", c.ID(),
+				"sourceId", sourceId,
+				"targetId", targetId,
+				"err", e,
+			)
+		}
+		return
+	}
+
+	if str, ok := msg.(string); ok && str == "stop" {
+		c.System().CancelAll(c.ID())
+		c.mq.Close()
+		c.Exit()
+	} else {
+		log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
+	}
+}
 func (c *Cluster) OnHandleEvent(event interface{}) {
 	switch e := event.(type) {
 	case actor.EvNewActor:
@@ -74,5 +102,5 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 }
 
 func subFormat(str string) string {
-	return "mq:" + str
+	return "mq.actor." + str
 }
