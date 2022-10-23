@@ -3,6 +3,7 @@ package nats
 import (
 	"github.com/nats-io/nats.go"
 	"github.com/wwj31/dogactor/actor/cluster/mq"
+	"github.com/wwj31/dogactor/log"
 	"time"
 )
 
@@ -52,6 +53,7 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 		callback(m.Data)
 	})
 
+	log.SysLog.Infow("subAsync success!", "subject", subject)
 	n.subscribers[subject] = newSub
 	return
 }

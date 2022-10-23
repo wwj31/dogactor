@@ -2,6 +2,7 @@ package mq
 
 import (
 	"fmt"
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"reflect"
@@ -56,6 +57,41 @@ func (c *Cluster) OnInit() {
 	)
 }
 
+func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
+	reqSourceId, reqTargetId, _, _ := actor.ParseRequestId(requestId)
+	if c.ID() != reqTargetId {
+		if sourceId == reqTargetId {
+			targetId = reqSourceId
+		} else {
+			targetId = reqTargetId
+		}
+
+		err := c.mq.Pub(subFormat(targetId), msg.([]byte))
+		if err != nil {
+			log.SysLog.Errorw("remote actor send failed",
+				"id", c.ID(),
+				"sourceId", sourceId,
+				"targetId", targetId,
+				"requestId", requestId,
+				"err", err,
+			)
+		}
+		return
+	}
+
+	str, ok := msg.(string)
+	if ok {
+		switch str {
+		case "stop":
+			c.System().CancelAll(c.ID())
+			c.mq.Close()
+			c.Exit()
+		default:
+			log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
+		}
+	}
+	return
+}
 func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	// cluster 只特殊处理 stop 消息，其余消息全部转发remote
 	if targetId != c.ID() {
@@ -78,12 +114,18 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 		log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
 	}
 }
+
 func (c *Cluster) OnHandleEvent(event interface{}) {
 	switch e := event.(type) {
 	case actor.EvNewActor:
 		if e.Publish {
-			err := c.mq.SubASync(subFormat(e.ActorId), func(msg MSG) {
-				expect.Nil(c.Send(e.ActorId, msg))
+			err := c.mq.SubASync(subFormat(e.ActorId), func(data []byte) {
+				msg := actor_msg.NewActorMessage() // remote recv message
+				if err := msg.Unmarshal(data); err != nil {
+					log.SysLog.Errorf("unmarshal msg failed", "err", err)
+					return
+				}
+				expect.Nil(c.System().Send(msg.SourceId, msg.TargetId, msg.RequestId, msg))
 			})
 
 			if err != nil {

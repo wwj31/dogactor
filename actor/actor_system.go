@@ -214,7 +214,7 @@ func (s *System) RequestWait(targetId string, msg interface{}, timeout ...time.D
 	waiter := New(
 		"wait_"+tools.XUID(),
 		&waitActor{c: waitRsp, msg: msg, targetId: targetId, timeout: t},
-		SetLocalized(),
+		//SetLocalized(),
 	)
 	expect.Nil(s.Add(waiter))
 

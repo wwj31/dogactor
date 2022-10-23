@@ -5,7 +5,7 @@ import (
 )
 
 var SysLog = l.New(l.Option{
-	Level:          l.WarnLevel,
+	Level:          l.InfoLevel,
 	LogPath:        "./syslog",
 	FileName:       "sys.err.log",
 	FileMaxAge:     15,
