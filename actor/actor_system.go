@@ -38,7 +38,8 @@ type System struct {
 	actorCache sync.Map    // all local actor
 	newList    chan *actor // new list
 
-	cluster *actor
+	cluster       *actor
+	requestWaiter string
 
 	protoIndex *tools.ProtoIndex
 
@@ -71,6 +72,9 @@ func NewSystem(op ...SystemOption) (*System, error) {
 		s.runActor(cluster, wait)
 		<-wait
 	}
+
+	s.requestWaiter = "wait_" + tools.XUID()
+	_ = s.Add(New(s.requestWaiter, &waitActor{}))
 
 	go func() {
 		for {
@@ -211,13 +215,12 @@ func (s *System) RequestWait(targetId string, msg interface{}, timeout ...time.D
 	}
 
 	waitRsp := make(chan result)
-	waiter := New(
-		"wait_"+tools.XUID(),
-		&waitActor{c: waitRsp, msg: msg, targetId: targetId, timeout: t},
-		//SetLocalized(),
-	)
-	expect.Nil(s.Add(waiter))
-
+	expect.Nil(s.Send("", s.requestWaiter, "", &RequestWait{
+		targetId: targetId,
+		timeout:  t,
+		msg:      msg,
+		c:        waitRsp,
+	}))
 	// wait to result
 	r := <-waitRsp
 	return r.result, r.err
