@@ -246,11 +246,6 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 	s.handler.OnHandleMessage(msg.GetSourceId(), msg.GetTargetId(), message)
 }
 
-func (s *actor) isWaitActor() bool {
-	_, ok := s.handler.(*waitActor)
-	return ok
-}
-
 // system close
 func (s *actor) stop() {
 	var stop bool

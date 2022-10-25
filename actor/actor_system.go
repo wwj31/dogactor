@@ -61,20 +61,20 @@ func NewSystem(op ...SystemOption) (*System, error) {
 			return nil, fmt.Errorf("%w %v", actorerr.ActorSystemOptionErr, e.Error())
 		}
 	}
+
 	if &s.protoIndex == nil {
 		log.SysLog.Warnw("without protobuf index,can't find ptoro struct")
 	}
 
-	// SystemOption maybe register actor
-	for len(s.newList) > 0 {
-		cluster := <-s.newList
-		wait := make(chan struct{})
-		s.runActor(cluster, wait)
-		<-wait
-	}
-
 	s.requestWaiter = "wait_" + tools.XUID()
 	_ = s.Add(New(s.requestWaiter, &waitActor{}))
+
+	// first,create waiter and cluster
+	for len(s.newList) > 0 {
+		wait := make(chan struct{})
+		s.runActor(<-s.newList, wait)
+		<-wait
+	}
 
 	go func() {
 		for {
@@ -103,21 +103,28 @@ func (s *System) Stop() {
 				value.(*actor).stop()
 				return true
 			})
-			if s.cluster != nil {
-				for c := false; !c; {
-					s.actorCache.Range(func(key, value interface{}) bool {
-						c = (key.(string)) == s.cluster.id
-						return c
-					})
-					runtime.Gosched()
+
+			var _stop bool
+			for !_stop {
+				actorId := ""
+				s.actorCache.Range(func(key, value interface{}) bool {
+					if key == s.cluster.id || key == s.requestWaiter {
+						return true
+					}
+					actorId = key.(string)
+					log.SysLog.Warnw("interrupt stopping", "actorId", actorId)
+					return false
+				})
+
+				if actorId == "" {
+					_stop = true
 				}
+				runtime.Gosched()
 			}
+			_ = s.Send("", s.requestWaiter, "", "stop")
 
 			if s.cluster != nil {
-				e := s.Send("", s.cluster.id, "", "stop")
-				if e != nil {
-					log.SysLog.Errorw("system stop exception", "err", e)
-				}
+				_ = s.Send("", s.cluster.id, "", "stop")
 			}
 
 			s.waitStop.Wait()
@@ -139,7 +146,7 @@ func (s *System) Spawn(id string, handler spawnActor, op ...Option) (Actor, erro
 
 // Add startup a new actor
 func (s *System) Add(actor *actor) error {
-	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
+	if atomic.LoadInt32(&s.exiting) == 1 {
 		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSystemErr, actor.ID())
 	}
 
@@ -215,7 +222,7 @@ func (s *System) RequestWait(targetId string, msg interface{}, timeout ...time.D
 	}
 
 	waitRsp := make(chan result)
-	expect.Nil(s.Send("", s.requestWaiter, "", &RequestWait{
+	expect.Nil(s.Send("", s.requestWaiter, "", &requestWait{
 		targetId: targetId,
 		timeout:  t,
 		msg:      msg,
@@ -236,7 +243,7 @@ func (s *System) LocalActor(actorId string) *actor {
 
 // if ok != nil, caller wait for actor call init to finish
 func (s *System) runActor(actor *actor, ok chan<- struct{}) {
-	if atomic.LoadInt32(&s.exiting) == 1 && !actor.isWaitActor() {
+	if atomic.LoadInt32(&s.exiting) == 1 {
 		return
 	}
 

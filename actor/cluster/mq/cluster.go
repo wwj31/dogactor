@@ -57,6 +57,10 @@ func (c *Cluster) OnInit() {
 	)
 }
 
+func (c *Cluster) OnStop() bool {
+	return false
+}
+
 func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
 	reqSourceId, reqTargetId, _, _ := actor.ParseRequestId(requestId)
 	if c.ID() != reqTargetId {
@@ -93,7 +97,6 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg inte
 	return
 }
 func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
-	// cluster 只特殊处理 stop 消息，其余消息全部转发remote
 	if targetId != c.ID() {
 		if e := c.mq.Pub(subFormat(targetId), msg.([]byte)); e != nil {
 			log.SysLog.Errorw("cluster handle message",
@@ -129,7 +132,7 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 			})
 
 			if err != nil {
-				log.SysLog.Errorf("mq cluster SubAsync failed!", "err", err, "event", e)
+				log.SysLog.Errorw("mq cluster SubAsync failed!", "err", err, "event", e)
 			}
 		}
 
@@ -137,7 +140,7 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 		if e.Publish {
 			err := c.mq.UnSub(subFormat(e.ActorId))
 			if err != nil {
-				log.SysLog.Errorf("mq cluster UnSub failed!", "err", err, "event", e)
+				log.SysLog.Errorw("mq cluster UnSub failed!", "err", err, "event", e)
 			}
 		}
 	}
