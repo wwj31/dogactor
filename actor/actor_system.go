@@ -29,18 +29,14 @@ type SystemOption func(*System) error
 type System struct {
 	CStop chan struct{}
 
-	sysAddr  string          // cluster listen addr
-	waitStop *sync.WaitGroup // stop wait
-	exiting  int32           // state of stopping
-
-	actorCache sync.Map    // all local actor
-	newList    chan *actor // newcomers
-
+	sysAddr       string          // cluster listen addr
+	waitStop      *sync.WaitGroup // stop wait
+	exiting       int32           // state of stopping
+	actorCache    sync.Map        // all local actor
+	newList       chan *actor     // newcomers
 	cluster       *actor
 	requestWaiter string
-
-	protoIndex *tools.ProtoIndex
-
+	protoIndex    *tools.ProtoIndex
 	evDispatcher
 }
 

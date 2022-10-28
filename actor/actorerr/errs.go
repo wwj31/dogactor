@@ -9,7 +9,7 @@ import (
 var (
 	//errors about event
 
-	RegisterEventErr = errors.New("RegistEvent only accept ptr param")
+	RegisterEventErr = errors.New("RegisterEvent only accept ptr param")
 	CancelEventErr   = errors.New("CancelEvent only accept ptr param")
 	DispatchEventErr = errors.New("DispatchEvent only accept ptr param")
 

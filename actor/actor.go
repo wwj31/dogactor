@@ -1,7 +1,6 @@
 package actor
 
 import (
-	"context"
 	"math"
 	"reflect"
 	"sync/atomic"
@@ -45,15 +44,12 @@ type (
 		lua     script.ILua
 		luapath string
 
-		// record Request msg and del in done
+		// record Request msg and delete after done
 		requests map[string]*request
 
-		// actor status control
+		// actor status schedule
 		status    atomic.Value
 		idleTimer *time.Timer
-
-		// span context
-		ctx context.Context
 	}
 )
 
