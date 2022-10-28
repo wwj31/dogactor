@@ -21,16 +21,22 @@ var (
 
 const DefaultTimeout = time.Second * 10
 
-type request struct {
-	id       string
-	sourceId string
-	targetId string
+type (
+	result struct {
+		data interface{}
+		err  error
+	}
 
-	result    interface{}
-	err       error
-	fn        func(resp interface{}, err error)
-	timeoutId string
-}
+	request struct {
+		id       string
+		sourceId string
+		targetId string
+
+		result    result
+		fn        func(resp interface{}, err error)
+		timeoutId string
+	}
+)
 
 func (s *request) Handle(fn func(resp interface{}, err error)) {
 	if s.fn != nil {
@@ -38,8 +44,8 @@ func (s *request) Handle(fn func(resp interface{}, err error)) {
 		return
 	}
 	s.fn = fn
-	if s.result != nil || s.err != nil {
-		s.fn(s.result, s.err)
+	if s.result.data != nil || s.result.err != nil {
+		s.fn(s.result.data, s.result.err)
 		requestPool.Put(s)
 	}
 }
@@ -49,14 +55,14 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 	req.id = requestId(s.id, targetId, s.system.Address())
 	req.sourceId = s.ID()
 	req.targetId = targetId
-	req.result = nil
-	req.err = nil
+	req.result.data = nil
+	req.result.err = nil
 	req.fn = nil
 	s.requests[req.id] = req
 
 	err := s.system.Send(s.id, targetId, req.id, msg)
 	if err != nil {
-		req.err = err
+		req.result.err = err
 		return req
 	}
 
@@ -98,15 +104,15 @@ func (s *actor) doneRequest(requestId string, resp interface{}) {
 
 	switch r := resp.(type) {
 	case *actor_msg.RequestDeadLetter:
-		req.err = errors.New(r.Err)
+		req.result.err = errors.New(r.Err)
 	case error:
-		req.err = r
+		req.result.err = r
 	default:
-		req.result = resp
+		req.result.data = resp
 	}
 
 	if req.fn != nil {
-		req.fn(req.result, req.err)
+		req.fn(req.result.data, req.result.err)
 		requestPool.Put(req)
 	}
 }

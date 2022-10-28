@@ -47,7 +47,7 @@ type Cluster struct {
 func (c *Cluster) OnInit() {
 	err := c.mq.Connect(c.mqURL)
 	if err != nil {
-		log.SysLog.Errorf("nat connect failed!", "url", c.mqURL)
+		log.SysLog.Errorw("nat connect failed!", "url", c.mqURL)
 		return
 	}
 
@@ -61,7 +61,7 @@ func (c *Cluster) OnStop() bool {
 	return false
 }
 
-func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
+func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string, msg interface{}) (respErr error) {
 	reqSourceId, reqTargetId, _, _ := actor.ParseRequestId(requestId)
 	if c.ID() != reqTargetId {
 		if sourceId == reqTargetId {
@@ -96,7 +96,7 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg inte
 	}
 	return
 }
-func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
+func (c *Cluster) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) {
 	if targetId != c.ID() {
 		if e := c.mq.Pub(subFormat(targetId), msg.([]byte)); e != nil {
 			log.SysLog.Errorw("cluster handle message",
@@ -146,6 +146,6 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 	}
 }
 
-func subFormat(str string) string {
+func subFormat(str actor.Id) string {
 	return "mq.actor." + str
 }

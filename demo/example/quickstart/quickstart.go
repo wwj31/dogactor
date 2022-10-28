@@ -28,7 +28,7 @@ func (s *PingActor) OnInit() {
 		s.Send("pong", "this is data")
 	}, -1)
 }
-func (s *PingActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
+func (s *PingActor) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) {
 	switch msg {
 	case 99999:
 		fmt.Println(sourceId, targetId)
@@ -37,7 +37,7 @@ func (s *PingActor) OnHandleMessage(sourceId, targetId string, msg interface{}) 
 }
 
 // OnHandleMessage PongActor
-func (s *PongActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
+func (s *PongActor) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) {
 	switch msg {
 	case "this is data":
 		fmt.Println(sourceId, targetId)

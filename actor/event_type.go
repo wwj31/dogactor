@@ -1,19 +1,19 @@
 package actor
 
 type EvNewActor struct {
-	ActorId     string
+	ActorId     Id
 	Publish     bool
 	FromCluster bool
 }
 
 type EvDelActor struct {
-	ActorId     string
+	ActorId     Id
 	Publish     bool
 	FromCluster bool
 }
 
 type EvClusterUpdate struct {
-	ActorId string
+	ActorId Id
 	Host    string
 	Add     bool
 }

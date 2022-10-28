@@ -9,11 +9,6 @@ import (
 // WARN: Deadlock cause by multiple actor RequestWait to each other
 
 type (
-	result struct {
-		result interface{}
-		err    error
-	}
-
 	requestWait struct {
 		targetId string
 		timeout  time.Duration
@@ -33,7 +28,7 @@ func (s *waitActor) OnHandleMessage(sourceId, targetId string, msg interface{}) 
 		req.Handle(func(resp interface{}, e error) {
 			go func() {
 				select {
-				case data.c <- result{result: resp, err: e}:
+				case data.c <- result{data: resp, err: e}:
 				case <-time.After(10 * time.Second):
 					log.SysLog.Warnw("waitActor result put time out sourceId:%v targetId:%v", sourceId, data.targetId)
 					break

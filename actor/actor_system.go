@@ -21,8 +21,7 @@ import (
 */
 
 const (
-	DefaultSysAddr     = ":8888"
-	DefaultProfileAddr = ":8760"
+	DefaultSysAddr = ":8888"
 )
 
 type SystemOption func(*System) error
@@ -30,10 +29,9 @@ type SystemOption func(*System) error
 type System struct {
 	CStop chan struct{}
 
-	sysAddr     string          // cluster listen addr
-	profileAddr string          // profile listen addr
-	waitStop    *sync.WaitGroup // stop wait
-	exiting     int32           // state of stopping
+	sysAddr  string          // cluster listen addr
+	waitStop *sync.WaitGroup // stop wait
+	exiting  int32           // state of stopping
 
 	actorCache sync.Map    // all local actor
 	newList    chan *actor // new list
@@ -48,11 +46,10 @@ type System struct {
 
 func NewSystem(op ...SystemOption) (*System, error) {
 	s := &System{
-		sysAddr:     DefaultSysAddr,
-		profileAddr: DefaultProfileAddr,
-		CStop:       make(chan struct{}, 1),
-		waitStop:    &sync.WaitGroup{},
-		newList:     make(chan *actor, 100),
+		sysAddr:  DefaultSysAddr,
+		CStop:    make(chan struct{}, 1),
+		waitStop: &sync.WaitGroup{},
+		newList:  make(chan *actor, 100),
 	}
 	s.evDispatcher = newEvent(s)
 
@@ -87,9 +84,6 @@ func NewSystem(op ...SystemOption) (*System, error) {
 			}
 		}
 	}()
-
-	// start pprof http server
-	profileHttp(s)
 
 	log.SysLog.Infof("System Start")
 	return s, nil
@@ -129,7 +123,7 @@ func (s *System) Stop() {
 
 			s.waitStop.Wait()
 			close(s.newList)
-			log.SysLog.Infof("System Exit %v", s.Address())
+			log.SysLog.Infof("System Exit")
 			s.CStop <- struct{}{}
 		}()
 	}
@@ -229,8 +223,8 @@ func (s *System) RequestWait(targetId string, msg interface{}, timeout ...time.D
 		c:        waitRsp,
 	}))
 	// wait to result
-	r := <-waitRsp
-	return r.result, r.err
+	res := <-waitRsp
+	return res.data, res.err
 }
 
 func (s *System) LocalActor(actorId string) *actor {
@@ -252,9 +246,6 @@ func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 
 func (s *System) Address() string {
 	return s.sysAddr
-}
-func (s *System) ProfileAddr() string {
-	return s.profileAddr
 }
 
 func (s *System) SetCluster(act *actor) {
@@ -280,13 +271,6 @@ func ProtoIndex(pi *tools.ProtoIndex) SystemOption {
 func Addr(addr string) SystemOption {
 	return func(system *System) error {
 		system.sysAddr = addr
-		return nil
-	}
-}
-
-func ProfileAddr(addr string) SystemOption {
-	return func(system *System) error {
-		system.profileAddr = addr
 		return nil
 	}
 }

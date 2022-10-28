@@ -23,9 +23,9 @@ type (
 	}
 
 	Sender interface {
-		Send(targetId string, msg interface{}) error
-		Request(targetId string, msg interface{}, timeout ...time.Duration) (req *request)
-		RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (result interface{}, err error)
+		Send(targetId Id, msg interface{}) error
+		Request(targetId Id, msg interface{}, timeout ...time.Duration) (req *request)
+		RequestWait(targetId Id, msg interface{}, timeout ...time.Duration) (result interface{}, err error)
 		Response(requestId string, msg interface{}) error
 	}
 
@@ -45,9 +45,9 @@ type (
 		// OnHandleEvent process event
 		OnHandleEvent(event interface{})
 		// OnHandleMessage process message
-		OnHandleMessage(sourceId, targetId string, msg interface{})
+		OnHandleMessage(sourceId, targetId Id, msg interface{})
 		// OnHandleRequest process request
-		OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) error
+		OnHandleRequest(sourceId, targetId Id, requestId string, msg interface{}) error
 	}
 
 	// only Base implement

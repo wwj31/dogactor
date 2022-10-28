@@ -75,7 +75,7 @@ func (c *Cluster) OnStop() bool {
 	return false
 }
 
-func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
+func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string, msg interface{}) (respErr error) {
 	_, reqTargetId, _, _ := actor.ParseRequestId(requestId)
 	if c.ID() != reqTargetId {
 		if err := c.sendRemote(targetId, requestId, msg.([]byte)); err != nil {
@@ -109,7 +109,7 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId, requestId string, msg inte
 	return
 }
 
-func (c *Cluster) OnHandleMessage(sourceId, targetId string, msg interface{}) {
+func (c *Cluster) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) {
 	// cluster 只特殊处理 stop 消息，其余消息全部转发remote
 	if targetId != c.ID() {
 		if e := c.sendRemote(targetId, "", msg.([]byte)); e != nil {
@@ -171,7 +171,7 @@ func (c *Cluster) OnSessionRecv(msg *actor_msg.ActorMessage) {
 
 ////////////////////////////////////// RemoteHandler /////////////////////////////////////////////////////////////////
 
-func (c *Cluster) sendRemote(targetId, requestId string, bytes []byte) error {
+func (c *Cluster) sendRemote(targetId actor.Id, requestId string, bytes []byte) error {
 	//Response的时候地址由requestId解析提供
 	var addr string
 	if reqSourceId, _, _addr, _ := actor.ParseRequestId(requestId); reqSourceId == targetId {
@@ -182,7 +182,7 @@ func (c *Cluster) sendRemote(targetId, requestId string, bytes []byte) error {
 	return c.remote.SendMsg(addr, bytes)
 }
 
-func (c *Cluster) watchRemote(actorId, host string, add bool) {
+func (c *Cluster) watchRemote(actorId actor.Id, host string, add bool) {
 	if add {
 		defer func() {
 			log.SysLog.Infow("remote actor regist",
@@ -218,7 +218,7 @@ func (c *Cluster) watchRemote(actorId, host string, add bool) {
 	}
 }
 
-func (c *Cluster) delRemoteActor(actorId string) {
+func (c *Cluster) delRemoteActor(actorId actor.Id) {
 	old := c.actors[actorId]
 	delete(c.actors, actorId)
 

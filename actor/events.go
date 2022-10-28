@@ -10,7 +10,7 @@ import (
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 )
 
-type listener map[string]map[string]struct{} // map[evType][actorId]bool
+type listener map[string]map[Id]struct{} // map[evType][actorId]bool
 
 type evDispatcher struct {
 	sync.RWMutex
@@ -23,7 +23,7 @@ func newEvent(s *System) evDispatcher {
 }
 
 // RegistEvent 注册actor事件
-func (ed *evDispatcher) RegistEvent(actorId string, events ...interface{}) error {
+func (ed *evDispatcher) RegistEvent(actorId Id, events ...interface{}) error {
 	for _, event := range events {
 		rtype := reflect.TypeOf(event)
 		if rtype.Kind() == reflect.Ptr {
@@ -45,7 +45,7 @@ func (ed *evDispatcher) RegistEvent(actorId string, events ...interface{}) error
 }
 
 // CancelEvent 取消actor事件
-func (ed *evDispatcher) CancelEvent(actorId string, events ...interface{}) error {
+func (ed *evDispatcher) CancelEvent(actorId Id, events ...interface{}) error {
 	for _, event := range events {
 		rtype := reflect.TypeOf(event)
 		if rtype.Kind() == reflect.Ptr {
@@ -63,7 +63,7 @@ func (ed *evDispatcher) CancelEvent(actorId string, events ...interface{}) error
 }
 
 // CancelAll 取消actor事件
-func (ed *evDispatcher) CancelAll(actorId string) {
+func (ed *evDispatcher) CancelAll(actorId Id) {
 	ed.Lock()
 	defer ed.Unlock()
 
@@ -73,7 +73,7 @@ func (ed *evDispatcher) CancelAll(actorId string) {
 }
 
 // DispatchEvent 事件触发
-func (ed *evDispatcher) DispatchEvent(sourceId string, event interface{}) {
+func (ed *evDispatcher) DispatchEvent(sourceId Id, event interface{}) {
 	rtype := reflect.TypeOf(event)
 	if rtype.Kind() == reflect.Ptr {
 		log.SysLog.Errorw("dispatch event type of event is ptr",

@@ -44,7 +44,7 @@ func main() {
 	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:5000"),
 		fullmesh.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.ProtoIndex(protoIndex))
 	system2, _ := actor.NewSystem(actor.Addr("127.0.0.1:5001"),
-		fullmesh.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.ProfileAddr(":8761"), actor.ProtoIndex(protoIndex))
+		fullmesh.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.ProtoIndex(protoIndex))
 
 	lilei := actor.New("LiLei", &Student{Name: "LiLei", Age: 19})
 	hanmeimei := actor.New("HanMeimei", &Student{Name: "HanMeimei", Age: 15})
@@ -70,7 +70,7 @@ func (s *Student) OnInit() {
 	}
 }
 
-func (s *Student) OnHandleMessage(sourceId, targetId string, v interface{}) {
+func (s *Student) OnHandleMessage(sourceId, targetId actor.Id, v interface{}) {
 	switch m := v.(type) {
 	case *msg.LileiSay:
 		log.Infof(m.Data)
@@ -102,7 +102,7 @@ func (s *Student) OnHandleMessage(sourceId, targetId string, v interface{}) {
 		}, -1)
 	}
 }
-func (s *Student) OnHandleRequest(sourceId, targetId string, requestId string, v interface{}) error {
+func (s *Student) OnHandleRequest(sourceId, targetId actor.Id, requestId string, v interface{}) error {
 	switch m := v.(type) {
 	case *msg.LileiSay:
 		log.Infof(m.Data)

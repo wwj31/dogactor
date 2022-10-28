@@ -21,11 +21,11 @@ func (s *Base) initActor(actor Actor) {
 func (s *Base) OnInit()      { log.SysLog.Warnw("actor default init", "actorId", s.ID()) }
 func (s *Base) OnStop() bool { return true }
 
-func (s *Base) OnHandleMessage(sourceId, targetId string, msg interface{}) {
+func (s *Base) OnHandleMessage(sourceId, targetId Id, msg interface{}) {
 	log.SysLog.Warnw("not implement OnHandleMessage", "actorId", s.ID())
 }
 
-func (s *Base) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
+func (s *Base) OnHandleRequest(sourceId, targetId Id, requestId string, msg interface{}) (respErr error) {
 	return actorerr.ActorUnimplemented
 }
 
@@ -47,13 +47,13 @@ func (s *TmpActor) OnInit() {
 	}
 }
 
-func (s *TmpActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
+func (s *TmpActor) OnHandleMessage(sourceId, targetId Id, msg interface{}) {
 	if s.HandleMessage != nil {
 		s.HandleMessage(sourceId, targetId, msg)
 	}
 }
 
-func (s *TmpActor) OnHandleRequest(sourceId, targetId, requestId string, msg interface{}) (respErr error) {
+func (s *TmpActor) OnHandleRequest(sourceId, targetId Id, requestId string, msg interface{}) (respErr error) {
 	if s.HandleRequest != nil {
 		return s.HandleRequest(sourceId, targetId, requestId, msg)
 	}

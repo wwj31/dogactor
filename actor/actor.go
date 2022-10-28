@@ -23,14 +23,14 @@ const (
 	stop
 )
 
-const idleTimeout = time.Minute
+type Id = string
 
 type (
 	Option func(*actor)
 	actor  struct {
 		system *System
 
-		id      string
+		id      Id
 		handler actorHandler
 		mailBox mailBox
 
@@ -59,7 +59,7 @@ type (
 
 // New build a new actor
 // id is invalid if contain '@' or '$'
-func New(id string, handler spawnActor, opt ...Option) *actor {
+func New(id Id, handler spawnActor, opt ...Option) *actor {
 	a := &actor{
 		id:      id,
 		handler: handler,
@@ -268,7 +268,7 @@ func (s *actor) resetIdleTime() {
 		default:
 		}
 	}
-	s.idleTimer.Reset(idleTimeout)
+	s.idleTimer.Reset(time.Minute)
 }
 
 // resetTime reset timer of timerMgr

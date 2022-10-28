@@ -57,7 +57,7 @@ func (s *Student) OnInit() {
 	}
 }
 
-func (s *Student) OnHandleMessage(sourceId, targetId string, v interface{}) {
+func (s *Student) OnHandleMessage(sourceId, targetId actor.Id, v interface{}) {
 	switch m := v.(type) {
 	case *msg.LileiSay:
 		fmt.Println(string(m.Data))
@@ -90,7 +90,7 @@ func (s *Student) OnHandleMessage(sourceId, targetId string, v interface{}) {
 	}
 }
 
-func (s *Student) OnHandleRequest(sourceId, targetId string, requestId string, v interface{}) error {
+func (s *Student) OnHandleRequest(sourceId, targetId actor.Id, requestId string, v interface{}) error {
 	switch m := v.(type) {
 	case *msg.LileiSay:
 		fmt.Println(m.Data)
