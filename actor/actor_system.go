@@ -34,7 +34,7 @@ type System struct {
 	exiting  int32           // state of stopping
 
 	actorCache sync.Map    // all local actor
-	newList    chan *actor // new list
+	newList    chan *actor // newcomers
 
 	cluster       *actor
 	requestWaiter string
@@ -129,15 +129,6 @@ func (s *System) Stop() {
 	}
 }
 
-// Spawn create a new actor with startup
-func (s *System) Spawn(id string, handler spawnActor, op ...Option) (Actor, error) {
-	newActor := New(id, handler, op...)
-	if err := s.Add(newActor); err != nil {
-		return nil, err
-	}
-	return newActor, nil
-}
-
 // Add startup a new actor
 func (s *System) Add(actor *actor) error {
 	if atomic.LoadInt32(&s.exiting) == 1 {
@@ -161,7 +152,7 @@ func (s *System) Add(actor *actor) error {
 }
 
 // Send msg send to target,if target not exist in local cache msg shall send to cluster
-func (s *System) Send(sourceId, targetId, requestId string, msg interface{}) (err error) {
+func (s *System) Send(sourceId, targetId Id, requestId string, msg interface{}) (err error) {
 	defer func() {
 		if err != nil {
 			err = errFormat(err, sourceId, targetId, requestId, reflect.TypeOf(msg).String())
@@ -222,6 +213,7 @@ func (s *System) RequestWait(targetId string, msg interface{}, timeout ...time.D
 		msg:      msg,
 		c:        waitRsp,
 	}))
+
 	// wait to result
 	res := <-waitRsp
 	return res.data, res.err
@@ -232,6 +224,7 @@ func (s *System) LocalActor(actorId string) *actor {
 	if ok {
 		return v.(*actor)
 	}
+
 	return nil
 }
 
