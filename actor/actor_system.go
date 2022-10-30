@@ -109,6 +109,7 @@ func (s *System) Stop() {
 				if actorId == "" {
 					_stop = true
 				}
+				time.Sleep(time.Second)
 				runtime.Gosched()
 			}
 			_ = s.Send("", s.requestWaiter, "", "stop")
