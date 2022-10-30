@@ -96,11 +96,13 @@ func (s *System) Stop() {
 
 			var _stop bool
 			for !_stop {
-				actorId := ""
+				var actorId string
+
 				s.actorCache.Range(func(key, value interface{}) bool {
 					if key == s.cluster.id || key == s.requestWaiter {
 						return true
 					}
+
 					actorId = key.(string)
 					log.SysLog.Warnw("interrupt stopping", "actorId", actorId)
 					return false
@@ -109,6 +111,7 @@ func (s *System) Stop() {
 				if actorId == "" {
 					_stop = true
 				}
+
 				time.Sleep(time.Second)
 				runtime.Gosched()
 			}
