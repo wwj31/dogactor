@@ -36,6 +36,7 @@ func (s *Base) OnHandleEvent(event interface{}) {
 type TmpActor struct {
 	Base
 	Init          func()
+	Stop          func() bool
 	HandleMessage func(sourceId, targetId Id, msg interface{})
 	HandleRequest func(sourceId, targetId Id, requestId string, msg interface{}) error
 	HandleEvent   func(event interface{})
@@ -45,6 +46,14 @@ func (s *TmpActor) OnInit() {
 	if s.Init != nil {
 		s.Init()
 	}
+}
+
+func (s *TmpActor) OnStop() bool {
+	if s.Stop != nil {
+		return s.Stop()
+	}
+
+	return true
 }
 
 func (s *TmpActor) OnHandleMessage(sourceId, targetId Id, msg interface{}) {
@@ -57,6 +66,7 @@ func (s *TmpActor) OnHandleRequest(sourceId, targetId Id, requestId string, msg 
 	if s.HandleRequest != nil {
 		return s.HandleRequest(sourceId, targetId, requestId, msg)
 	}
+
 	return nil
 }
 
