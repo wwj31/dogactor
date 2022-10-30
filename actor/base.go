@@ -36,8 +36,8 @@ func (s *Base) OnHandleEvent(event interface{}) {
 type TmpActor struct {
 	Base
 	Init          func()
-	HandleMessage func(sourceId, targetId string, msg interface{})
-	HandleRequest func(sourceId, targetId, requestId string, msg interface{}) error
+	HandleMessage func(sourceId, targetId Id, msg interface{})
+	HandleRequest func(sourceId, targetId Id, requestId string, msg interface{}) error
 	HandleEvent   func(event interface{})
 }
 
