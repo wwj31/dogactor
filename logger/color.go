@@ -1,7 +1,7 @@
 //go:build !debug || disable_TColor
-//+build !debug disable_TColor
+// +build !debug disable_TColor
 
-package l
+package logger
 
 type TColor = int
 

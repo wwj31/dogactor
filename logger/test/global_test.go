@@ -1,19 +1,19 @@
 package test
 
 import (
-	"github.com/wwj31/dogactor/l"
+	"github.com/wwj31/dogactor/logger"
 	"github.com/wwj31/dogactor/tools"
 	"testing"
 )
 
 func TestGLogger(t *testing.T) {
 	GOGO()
-	l.Close()
+	logger.Close()
 }
 
 func GOGO() {
-	ln := l.New(l.Option{
-		Level:          l.DebugLevel,
+	ln := logger.New(logger.Option{
+		Level:          logger.DebugLevel,
 		LogPath:        "./testLog",
 		FileName:       "test.log",
 		FileMaxAge:     1,

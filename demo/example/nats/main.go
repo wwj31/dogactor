@@ -11,7 +11,7 @@ import (
 	"github.com/wwj31/dogactor/actor/cluster/mq"
 	"github.com/wwj31/dogactor/actor/cluster/mq/nats"
 	"github.com/wwj31/dogactor/demo/example/fullmesh/msg"
-	"github.com/wwj31/dogactor/l"
+	"github.com/wwj31/dogactor/logger"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -47,7 +47,7 @@ func main() {
 	<-system1.CStop
 	<-system2.CStop
 
-	l.Close()
+	logger.Close()
 }
 func (s *Student) OnInit() {
 	if s.Name == "LiLei" {

@@ -1,11 +1,11 @@
 package log
 
 import (
-	"github.com/wwj31/dogactor/l"
+	"github.com/wwj31/dogactor/logger"
 )
 
-var SysLog = l.New(l.Option{
-	Level:          l.InfoLevel,
+var SysLog = logger.New(logger.Option{
+	Level:          logger.InfoLevel,
 	LogPath:        "./syslog",
 	FileName:       "sys.err.log",
 	FileMaxAge:     15,
@@ -16,5 +16,5 @@ var SysLog = l.New(l.Option{
 })
 
 func init() {
-	SysLog.Color(l.Gray)
+	SysLog.Color(logger.Gray)
 }

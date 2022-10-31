@@ -9,7 +9,7 @@ import (
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/cluster/fullmesh"
 	"github.com/wwj31/dogactor/demo/example/fullmesh/msg"
-	"github.com/wwj31/dogactor/l"
+	"github.com/wwj31/dogactor/logger"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -24,11 +24,11 @@ type Student struct {
 	Age  int
 }
 
-var log *l.Logger
+var log *logger.Logger
 
 func main() {
-	log = l.New(l.Option{
-		Level:          l.DebugLevel,
+	log = logger.New(logger.Option{
+		Level:          logger.DebugLevel,
 		LogPath:        "./example2",
 		FileName:       "e.log",
 		FileMaxAge:     1,
@@ -60,7 +60,7 @@ func main() {
 	<-system1.CStop
 	<-system2.CStop
 
-	l.Close()
+	logger.Close()
 }
 func (s *Student) OnInit() {
 	if s.Name == "LiLei" {

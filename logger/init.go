@@ -1,4 +1,4 @@
-package l
+package logger
 
 var loggers []*Logger
 
