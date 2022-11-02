@@ -1,4 +1,4 @@
-package algo
+package tools
 
 import (
 	"fmt"
