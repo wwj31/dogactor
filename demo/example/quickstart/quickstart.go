@@ -17,7 +17,7 @@ func main() {
 	system.Add(ping)
 	system.Add(pong)
 
-	<-system.CStop
+	<-system.Stopped
 
 	fmt.Println("stop")
 }

@@ -27,7 +27,7 @@ const (
 type SystemOption func(*System) error
 
 type System struct {
-	CStop chan struct{}
+	Stopped chan struct{}
 
 	sysAddr       string          // cluster listen addr
 	waitStop      *sync.WaitGroup // stop wait
@@ -43,7 +43,7 @@ type System struct {
 func NewSystem(op ...SystemOption) (*System, error) {
 	s := &System{
 		sysAddr:  DefaultSysAddr,
-		CStop:    make(chan struct{}, 1),
+		Stopped:  make(chan struct{}, 1),
 		waitStop: &sync.WaitGroup{},
 		newList:  make(chan *actor, 100),
 	}
@@ -124,7 +124,7 @@ func (s *System) Stop() {
 			s.waitStop.Wait()
 			close(s.newList)
 			log.SysLog.Infof("System Exit")
-			s.CStop <- struct{}{}
+			s.Stopped <- struct{}{}
 		}()
 	}
 }

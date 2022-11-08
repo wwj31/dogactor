@@ -57,8 +57,8 @@ func main() {
 	<-c
 	system1.Stop()
 	system2.Stop()
-	<-system1.CStop
-	<-system2.CStop
+	<-system1.Stopped
+	<-system2.Stopped
 
 	logger.Close()
 }
