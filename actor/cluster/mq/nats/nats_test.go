@@ -8,12 +8,12 @@ import (
 )
 
 // nats 是 at most once 投递消息，测试证明了没有消费者时，消息不会被保存
+// 所以没有消息积压的能力
 func TestPublishWithDelaySubscription(t *testing.T) {
 	nats := New()
 	assert.NoError(t, nats.Connect("nats://localhost:4222"))
 
 	var sub = "topicA"
-
 	go func() {
 		for i := 1; i <= 5; i++ {
 			time.Sleep(time.Second)
