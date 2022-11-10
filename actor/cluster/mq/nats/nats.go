@@ -78,3 +78,6 @@ func (n *Nats) UnSub(subject string) (err error) {
 	}
 	return sub.Unsubscribe()
 }
+func (n *Nats) Flush() error {
+	return n.nc.Flush()
+}
