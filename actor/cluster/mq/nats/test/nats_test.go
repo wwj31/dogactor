@@ -1,8 +1,9 @@
-package nats
+package test
 
 import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
+	nats2 "github.com/wwj31/dogactor/actor/cluster/mq/nats"
 	"testing"
 	"time"
 )
@@ -10,7 +11,7 @@ import (
 // nats 是 at most once 投递消息，测试证明了没有消费者时，消息不会被保存
 // 所以没有消息积压的能力
 func TestPublishWithDelaySubscription(t *testing.T) {
-	nats := New()
+	nats := nats2.New()
 	assert.NoError(t, nats.Connect("nats://localhost:4222"))
 
 	var sub = "topicA"
