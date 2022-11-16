@@ -1,6 +1,7 @@
 package nats
 
 import (
+	"context"
 	"github.com/nats-io/nats.go"
 	"github.com/wwj31/dogactor/actor/cluster/mq"
 	"github.com/wwj31/dogactor/log"
@@ -11,23 +12,29 @@ import (
 
 func New() *Nats {
 	return &Nats{
-		subscribers: make(map[string]*nats.Subscription),
+		cancelSubs: make(map[string]func() error),
 	}
 }
 
 var _ mq.MQ = &Nats{}
 
 type Nats struct {
-	url         string
-	nc          *nats.Conn
-	subscribers map[string]*nats.Subscription
+	url        string
+	nc         *nats.Conn
+	js         nats.JetStreamContext
+	cancelSubs map[string]func() error
 }
 
 func (n *Nats) Connect(url string) (err error) {
 	n.url = url
 
 	// Connect to a server with nats.GetDefaultOptions()
-	n.nc, err = nats.Connect(n.url)
+	if n.nc, err = nats.Connect(n.url); err != nil {
+		return
+	}
+	if n.js, err = n.nc.JetStream(); err != nil {
+		return
+	}
 	return
 }
 func (n *Nats) Close() {
@@ -47,14 +54,38 @@ func (n *Nats) Req(subj string, data []byte) ([]byte, error) {
 }
 
 func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) {
-	var newSub *nats.Subscription
-	newSub, err = n.nc.Subscribe(subject, func(m *nats.Msg) {
-		//fmt.Printf("Received a message: %s\n", string(m.Data))
-		callback(m.Data)
-	})
+	if err = n.addStream(subject); err != nil {
+		return
+	}
+
+	sub, err := n.js.PullSubscribe("", subject, nats.BindStream(subject))
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	go func() {
+		msgs, err := sub.Fetch(10, nats.Context(ctx))
+		if err != nil {
+			log.SysLog.Errorw("subscribe fetch got err", "err", err)
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
+
+		for _, msg := range msgs {
+			callback(msg.Data)
+		}
+	}()
 
 	log.SysLog.Infow("subAsync success!", "subject", subject)
-	n.subscribers[subject] = newSub
+	n.cancelSubs[subject] = func() error {
+		cancel()
+		return sub.Unsubscribe()
+	}
 	return
 }
 
@@ -72,12 +103,30 @@ func (n *Nats) SubSync(subject string) ([]byte, error) {
 }
 
 func (n *Nats) UnSub(subject string) (err error) {
-	sub, exist := n.subscribers[subject]
+	cancel, exist := n.cancelSubs[subject]
 	if !exist {
 		return
 	}
-	return sub.Unsubscribe()
+	return cancel()
 }
 func (n *Nats) Flush() error {
 	return n.nc.Flush()
+}
+
+func (n *Nats) addStream(id string) error {
+	// ### Creating the stream
+	// Define the stream configuration, specifying `WorkQueuePolicy` for
+	// retention, and create the stream.
+	cfg := &nats.StreamConfig{
+		Name:      id,
+		Retention: nats.WorkQueuePolicy,
+		Subjects:  []string{""},
+	}
+
+	if _, err := n.js.AddStream(cfg); err != nil {
+		if jsErr, ok := err.(nats.JetStreamError); !ok || jsErr.APIError().ErrorCode != nats.JSErrCodeStreamNameInUse {
+			return err
+		}
+	}
+	return nil
 }

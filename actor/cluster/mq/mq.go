@@ -6,6 +6,5 @@ type MQ interface {
 	Pub(subject string, data []byte) error
 	Req(subject string, data []byte) ([]byte, error)
 	SubASync(subject string, callback func(data []byte)) error
-	SubSync(subject string) ([]byte, error)
 	UnSub(subject string) (err error)
 }

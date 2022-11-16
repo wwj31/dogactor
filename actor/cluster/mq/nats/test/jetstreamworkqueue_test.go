@@ -3,6 +3,7 @@ package test
 import (
 	"fmt"
 	"github.com/nats-io/nats.go"
+	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
 )
@@ -30,7 +31,12 @@ func TestJetStreamWorkQueue(t *testing.T) {
 		Subjects:  []string{"events.>"},
 	}
 
-	js.AddStream(cfg)
+	if _, err := js.AddStream(cfg); err != nil {
+		if jsErr, ok := err.(nats.JetStreamError); !ok || jsErr.APIError().ErrorCode != nats.JSErrCodeStreamNameInUse {
+			assert.NoError(t, err)
+		}
+	}
+
 	fmt.Println("created the stream")
 
 	// ### Queue messages
