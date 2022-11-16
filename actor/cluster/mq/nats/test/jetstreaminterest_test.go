@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestName(t *testing.T) {
+func TestJetStreamInterest(t *testing.T) {
 	url := os.Getenv("NATS_URL")
 	if url == "" {
 		url = nats.DefaultURL
