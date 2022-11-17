@@ -147,5 +147,5 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 }
 
 func subFormat(str actor.Id) string {
-	return "mq.actor." + str
+	return "mq:actor:" + str
 }

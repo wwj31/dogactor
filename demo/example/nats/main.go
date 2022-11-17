@@ -81,11 +81,11 @@ func (s *Student) OnHandleMessage(sourceId, targetId actor.Id, v interface{}) {
 		})
 
 		s.AddTimer(tools.XUID(), tools.Now().Add(time.Second), func(dt time.Duration) {
-			s.Request(sourceId, &msg.LileiSay{
+			resp, _ := s.RequestWait(sourceId, &msg.LileiSay{
 				Data: "please~",
-			}).Handle(func(resp interface{}, err error) {
-				fmt.Println(resp.(*msg.HanMeimeiSay).Data)
 			})
+			fmt.Println(resp.(*msg.HanMeimeiSay).Data)
+
 		}, -1)
 	}
 }

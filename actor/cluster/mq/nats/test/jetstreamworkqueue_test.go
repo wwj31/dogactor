@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestJetStreamWorkQueue(t *testing.T) {
@@ -41,10 +42,11 @@ func TestJetStreamWorkQueue(t *testing.T) {
 
 	// ### Queue messages
 	// Publish a few messages.
-	js.Publish("events.us.page_loaded", nil)
-	js.Publish("events.eu.mouse_clicked", nil)
-	js.Publish("events.us.input_focused", nil)
-	fmt.Println("published 3 messages")
+	js.Publish("events.us.page_loaded", []byte("msg1"))
+	js.Publish("events.eu.mouse_clicked", []byte("msg2"))
+	js.Publish("events.us.input_focused", []byte("msg3"))
+	js.Publish("events.us.input_focused", []byte("msg4"))
+	fmt.Println("published 4 messages")
 
 	// Checking the stream info, we see three messages have been queued.
 	fmt.Println("# Stream info without any consumers")
@@ -59,10 +61,13 @@ func TestJetStreamWorkQueue(t *testing.T) {
 	sub1, _ := js.PullSubscribe("", "processor-1", nats.BindStream(cfg.Name))
 
 	// Fetch and ack the queued messages.
-	msgs, _ := sub1.Fetch(3)
+	t1 := time.Now()
+	msgs, _ := sub1.Fetch(100, nats.MaxWait(10*time.Second))
 	for _, msg := range msgs {
+		fmt.Println(string(msg.Data))
 		msg.AckSync()
 	}
+	fmt.Println("delay ", time.Now().Sub(t1).String())
 
 	// Checking the stream info again, we will notice no messages
 	// are available.

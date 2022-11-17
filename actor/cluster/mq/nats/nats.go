@@ -43,7 +43,7 @@ func (n *Nats) Close() {
 }
 
 func (n *Nats) Pub(subj string, data []byte) error {
-	return n.nc.Publish(subj, data)
+	return n.nc.Publish(subj+".msg", data)
 }
 
 func (n *Nats) Req(subj string, data []byte) ([]byte, error) {
@@ -59,7 +59,7 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 		return
 	}
 
-	sub, subErr := n.js.PullSubscribe("", "consumer:"+subject, nats.BindStream(subject), nats.AckAll())
+	sub, subErr := n.js.PullSubscribe("", "consumer:"+subject, nats.BindStream(subject))
 	if subErr != nil {
 		return subErr
 	}
@@ -67,28 +67,24 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		for {
+			tctx, _ := context.WithTimeout(ctx, 10*time.Second)
+			msgs, err := sub.Fetch(100, nats.Context(tctx))
+			if err != nil {
+				log.SysLog.Errorw("subscribe fetch got err", "subject", subject, "err", err)
+			}
+
+			select {
+			case <-ctx.Done():
+				log.SysLog.Infow("exit the pull loop", "subject", subject)
+				return
+			default:
+			}
+
 			tools.Try(func() {
-				msgs, err := sub.Fetch(100, nats.MaxWait(10*time.Second), nats.Context(ctx))
-				if err != nil {
-					log.SysLog.Errorw("subscribe fetch got err", "err", err)
-				}
-
-				select {
-				case <-ctx.Done():
-					log.SysLog.Infow("exit the pull loop", "subject", subject)
-					return
-				default:
-				}
-
-				var lastMsg *nats.Msg
 				for _, msg := range msgs {
 					callback(msg.Data)
-					lastMsg = msg
-				}
-
-				if lastMsg != nil {
-					if ackErr := lastMsg.Ack(); ackErr != nil {
-						log.SysLog.Errorw("msg ack failed.", "err", ackErr)
+					if err := msg.Ack(); err != nil {
+						log.SysLog.Errorf("msg ack failed ", "subject", subject, "err", err)
 					}
 				}
 			})
@@ -134,7 +130,8 @@ func (n *Nats) addStream(id string) error {
 	cfg := &nats.StreamConfig{
 		Name:      id,
 		Retention: nats.WorkQueuePolicy,
-		Subjects:  []string{""},
+		Subjects:  []string{id + ".>"},
+		Storage:   nats.MemoryStorage,
 	}
 
 	if _, err := n.js.AddStream(cfg); err != nil {
