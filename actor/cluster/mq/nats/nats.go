@@ -5,6 +5,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/wwj31/dogactor/actor/cluster/mq"
 	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 	"time"
 )
 
@@ -58,26 +59,39 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 		return
 	}
 
-	sub, err := n.js.PullSubscribe("", subject, nats.BindStream(subject))
-	if err != nil {
-		return err
+	sub, subErr := n.js.PullSubscribe("", "consumer:"+subject, nats.BindStream(subject), nats.AckAll())
+	if subErr != nil {
+		return subErr
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
-		msgs, err := sub.Fetch(10, nats.Context(ctx))
-		if err != nil {
-			log.SysLog.Errorw("subscribe fetch got err", "err", err)
-		}
+		for {
+			tools.Try(func() {
+				msgs, err := sub.Fetch(100, nats.MaxWait(10*time.Second), nats.Context(ctx))
+				if err != nil {
+					log.SysLog.Errorw("subscribe fetch got err", "err", err)
+				}
 
-		select {
-		case <-ctx.Done():
-			return
-		default:
-		}
+				select {
+				case <-ctx.Done():
+					log.SysLog.Infow("exit the pull loop", "subject", subject)
+					return
+				default:
+				}
 
-		for _, msg := range msgs {
-			callback(msg.Data)
+				var lastMsg *nats.Msg
+				for _, msg := range msgs {
+					callback(msg.Data)
+					lastMsg = msg
+				}
+
+				if lastMsg != nil {
+					if ackErr := lastMsg.Ack(); ackErr != nil {
+						log.SysLog.Errorw("msg ack failed.", "err", ackErr)
+					}
+				}
+			})
 		}
 	}()
 

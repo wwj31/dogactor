@@ -2,21 +2,21 @@ package mq
 
 import (
 	"fmt"
-	"github.com/wwj31/dogactor/actor/internal/actor_msg"
-	"github.com/wwj31/dogactor/expect"
-	"github.com/wwj31/dogactor/log"
 	"reflect"
 
 	"github.com/nats-io/nats.go"
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/actorerr"
+	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/expect"
+	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )
 
 func WithRemote(url string, mq MQ) actor.SystemOption {
 	return func(system *actor.System) error {
 		cluster := newCluster(url, mq)
-		clusterActor := actor.New("cluster_"+tools.XUID(), cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
+		clusterActor := actor.New("cluster_"+tools.XUID(), cluster, actor.SetLocalized(), actor.SetMailBoxSize(1000))
 		if e := system.Add(clusterActor); e != nil {
 			return fmt.Errorf("%w %v", actorerr.RegisterClusterErr, e)
 		}
