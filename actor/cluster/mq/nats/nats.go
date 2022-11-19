@@ -85,8 +85,9 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 	exit := make(chan struct{})
 	go func() {
 		for {
-			tctx, _ := context.WithTimeout(ctx, 5*time.Second)
-			msgs, err := sub.Fetch(100, nats.Context(tctx))
+			deadline, cf := context.WithTimeout(ctx, time.Minute)
+			msgs, err := sub.Fetch(100, nats.Context(deadline))
+			cf()
 
 			if err != nil {
 				if err == context.Canceled {
