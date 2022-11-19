@@ -21,6 +21,10 @@ type EvClusterUpdate struct {
 type EvSessionClosed struct {
 	PeerHost string
 }
+
 type EvSessionOpened struct {
 	PeerHost string
 }
+
+type ReqMsgDrain struct{}
+type RespMsgDrain struct{ Err error }

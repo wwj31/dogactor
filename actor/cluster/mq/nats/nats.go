@@ -2,6 +2,7 @@ package nats
 
 import (
 	"context"
+	"fmt"
 	"github.com/nats-io/nats.go"
 	"github.com/wwj31/dogactor/actor/cluster/mq"
 	"github.com/wwj31/dogactor/log"
@@ -12,18 +13,29 @@ import (
 // https://github.com/nats-io/nats.go
 
 func New() *Nats {
+	ctx, cancel := context.WithCancel(context.Background())
 	return &Nats{
-		cancelSubs: make(map[string]func() error),
+		subs:   make(map[string]SubInfo),
+		ctx:    ctx,
+		cancel: cancel,
 	}
 }
 
 var _ mq.MQ = &Nats{}
 
+type SubInfo struct {
+	cancel context.CancelFunc
+	sub    *nats.Subscription
+	exit   chan struct{}
+}
 type Nats struct {
-	url        string
-	nc         *nats.Conn
-	js         nats.JetStreamContext
-	cancelSubs map[string]func() error
+	ctx    context.Context
+	cancel context.CancelFunc
+
+	url  string
+	nc   *nats.Conn
+	js   nats.JetStreamContext
+	subs map[string]SubInfo
 }
 
 func (n *Nats) Connect(url string) (err error) {
@@ -39,6 +51,7 @@ func (n *Nats) Connect(url string) (err error) {
 	return
 }
 func (n *Nats) Close() {
+	n.cancel()
 	n.nc.Close()
 }
 
@@ -59,42 +72,57 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 		return
 	}
 
-	sub, subErr := n.js.PullSubscribe("", "consumer:"+subject, nats.BindStream(subject))
+	sub, subErr := n.js.PullSubscribe(
+		"",
+		"consumer:"+subject,
+		nats.BindStream(subject),
+		nats.AckAll())
 	if subErr != nil {
 		return subErr
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(n.ctx)
+	exit := make(chan struct{})
 	go func() {
 		for {
-			tctx, _ := context.WithTimeout(ctx, 10*time.Second)
+			tctx, _ := context.WithTimeout(ctx, 5*time.Second)
 			msgs, err := sub.Fetch(100, nats.Context(tctx))
-			if err != nil {
-				log.SysLog.Errorw("subscribe fetch got err", "subject", subject, "err", err)
-			}
 
-			select {
-			case <-ctx.Done():
-				log.SysLog.Infow("exit the pull loop", "subject", subject)
-				return
-			default:
+			if err != nil {
+				if err == context.Canceled {
+					log.SysLog.Infow("exit the pull loop", "subject", subject)
+					select {
+					case exit <- struct{}{}:
+					default:
+					}
+					return
+				}
+
+				if err != context.DeadlineExceeded {
+					log.SysLog.Errorw("subscribe fetch got err", "subject", subject, "err", err)
+				}
 			}
 
 			tools.Try(func() {
+				if len(msgs) > 0 {
+					if err := msgs[len(msgs)-1].Ack(); err != nil {
+						log.SysLog.Errorf("msg ack failed ", "subject", subject, "err", err)
+
+					}
+				}
+
 				for _, msg := range msgs {
 					callback(msg.Data)
-					if err := msg.Ack(); err != nil {
-						log.SysLog.Errorf("msg ack failed ", "subject", subject, "err", err)
-					}
 				}
 			})
 		}
 	}()
 
 	log.SysLog.Infow("subAsync success!", "subject", subject)
-	n.cancelSubs[subject] = func() error {
-		cancel()
-		return sub.Unsubscribe()
+	n.subs[subject] = SubInfo{
+		cancel: cancel,
+		sub:    sub,
+		exit:   exit,
 	}
 	return
 }
@@ -113,11 +141,21 @@ func (n *Nats) SubSync(subject string) ([]byte, error) {
 }
 
 func (n *Nats) UnSub(subject string) (err error) {
-	cancel, exist := n.cancelSubs[subject]
+	sub, exist := n.subs[subject]
 	if !exist {
 		return
 	}
-	return cancel()
+	delete(n.subs, subject)
+
+	sub.cancel()
+
+	select {
+	case <-sub.exit:
+	case <-time.After(10 * time.Second):
+		return fmt.Errorf("nats go fetch exit timeout ")
+	}
+
+	return sub.sub.Unsubscribe()
 }
 func (n *Nats) Flush() error {
 	return n.nc.Flush()
@@ -129,9 +167,10 @@ func (n *Nats) addStream(id string) error {
 	// retention, and create the stream.
 	cfg := &nats.StreamConfig{
 		Name:      id,
-		Retention: nats.WorkQueuePolicy,
+		Retention: nats.LimitsPolicy,
 		Subjects:  []string{id + ".>"},
 		Storage:   nats.MemoryStorage,
+		MaxAge:    time.Minute,
 	}
 
 	if _, err := n.js.AddStream(cfg); err != nil {

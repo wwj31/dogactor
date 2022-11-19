@@ -49,6 +49,7 @@ type (
 
 		// actor status schedule
 		status    atomic.Value
+		draining  atomic.Value
 		idleTimer *time.Timer
 	}
 )
@@ -69,6 +70,7 @@ func New(id Id, handler spawnActor, opt ...Option) *actor {
 		idleTimer: time.NewTimer(math.MaxInt),
 	}
 	a.status.Store(starting)
+	a.draining.Store(false)
 	a.timer.Stop()
 	a.idleTimer.Stop()
 
@@ -82,7 +84,22 @@ func New(id Id, handler spawnActor, opt ...Option) *actor {
 
 func (s *actor) ID() string      { return s.id }
 func (s *actor) System() *System { return s.system }
-func (s *actor) Exit()           { _ = s.push(actorStopMsg) }
+func (s *actor) Exit()           { _ = s.push(actorStop) }
+func (s *actor) Drain() {
+	v, err := s.RequestWait(s.system.cluster.id, ReqMsgDrain{})
+	if err != nil {
+		log.SysLog.Errorw("drain failed ", "err", err)
+		return
+	}
+
+	resp := v.(RespMsgDrain)
+	if resp.Err != nil {
+		log.SysLog.Errorw("drain return err ", "err", resp.Err)
+		return
+	}
+
+	s.draining.Store(true)
+}
 
 func (s *actor) Send(targetId string, msg interface{}) error {
 	return s.system.Send(s.id, targetId, "", msg)
@@ -122,14 +139,19 @@ func (s *actor) push(msg actor_msg.Message) error {
 			"actorId", s.id)
 	}
 
-	s.mailBox.ch <- msg
+	select {
+	case s.mailBox.ch <- msg:
+	case <-time.After(time.Minute):
+		log.SysLog.Warnw("mail box was full", "actorId", s.id)
+	}
+
 	s.activate()
 	return nil
 }
 
 var (
 	timerTickMsg = &actor_msg.ActorMessage{MsgName: "timerTickMsg"} // timer tick msg
-	actorStopMsg = &actor_msg.ActorMessage{MsgName: "actorStopMsg"} // actor stop msg
+	actorStop    = &actor_msg.ActorMessage{MsgName: "actorStop"}    // actor stop msg
 )
 
 func (s *actor) init(ok chan<- struct{}) {
@@ -164,11 +186,15 @@ func (s *actor) run() {
 				// upset timer
 				s.timerMgr.Update(tools.Now())
 			})
-
 			msg.Free()
+
+			if s.draining.Load() == true && s.mailBox.Empty() {
+				s.exit()
+				return
+			}
+
 			s.resetTime()
 			s.resetIdleTime()
-
 		case <-s.timer.C:
 			_ = s.push(timerTickMsg)
 
@@ -252,7 +278,7 @@ func (s *actor) stop() {
 	})
 
 	if stop {
-		_ = s.push(actorStopMsg)
+		_ = s.push(actorStop)
 	}
 }
 
@@ -288,10 +314,14 @@ func (s *actor) resetTime() {
 
 func (s *actor) isStop(msg actor_msg.Message) bool {
 	message, ok := msg.(*actor_msg.ActorMessage)
-	if ok && message == actorStopMsg {
+	if ok && message == actorStop {
 		return true
 	}
 	return false
+}
+
+func (s *actor) isDrained() bool {
+	return s.draining.Load() == true && s.mailBox.Empty()
 }
 
 func (s *actor) exit() {

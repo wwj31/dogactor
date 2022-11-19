@@ -35,11 +35,12 @@ func (s *waitActor) OnHandleMessage(sourceId, targetId string, msg interface{}) 
 				}
 			}()
 		})
-	default:
-		if str, ok := msg.(string); ok && str == "stop" {
+
+	case string:
+		if data == "stop" {
 			s.Exit()
 		} else {
-			log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
+			log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", data)
 		}
 	}
 }

@@ -33,7 +33,7 @@ func TestPull(t *testing.T) {
 	// retention, and create the stream.
 	cfg := &nats.StreamConfig{
 		Name:      "pull_test",
-		Retention: nats.WorkQueuePolicy,
+		Retention: nats.LimitsPolicy,
 		Subjects:  []string{"actor1.>"},
 		Storage:   nats.MemoryStorage,
 		NoAck:     false,
@@ -51,16 +51,17 @@ func TestPull(t *testing.T) {
 	fmt.Println("created the stream")
 
 	// Checking the stream info, we see three messages have been queued.
-	sub1, _ := js.PullSubscribe("", "processor-1", nats.BindStream(cfg.Name))
+	sub1, err := js.PullSubscribe("", "processor-1", nats.BindStream(cfg.Name), nats.AckAll())
+	assert.NoError(t, err)
 	//nats.PullMaxWaiting(3), // 最大等待的fetch连接数量
 
-	//js.PublishAsync("actor1.msg", []byte(time.Now().String()))
+	//js.Publish("actor1.msg", []byte(time.Now().String()))
 	//time.Sleep(time.Second)
-	//js.PublishAsync("actor1.msg", []byte(time.Now().String()))
+	//js.Publish("actor1.msg", []byte(time.Now().String()))
 	//time.Sleep(time.Second)
-	//js.PublishAsync("actor1.msg", []byte(time.Now().String()))
+	//js.Publish("actor1.msg", []byte(time.Now().String()))
 	//time.Sleep(time.Second)
-	//js.PublishAsync("actor1.msg", []byte(time.Now().String()))
+	//js.Publish("actor1.msg", []byte(time.Now().String()))
 	//time.Sleep(time.Second)
 
 	g := func(i int) {
@@ -76,12 +77,13 @@ func TestPull(t *testing.T) {
 			fmt.Println("delay ", time.Now().Sub(t1).String())
 			var lastMsg *nats.Msg
 			for _, msg := range msgs {
-				msg.Ack()
+				//msg.Ack()
 				fmt.Println(i, string(msg.Data))
 				lastMsg = msg
 			}
 			if lastMsg != nil {
-				//assert.NoError(t, lastMsg.Ack())
+				assert.NoError(t, lastMsg.Ack())
+				fmt.Println("ack", lastMsg.Subject)
 			}
 			//time.Sleep(1 * time.Second)
 		}

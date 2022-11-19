@@ -162,7 +162,9 @@ func (s *System) Send(sourceId, targetId Id, requestId string, msg interface{}) 
 	var atr *actor
 	if localActor, ok := s.actorCache.Load(targetId); ok {
 		atr = localActor.(*actor)
-	} else {
+	}
+
+	if atr == nil || atr.draining.Load() == true {
 		pt, canRemote := msg.(proto.Message)
 		if canRemote {
 			atr = s.Cluster()

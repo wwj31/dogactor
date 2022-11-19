@@ -22,3 +22,7 @@ func (m *mailBox) recording(t time.Time, msgName string) {
 		log.SysLog.Warnw("too long to process time", "msg", msgName, "duration", dur)
 	}
 }
+
+func (m *mailBox) Empty() bool {
+	return len(m.ch) == 0
+}

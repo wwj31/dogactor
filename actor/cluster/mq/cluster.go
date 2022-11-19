@@ -61,6 +61,12 @@ func (c *Cluster) OnStop() bool {
 	return false
 }
 
+func (c *Cluster) stop() {
+	c.System().CancelAll(c.ID())
+	c.mq.Close()
+	c.Exit()
+}
+
 func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string, msg interface{}) (respErr error) {
 	reqSourceId, reqTargetId, _, _ := actor.ParseRequestId(requestId)
 	if c.ID() != reqTargetId {
@@ -83,15 +89,16 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string,
 		return
 	}
 
-	str, ok := msg.(string)
-	if ok {
-		switch str {
-		case "stop":
-			c.System().CancelAll(c.ID())
-			c.mq.Close()
-			c.Exit()
-		default:
-			log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
+	switch v := msg.(type) {
+	case actor.ReqMsgDrain:
+		err := c.mq.UnSub(sourceId)
+		_ = c.Response(requestId, actor.RespMsgDrain{Err: err})
+
+	case string:
+		if v == "stop" {
+			c.stop()
+		} else {
+			log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", v)
 		}
 	}
 	return
@@ -110,9 +117,7 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) 
 	}
 
 	if str, ok := msg.(string); ok && str == "stop" {
-		c.System().CancelAll(c.ID())
-		c.mq.Close()
-		c.Exit()
+		c.stop()
 	} else {
 		log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
 	}
