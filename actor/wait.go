@@ -27,12 +27,14 @@ func (s *waitActor) OnHandleMessage(sourceId, targetId string, msg interface{}) 
 		req := s.Request(data.targetId, data.msg, data.timeout)
 		req.Handle(func(resp interface{}, e error) {
 			go func() {
+				deadline := globalTimerPool.Get(10 * time.Second)
 				select {
 				case data.c <- result{data: resp, err: e}:
-				case <-time.After(10 * time.Second):
+				case <-deadline.C:
 					log.SysLog.Warnw("waitActor result put time out sourceId:%v targetId:%v", sourceId, data.targetId)
 					break
 				}
+				globalTimerPool.Put(deadline)
 			}()
 		})
 

@@ -65,9 +65,9 @@ func New(id Id, handler spawnActor, opt ...Option) *actor {
 		},
 		remote:    true, // 默认都能被远端发现
 		timerMgr:  jtimer.New(),
-		timer:     tools.NewTimer(math.MaxInt),
+		timer:     globalTimerPool.Get(math.MaxInt),
 		requests:  make(map[string]*request),
-		idleTimer: tools.NewTimer(math.MaxInt),
+		idleTimer: globalTimerPool.Get(math.MaxInt),
 	}
 	a.status.Store(starting)
 	a.draining.Store(false)
@@ -139,13 +139,13 @@ func (s *actor) push(msg actor_msg.Message) error {
 			"actorId", s.id)
 	}
 
-	deadline := tools.NewTimer(time.Minute)
+	deadline := globalTimerPool.Get(time.Minute)
 	select {
 	case s.mailBox.ch <- msg:
 	case <-deadline.C:
 		log.SysLog.Warnw("mail box was full", "actorId", s.id)
 	}
-	tools.Put(deadline)
+	globalTimerPool.Put(deadline)
 
 	s.activate()
 	return nil
@@ -287,7 +287,7 @@ func (s *actor) stop() {
 
 // resetIdleTime reset idleTimer
 func (s *actor) resetIdleTime() {
-	s.idleTimer = tools.NewTimer(time.Minute)
+	s.idleTimer = globalTimerPool.Get(time.Minute)
 }
 
 // resetTime reset timer of timerMgr
@@ -298,7 +298,7 @@ func (s *actor) resetTime() {
 	}
 
 	if !nextAt.Equal(s.nextAt) {
-		s.timer = tools.NewTimer(nextAt.Sub(tools.Now()))
+		s.timer = globalTimerPool.Get(nextAt.Sub(tools.Now()))
 		s.nextAt = nextAt
 	}
 }
