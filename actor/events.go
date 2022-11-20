@@ -22,7 +22,6 @@ func newEvent(s *System) evDispatcher {
 	return evDispatcher{listeners: make(listener), sys: s}
 }
 
-// RegistEvent 注册actor事件
 func (ed *evDispatcher) RegistEvent(actorId Id, events ...interface{}) error {
 	for _, event := range events {
 		rtype := reflect.TypeOf(event)
@@ -62,7 +61,6 @@ func (ed *evDispatcher) CancelEvent(actorId Id, events ...interface{}) error {
 	return nil
 }
 
-// CancelAll 取消actor事件
 func (ed *evDispatcher) CancelAll(actorId Id) {
 	ed.Lock()
 	defer ed.Unlock()
@@ -72,7 +70,6 @@ func (ed *evDispatcher) CancelAll(actorId Id) {
 	}
 }
 
-// DispatchEvent 事件触发
 func (ed *evDispatcher) DispatchEvent(sourceId Id, event interface{}) {
 	rtype := reflect.TypeOf(event)
 	if rtype.Kind() == reflect.Ptr {
