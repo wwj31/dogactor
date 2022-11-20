@@ -151,7 +151,7 @@ func (s *System) Add(actor *actor) error {
 	return nil
 }
 
-// Send msg send to target,if target not exist in local cache msg shall send to cluster
+// Send try to send the message to target
 func (s *System) Send(sourceId, targetId Id, requestId string, msg interface{}) (err error) {
 	defer func() {
 		if err != nil {
@@ -164,6 +164,8 @@ func (s *System) Send(sourceId, targetId Id, requestId string, msg interface{}) 
 		atr = localActor.(*actor)
 	}
 
+	// when the actor into draining or not found locally,
+	// send the message to the cluster.
 	if atr == nil || atr.draining.Load() == true {
 		pt, canRemote := msg.(proto.Message)
 		if canRemote {
