@@ -47,9 +47,13 @@ func (n *Nats) Connect(url string) (err error) {
 		nats.ReconnectHandler(func(conn *nats.Conn) {
 			log.SysLog.Errorw("nats reconnect to server", "url", conn.ConnectedUrl())
 		}),
+
 		nats.DisconnectErrHandler(func(conn *nats.Conn, err error) {
-			log.SysLog.Errorw("nats disconnect", "url", conn.ConnectedUrl(), "err", err)
+			if err != nil {
+				log.SysLog.Errorw("nats disconnect", "url", conn.ConnectedUrl(), "err", err)
+			}
 		}),
+
 		nats.ClosedHandler(func(conn *nats.Conn) {
 			log.SysLog.Infow("nats connect closed successfully", "url", conn.ConnectedUrl())
 		}),
@@ -122,7 +126,6 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 				if len(msgs) > 0 {
 					if err := msgs[len(msgs)-1].Ack(); err != nil {
 						log.SysLog.Errorf("msg ack failed ", "subject", subject, "err", err)
-
 					}
 				}
 

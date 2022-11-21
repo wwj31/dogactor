@@ -4,19 +4,16 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
-	"reflect"
 	"sync"
 	"sync/atomic"
 )
 
 var (
-	_msgPool   sync.Pool
-	_eventPool sync.Pool
+	_msgPool sync.Pool
 )
 
 func init() {
 	_msgPool.New = func() interface{} { return &ActorMessage{pool: &_msgPool} }
-	_eventPool.New = func() interface{} { return &EventMessage{pool: &_eventPool} }
 }
 
 type Message interface {
@@ -89,33 +86,4 @@ func (msg *ActorMessage) Fill(pi *tools.ProtoIndex) interface{} {
 		return nil
 	}
 	return pt
-}
-
-func NewEventMessage(actEvent interface{}) *EventMessage {
-	event := _eventPool.Get().(*EventMessage)
-	atomic.StoreInt32(&event.free, 1)
-	event.actEvent = actEvent
-	return event
-}
-
-type EventMessage struct {
-	pool *sync.Pool
-	free int32
-
-	actEvent interface{}
-}
-
-func (s *EventMessage) ActEvent() interface{} {
-	return s.actEvent
-}
-
-func (s *EventMessage) Free() {
-	if s.pool != nil && atomic.CompareAndSwapInt32(&s.free, 1, 0) {
-		s.actEvent = nil
-		s.pool.Put(s)
-	}
-}
-
-func (s *EventMessage) String() string {
-	return reflect.TypeOf(s.actEvent).Elem().Name()
 }

@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/wwj31/dogactor/actor/actorerr"
-	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 )
 
 type listener map[string]map[Id]func(event interface{}) // map[evType][actorId]bool
@@ -66,8 +65,8 @@ func (ed *evDispatcher) CancelAll(actorId Id) {
 }
 
 func (ed *evDispatcher) DispatchEvent(sourceId Id, event interface{}) {
-	rtype := reflect.TypeOf(event)
-	if rtype.Kind() == reflect.Ptr {
+	rType := reflect.TypeOf(event)
+	if rType.Kind() == reflect.Ptr {
 		log.SysLog.Errorw("dispatch event type of event is ptr",
 			"err", actorerr.DispatchEventErr,
 			"actorId", sourceId,
@@ -76,15 +75,14 @@ func (ed *evDispatcher) DispatchEvent(sourceId Id, event interface{}) {
 		return
 	}
 
-	etype := rtype.String()
-	wrap := actor_msg.NewEventMessage(event)
-
 	ed.RLock()
 	defer ed.RUnlock()
 
-	if listeners := ed.listeners[etype]; listeners != nil {
-		for actorId, _ := range listeners {
-			err := ed.sys.Send(sourceId, actorId, "", wrap)
+	if listeners := ed.listeners[rType.String()]; listeners != nil {
+		for actorId, callback := range listeners {
+			err := ed.sys.Send(sourceId, actorId, "", func() {
+				callback(event)
+			})
 			if err != nil {
 				log.SysLog.Errorw("DispatchEvent send to actor", "actorId", actorId, "err", err)
 			}
