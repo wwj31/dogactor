@@ -51,10 +51,33 @@ func (c *Cluster) OnInit() {
 		return
 	}
 
-	_ = c.System().RegistEvent(c.ID(),
-		actor.EvNewActor{},
-		actor.EvDelActor{},
-	)
+	c.System().OnEvent(c.ID(), actor.EvNewActor{}, func(event interface{}) {
+		ev := event.(actor.EvNewActor)
+		if ev.Publish {
+			err := c.mq.SubASync(subFormat(ev.ActorId), func(data []byte) {
+				msg := actor_msg.NewActorMessage() // remote recv message
+				if err := msg.Unmarshal(data); err != nil {
+					log.SysLog.Errorf("unmarshal msg failed", "err", err)
+					return
+				}
+				expect.Nil(c.System().Send(msg.SourceId, msg.TargetId, msg.RequestId, msg))
+			})
+
+			if err != nil {
+				log.SysLog.Errorw("mq cluster SubAsync failed!", "err", err, "event", ev)
+			}
+		}
+	})
+
+	c.System().OnEvent(c.ID(), actor.EvDelActor{}, func(event interface{}) {
+		ev := event.(actor.EvDelActor)
+		if ev.Publish {
+			err := c.mq.UnSub(subFormat(ev.ActorId), false)
+			if err != nil {
+				log.SysLog.Errorw("mq cluster UnSub failed!", "err", err, "event", ev)
+			}
+		}
+	})
 }
 
 func (c *Cluster) OnStop() bool {
@@ -120,34 +143,6 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) 
 		c.stop()
 	} else {
 		log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
-	}
-}
-
-func (c *Cluster) OnHandleEvent(event interface{}) {
-	switch e := event.(type) {
-	case actor.EvNewActor:
-		if e.Publish {
-			err := c.mq.SubASync(subFormat(e.ActorId), func(data []byte) {
-				msg := actor_msg.NewActorMessage() // remote recv message
-				if err := msg.Unmarshal(data); err != nil {
-					log.SysLog.Errorf("unmarshal msg failed", "err", err)
-					return
-				}
-				expect.Nil(c.System().Send(msg.SourceId, msg.TargetId, msg.RequestId, msg))
-			})
-
-			if err != nil {
-				log.SysLog.Errorw("mq cluster SubAsync failed!", "err", err, "event", e)
-			}
-		}
-
-	case actor.EvDelActor:
-		if e.Publish {
-			err := c.mq.UnSub(subFormat(e.ActorId), e.Drained)
-			if err != nil {
-				log.SysLog.Errorw("mq cluster UnSub failed!", "err", err, "event", e)
-			}
-		}
 	}
 }
 

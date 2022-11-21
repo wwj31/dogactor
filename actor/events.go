@@ -1,7 +1,6 @@
 package actor
 
 import (
-	"fmt"
 	"github.com/wwj31/dogactor/log"
 	"reflect"
 	"sync"
@@ -10,7 +9,7 @@ import (
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 )
 
-type listener map[string]map[Id]struct{} // map[evType][actorId]bool
+type listener map[string]map[Id]func(event interface{}) // map[evType][actorId]bool
 
 type evDispatcher struct {
 	sync.RWMutex
@@ -22,42 +21,39 @@ func newEvent(s *System) evDispatcher {
 	return evDispatcher{listeners: make(listener), sys: s}
 }
 
-func (ed *evDispatcher) RegistEvent(actorId Id, events ...interface{}) error {
-	for _, event := range events {
-		rtype := reflect.TypeOf(event)
-		if rtype.Kind() == reflect.Ptr {
-			return fmt.Errorf("%w actorId:%v,event:%v", actorerr.RegisterEventErr, actorId, event)
-		}
+func (ed *evDispatcher) OnEvent(actorId Id, event interface{}, callback func(event interface{})) {
+	rType := reflect.TypeOf(event)
+	if rType.Kind() == reflect.Ptr {
+		log.SysLog.Errorw("OnEvent failed", "err", actorerr.RegisterEventErr, "actorId", actorId, "event", event)
+		return
 	}
 
 	ed.Lock()
 	defer ed.Unlock()
 
-	for _, event := range events {
-		typ := reflect.TypeOf(event).String()
-		if ed.listeners[typ] == nil {
-			ed.listeners[typ] = make(map[string]struct{})
-		}
-		ed.listeners[typ][actorId] = struct{}{}
+	typ := reflect.TypeOf(event).String()
+	if ed.listeners[typ] == nil {
+		ed.listeners[typ] = make(map[string]func(interface{}))
 	}
-	return nil
+	ed.listeners[typ][actorId] = callback
 }
 
-func (ed *evDispatcher) CancelEvent(actorId Id, events ...interface{}) error {
+func (ed *evDispatcher) CancelEvent(actorId Id, events ...interface{}) {
 	for _, event := range events {
 		rtype := reflect.TypeOf(event)
 		if rtype.Kind() == reflect.Ptr {
-			return fmt.Errorf(" %w,actorId:%v,event:%v", actorerr.CancelEventErr, actorId, event)
+			log.SysLog.Errorw("CancelEvent failed", "err", actorerr.CancelEventErr, "actorId", actorId, "event", event)
+			return
 		}
 	}
+
 	ed.Lock()
 	defer ed.Unlock()
 
 	for _, event := range events {
-		rtype := reflect.TypeOf(event).String()
-		delete(ed.listeners[rtype], actorId)
+		rType := reflect.TypeOf(event).String()
+		delete(ed.listeners[rType], actorId)
 	}
-	return nil
 }
 
 func (ed *evDispatcher) CancelAll(actorId Id) {
