@@ -178,7 +178,7 @@ func (s *actor) run() {
 		select {
 		case msg := <-s.mailBox.ch:
 			if s.isStop(msg) {
-				s.exit()
+				s.exit(true)
 				return
 			}
 
@@ -191,7 +191,7 @@ func (s *actor) run() {
 			msg.Free()
 
 			if s.draining.Load() == true && s.mailBox.Empty() {
-				s.exit()
+				s.exit(false)
 				return
 			}
 
@@ -315,11 +315,14 @@ func (s *actor) isDrained() bool {
 	return s.draining.Load() == true && s.mailBox.Empty()
 }
 
-func (s *actor) exit() {
+func (s *actor) exit(emitEvent bool) {
 	log.SysLog.Infow("actor done", "actorId", s.ID())
 	s.status.Store(stop)
 
-	s.system.DispatchEvent(s.id, EvDelActor{ActorId: s.id, Publish: s.remote})
+	if emitEvent {
+		s.system.DispatchEvent(s.id, EvDelActor{ActorId: s.id, Publish: s.remote})
+	}
+
 	s.system.actorCache.Delete(s.ID())
 	s.system.waitStop.Done()
 }

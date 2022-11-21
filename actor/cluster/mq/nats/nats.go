@@ -155,7 +155,7 @@ func (n *Nats) SubSync(subject string) ([]byte, error) {
 	return m.Data, nil
 }
 
-func (n *Nats) UnSub(subject string) (err error) {
+func (n *Nats) UnSub(subject string, drained bool) (err error) {
 	sub, exist := n.subs[subject]
 	if !exist {
 		return
@@ -169,9 +169,21 @@ func (n *Nats) UnSub(subject string) (err error) {
 	case <-time.After(10 * time.Second):
 		return fmt.Errorf("nats go fetch exit timeout ")
 	}
+	err = sub.sub.Unsubscribe()
+	if err != nil {
+		return
+	}
 
-	return sub.sub.Unsubscribe()
+	if !drained {
+		err = n.js.DeleteStream(subject)
+		if err != nil {
+			return
+		}
+	}
+
+	return
 }
+
 func (n *Nats) Flush() error {
 	return n.nc.Flush()
 }

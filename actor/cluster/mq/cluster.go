@@ -91,7 +91,7 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string,
 
 	switch v := msg.(type) {
 	case actor.ReqMsgDrain:
-		err := c.mq.UnSub(sourceId)
+		err := c.mq.UnSub(sourceId, true)
 		_ = c.Response(requestId, actor.RespMsgDrain{Err: err})
 
 	case string:
@@ -143,7 +143,7 @@ func (c *Cluster) OnHandleEvent(event interface{}) {
 
 	case actor.EvDelActor:
 		if e.Publish {
-			err := c.mq.UnSub(subFormat(e.ActorId))
+			err := c.mq.UnSub(subFormat(e.ActorId), e.Drained)
 			if err != nil {
 				log.SysLog.Errorw("mq cluster UnSub failed!", "err", err, "event", e)
 			}
