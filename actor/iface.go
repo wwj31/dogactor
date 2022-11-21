@@ -10,6 +10,7 @@ type (
 		ID() string
 		System() *System
 		Exit()
+		Drain()
 
 		Timer
 		Sender
