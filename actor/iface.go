@@ -10,7 +10,7 @@ type (
 		ID() string
 		System() *System
 		Exit()
-		Drain()
+		Drain(afterDrained ...func())
 
 		Timer
 		Sender

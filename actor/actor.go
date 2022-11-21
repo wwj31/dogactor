@@ -49,8 +49,11 @@ type (
 
 		// actor status schedule
 		status    atomic.Value
-		draining  atomic.Value
 		idleTimer *time.Timer
+
+		// drain
+		draining     atomic.Value
+		afterDrained []func()
 	}
 )
 
@@ -85,7 +88,7 @@ func New(id Id, handler spawnActor, opt ...Option) *actor {
 func (s *actor) ID() string      { return s.id }
 func (s *actor) System() *System { return s.system }
 func (s *actor) Exit()           { _ = s.push(actorStop) }
-func (s *actor) Drain() {
+func (s *actor) Drain(afterDrained ...func()) {
 	v, err := s.RequestWait(s.system.cluster.id, ReqMsgDrain{})
 	if err != nil {
 		log.SysLog.Errorw("drain failed ", "err", err)
@@ -98,6 +101,7 @@ func (s *actor) Drain() {
 		return
 	}
 
+	s.afterDrained = afterDrained
 	s.draining.Store(true)
 }
 
@@ -191,6 +195,10 @@ func (s *actor) run() {
 			msg.Free()
 
 			if s.draining.Load() == true && s.mailBox.Empty() {
+				for _, fn := range s.afterDrained {
+					fn()
+				}
+
 				s.exit(false)
 				return
 			}
