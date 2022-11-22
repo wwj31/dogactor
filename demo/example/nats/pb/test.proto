@@ -11,3 +11,8 @@ message HanMeimeiSay
 {
     string Data  = 1;
 }
+
+message DrainTest
+{
+    string Data  = 1;
+}

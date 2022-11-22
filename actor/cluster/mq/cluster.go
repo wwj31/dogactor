@@ -2,8 +2,6 @@ package mq
 
 import (
 	"fmt"
-	"reflect"
-
 	"github.com/nats-io/nats.go"
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/actorerr"
@@ -75,6 +73,11 @@ func (c *Cluster) OnInit() {
 				log.SysLog.Errorw("mq cluster UnSub failed!", "err", err, "event", ev)
 			}
 		}
+
+		if ev.ActorId == c.System().WaiterId() {
+			log.SysLog.Infow("waiter was stopped")
+			c.stop()
+		}
 	})
 }
 
@@ -110,17 +113,10 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string,
 		return
 	}
 
-	switch v := msg.(type) {
-	case actor.ReqMsgDrain:
-		err := c.mq.UnSub(sourceId, true)
-		_ = c.Response(requestId, actor.RespMsgDrain{Err: err})
-
-	case string:
-		if v == "stop" {
-			c.stop()
-		} else {
-			log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", v)
-		}
+	switch msg.(type) {
+	case *actor.ReqMsgDrain:
+		err := c.mq.UnSub(subFormat(sourceId), true)
+		_ = c.Response(requestId, &actor.RespMsgDrain{Err: err})
 	}
 	return
 }
@@ -135,12 +131,6 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) 
 			)
 		}
 		return
-	}
-
-	if str, ok := msg.(string); ok && str == "stop" {
-		c.stop()
-	} else {
-		log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
 	}
 }
 

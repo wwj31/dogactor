@@ -5,6 +5,7 @@ package msg
 import "sync"
 
 var spawnerPools = map[string]*sync.Pool{
-	"msg.LileiSay":     {New: func() interface{} { return spawner["msg.LileiSay"]() }},
+	"msg.DrainTest":    {New: func() interface{} { return spawner["msg.DrainTest"]() }},
 	"msg.HanMeimeiSay": {New: func() interface{} { return spawner["msg.HanMeimeiSay"]() }},
+	"msg.LileiSay":     {New: func() interface{} { return spawner["msg.LileiSay"]() }},
 }

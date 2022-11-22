@@ -89,20 +89,21 @@ func (s *actor) ID() string      { return s.id }
 func (s *actor) System() *System { return s.system }
 func (s *actor) Exit()           { _ = s.push(actorStop) }
 func (s *actor) Drain(afterDrained ...func()) {
-	v, err := s.RequestWait(s.system.cluster.id, ReqMsgDrain{})
-	if err != nil {
-		log.SysLog.Errorw("drain failed ", "err", err)
-		return
-	}
+	s.Request(s.system.cluster.id, &ReqMsgDrain{}).Handle(func(resp interface{}, err error) {
+		if err != nil {
+			log.SysLog.Errorw("drain failed ", "err", err)
+			return
+		}
 
-	resp := v.(RespMsgDrain)
-	if resp.Err != nil {
-		log.SysLog.Errorw("drain return err ", "err", resp.Err)
-		return
-	}
+		respMsgDrain := resp.(*RespMsgDrain)
+		if respMsgDrain.Err != nil {
+			log.SysLog.Errorw("drain return err ", "err", respMsgDrain.Err)
+			return
+		}
 
-	s.afterDrained = afterDrained
-	s.draining.Store(true)
+		s.afterDrained = afterDrained
+		s.draining.Store(true)
+	})
 }
 
 func (s *actor) Send(targetId string, msg interface{}) error {

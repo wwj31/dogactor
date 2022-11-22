@@ -17,11 +17,11 @@ type (
 	}
 )
 
-type waitActor struct {
+type waiter struct {
 	Base
 }
 
-func (s *waitActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
+func (s *waiter) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	switch data := msg.(type) {
 	case *requestWait:
 		req := s.Request(data.targetId, data.msg, data.timeout)
@@ -31,7 +31,7 @@ func (s *waitActor) OnHandleMessage(sourceId, targetId string, msg interface{}) 
 				select {
 				case data.c <- result{data: resp, err: e}:
 				case <-deadline.C:
-					log.SysLog.Warnw("waitActor result put time out sourceId:%v targetId:%v", sourceId, data.targetId)
+					log.SysLog.Warnw("waiter result put time out sourceId:%v targetId:%v", sourceId, data.targetId)
 					break
 				}
 				globalTimerPool.Put(deadline)
@@ -47,6 +47,6 @@ func (s *waitActor) OnHandleMessage(sourceId, targetId string, msg interface{}) 
 	}
 }
 
-func (s *waitActor) OnStop() bool {
+func (s *waiter) OnStop() bool {
 	return false
 }

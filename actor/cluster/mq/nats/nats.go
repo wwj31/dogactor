@@ -15,7 +15,7 @@ import (
 func New() *Nats {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Nats{
-		subs:   make(map[string]SubInfo),
+		subs:   make(map[string]*SubInfo),
 		ctx:    ctx,
 		cancel: cancel,
 	}
@@ -35,7 +35,7 @@ type Nats struct {
 	url  string
 	nc   *nats.Conn
 	js   nats.JetStreamContext
-	subs map[string]SubInfo
+	subs map[string]*SubInfo
 }
 
 func (n *Nats) Connect(url string) (err error) {
@@ -100,8 +100,22 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 	}
 
 	ctx, cancel := context.WithCancel(n.ctx)
+
 	exit := make(chan struct{})
+	n.subs[subject] = &SubInfo{
+		cancel: cancel,
+		sub:    sub,
+		exit:   exit,
+	}
+
 	go func() {
+		defer func() {
+			select {
+			case exit <- struct{}{}:
+			default:
+			}
+		}()
+
 		for {
 			deadline, deadlineCancel := context.WithTimeout(ctx, time.Minute)
 			msgs, err := sub.Fetch(100, nats.Context(deadline))
@@ -110,10 +124,6 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 			if err != nil {
 				if err == context.Canceled {
 					log.SysLog.Infow("exit the pull loop", "subject", subject)
-					select {
-					case exit <- struct{}{}:
-					default:
-					}
 					return
 				}
 
@@ -137,11 +147,6 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 	}()
 
 	log.SysLog.Infow("subAsync success!", "subject", subject)
-	n.subs[subject] = SubInfo{
-		cancel: cancel,
-		sub:    sub,
-		exit:   exit,
-	}
 	return
 }
 
@@ -172,6 +177,7 @@ func (n *Nats) UnSub(subject string, drained bool) (err error) {
 	case <-time.After(10 * time.Second):
 		return fmt.Errorf("nats go fetch exit timeout ")
 	}
+
 	err = sub.sub.Unsubscribe()
 	if err != nil {
 		return

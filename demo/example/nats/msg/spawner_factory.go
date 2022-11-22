@@ -28,6 +28,7 @@ func Put(name string, x interface{}) {
 }
 
 var spawner = map[string]factory{
-	"msg.LileiSay":     func() interface{} { return &LileiSay{} },
+	"msg.DrainTest":    func() interface{} { return &DrainTest{} },
 	"msg.HanMeimeiSay": func() interface{} { return &HanMeimeiSay{} },
+	"msg.LileiSay":     func() interface{} { return &LileiSay{} },
 }

@@ -52,7 +52,7 @@ func (s *request) Handle(fn func(resp interface{}, err error)) {
 
 func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Duration) (req *request) {
 	req = requestPool.Get().(*request)
-	req.id = requestId(s.id, targetId, s.system.Address())
+	req.id = requestId(s.ID(), targetId, s.system.Address())
 	req.sourceId = s.ID()
 	req.targetId = targetId
 	req.result.data = nil
@@ -60,7 +60,7 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 	req.fn = nil
 	s.requests[req.id] = req
 
-	err := s.system.Send(s.id, targetId, req.id, msg)
+	err := s.system.Send(s.ID(), targetId, req.id, msg)
 	if err != nil {
 		req.result.err = err
 		return req

@@ -110,24 +110,70 @@ func (m *HanMeimeiSay) GetData() string {
 	return ""
 }
 
+type DrainTest struct {
+	Data string `protobuf:"bytes,1,opt,name=Data,proto3" json:"Data,omitempty"`
+}
+
+func (m *DrainTest) Reset()         { *m = DrainTest{} }
+func (m *DrainTest) String() string { return proto.CompactTextString(m) }
+func (*DrainTest) ProtoMessage()    {}
+func (*DrainTest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{2}
+}
+func (m *DrainTest) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *DrainTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_DrainTest.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *DrainTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DrainTest.Merge(m, src)
+}
+func (m *DrainTest) XXX_Size() int {
+	return m.Size()
+}
+func (m *DrainTest) XXX_DiscardUnknown() {
+	xxx_messageInfo_DrainTest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_DrainTest proto.InternalMessageInfo
+
+func (m *DrainTest) GetData() string {
+	if m != nil {
+		return m.Data
+	}
+	return ""
+}
+
 func init() {
 	proto.RegisterType((*LileiSay)(nil), "inner_message.LileiSay")
 	proto.RegisterType((*HanMeimeiSay)(nil), "inner_message.HanMeimeiSay")
+	proto.RegisterType((*DrainTest)(nil), "inner_message.DrainTest")
 }
 
 func init() { proto.RegisterFile("test.proto", fileDescriptor_c161fcfdc0c3ff1e) }
 
 var fileDescriptor_c161fcfdc0c3ff1e = []byte{
-	// 132 bytes of a gzipped FileDescriptorProto
+	// 146 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2a, 0x49, 0x2d, 0x2e,
 	0xd1, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0xe2, 0xcd, 0xcc, 0xcb, 0x4b, 0x2d, 0x8a, 0xcf, 0x4d,
 	0x2d, 0x2e, 0x4e, 0x4c, 0x4f, 0x55, 0x92, 0xe3, 0xe2, 0xf0, 0xc9, 0xcc, 0x49, 0xcd, 0x0c, 0x4e,
 	0xac, 0x14, 0x12, 0xe2, 0x62, 0x71, 0x49, 0x2c, 0x49, 0x94, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x0c,
-	0x02, 0xb3, 0x95, 0x94, 0xb8, 0x78, 0x3c, 0x12, 0xf3, 0x7c, 0x53, 0x33, 0x73, 0x71, 0xaa, 0x71,
-	0x92, 0x3b, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23, 0x39, 0xc6, 0x07, 0x8f, 0xe4, 0x18, 0x27, 0x3c,
-	0x96, 0x63, 0xb8, 0xf0, 0x58, 0x8e, 0xe1, 0xc6, 0x63, 0x39, 0x86, 0x28, 0x16, 0xfd, 0xdc, 0xe2,
-	0xf4, 0x24, 0x36, 0xb0, 0xcd, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0xb4, 0x46, 0x96, 0x41,
-	0x87, 0x00, 0x00, 0x00,
+	0x02, 0xb3, 0x95, 0x94, 0xb8, 0x78, 0x3c, 0x12, 0xf3, 0x7c, 0x53, 0x33, 0x73, 0x71, 0xab, 0x91,
+	0xe7, 0xe2, 0x74, 0x29, 0x4a, 0xcc, 0xcc, 0x0b, 0x49, 0x2d, 0x2e, 0xc1, 0xa6, 0xc0, 0x49, 0xee,
+	0xc4, 0x23, 0x39, 0xc6, 0x0b, 0x8f, 0xe4, 0x18, 0x1f, 0x3c, 0x92, 0x63, 0x9c, 0xf0, 0x58, 0x8e,
+	0xe1, 0xc2, 0x63, 0x39, 0x86, 0x1b, 0x8f, 0xe5, 0x18, 0xa2, 0x58, 0xf4, 0x73, 0x8b, 0xd3, 0x93,
+	0xd8, 0xc0, 0x4e, 0x33, 0x06, 0x04, 0x00, 0x00, 0xff, 0xff, 0x34, 0x2c, 0x36, 0x6a, 0xa8, 0x00,
+	0x00, 0x00,
 }
 
 func (m *LileiSay) Marshal() (dAtA []byte, err error) {
@@ -190,6 +236,36 @@ func (m *HanMeimeiSay) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *DrainTest) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *DrainTest) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *DrainTest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Data) > 0 {
+		i -= len(m.Data)
+		copy(dAtA[i:], m.Data)
+		i = encodeVarintTest(dAtA, i, uint64(len(m.Data)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintTest(dAtA []byte, offset int, v uint64) int {
 	offset -= sovTest(v)
 	base := offset
@@ -215,6 +291,19 @@ func (m *LileiSay) Size() (n int) {
 }
 
 func (m *HanMeimeiSay) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Data)
+	if l > 0 {
+		n += 1 + l + sovTest(uint64(l))
+	}
+	return n
+}
+
+func (m *DrainTest) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -342,6 +431,88 @@ func (m *HanMeimeiSay) Unmarshal(dAtA []byte) error {
 		}
 		if fieldNum <= 0 {
 			return fmt.Errorf("proto: HanMeimeiSay: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTest
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthTest
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthTest
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Data = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTest(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTest
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *DrainTest) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTest
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: DrainTest: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: DrainTest: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

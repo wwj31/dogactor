@@ -60,7 +60,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 	}
 
 	s.requestWaiter = "wait_" + tools.XUID()
-	_ = s.Add(New(s.requestWaiter, &waitActor{}))
+	_ = s.Add(New(s.requestWaiter, &waiter{}))
 
 	// first,create waiter and cluster
 	for len(s.newList) > 0 {
@@ -116,10 +116,6 @@ func (s *System) Stop() {
 				runtime.Gosched()
 			}
 			_ = s.Send("", s.requestWaiter, "", "stop")
-
-			if s.cluster != nil {
-				_ = s.Send("", s.cluster.id, "", "stop")
-			}
 
 			s.waitStop.Wait()
 			close(s.newList)
@@ -243,6 +239,10 @@ func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 
 func (s *System) Address() string {
 	return s.sysAddr
+}
+
+func (s *System) WaiterId() string {
+	return s.requestWaiter
 }
 
 func (s *System) SetCluster(act *actor) {
