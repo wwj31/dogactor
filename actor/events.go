@@ -1,14 +1,20 @@
 package actor
 
 import (
+	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/log"
 	"reflect"
 	"sync"
-
-	"github.com/wwj31/dogactor/actor/actorerr"
 )
 
-type listener map[string]map[Id]func(event interface{}) // map[evType][actorId]bool
+type Handler interface{}
+
+type fnMeta struct {
+	CallValue reflect.Value
+	ArgType   reflect.Type
+}
+
+type listener map[string]map[Id]fnMeta // map[evType][actorId]Handler
 
 type evDispatcher struct {
 	sync.RWMutex
@@ -20,21 +26,34 @@ func newEvent(s *System) evDispatcher {
 	return evDispatcher{listeners: make(listener), sys: s}
 }
 
-func (ed *evDispatcher) OnEvent(actorId Id, event interface{}, callback func(event interface{})) {
-	rType := reflect.TypeOf(event)
-	if rType.Kind() == reflect.Ptr {
-		log.SysLog.Errorw("OnEvent failed", "err", actorerr.RegisterEventErr, "actorId", actorId, "event", event)
+func (ed *evDispatcher) OnEvent(actorId Id, callback Handler) {
+	argType, n := argInfo(callback)
+	if n != 1 {
+		log.SysLog.Errorw("OnEvent Handler param len !=1",
+			"n", n, "actorId", actorId)
 		return
 	}
+
+	if argType.Kind() == reflect.Ptr {
+		log.SysLog.Errorw("OnEvent Handler param must be a value instead of the point",
+			"kind", argType.Kind(), "n", n, "actorId", actorId)
+		return
+	}
+
+	callValue := reflect.ValueOf(callback)
 
 	ed.Lock()
 	defer ed.Unlock()
 
-	typ := reflect.TypeOf(event).String()
+	typ := argType.String()
 	if ed.listeners[typ] == nil {
-		ed.listeners[typ] = make(map[string]func(interface{}))
+		ed.listeners[typ] = make(map[string]fnMeta)
 	}
-	ed.listeners[typ][actorId] = callback
+
+	ed.listeners[typ][actorId] = fnMeta{
+		CallValue: callValue,
+		ArgType:   argType,
+	}
 }
 
 func (ed *evDispatcher) CancelEvent(actorId Id, events ...interface{}) {
@@ -66,26 +85,36 @@ func (ed *evDispatcher) CancelAll(actorId Id) {
 
 func (ed *evDispatcher) DispatchEvent(sourceId Id, event interface{}) {
 	rType := reflect.TypeOf(event)
-	if rType.Kind() == reflect.Ptr {
-		log.SysLog.Errorw("dispatch event type of event is ptr",
-			"err", actorerr.DispatchEventErr,
-			"actorId", sourceId,
-			"event", event,
-		)
-		return
-	}
 
 	ed.RLock()
 	defer ed.RUnlock()
 
 	if listeners := ed.listeners[rType.String()]; listeners != nil {
-		for actorId, callback := range listeners {
+		for actorId, fnMeta := range listeners {
 			err := ed.sys.Send(sourceId, actorId, "", func() {
-				callback(event)
+				if fnMeta.ArgType.Kind() != rType.Kind() {
+					log.SysLog.Errorw("param type kind not equal", "fnMeta.ArgType", fnMeta.ArgType.Kind(), "rType", rType.Kind())
+					return
+				}
+				fnMeta.CallValue.Call([]reflect.Value{reflect.ValueOf(event)})
 			})
 			if err != nil {
 				log.SysLog.Errorw("DispatchEvent send to actor", "actorId", actorId, "err", err)
 			}
 		}
 	}
+}
+
+// Dissect the cb Handler's signature
+func argInfo(cb Handler) (reflect.Type, int) {
+	cbType := reflect.TypeOf(cb)
+	if cbType.Kind() != reflect.Func {
+		log.SysLog.Errorw("nats: Handler needs to be a func")
+		return nil, 0
+	}
+	numArgs := cbType.NumIn()
+	if numArgs == 0 {
+		return nil, numArgs
+	}
+	return cbType.In(numArgs - 1), numArgs
 }

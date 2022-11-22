@@ -51,8 +51,7 @@ func (c *Cluster) OnInit() {
 		return
 	}
 
-	c.System().OnEvent(c.ID(), actor.EvNewActor{}, func(event interface{}) {
-		ev := event.(actor.EvNewActor)
+	c.System().OnEvent(c.ID(), func(ev actor.EvNewActor) {
 		if ev.Publish {
 			err := c.mq.SubASync(subFormat(ev.ActorId), func(data []byte) {
 				msg := actor_msg.NewActorMessage() // remote recv message
@@ -69,8 +68,7 @@ func (c *Cluster) OnInit() {
 		}
 	})
 
-	c.System().OnEvent(c.ID(), actor.EvDelActor{}, func(event interface{}) {
-		ev := event.(actor.EvDelActor)
+	c.System().OnEvent(c.ID(), func(ev actor.EvDelActor) {
 		if ev.Publish {
 			err := c.mq.UnSub(subFormat(ev.ActorId), false)
 			if err != nil {
