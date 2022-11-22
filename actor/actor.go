@@ -95,7 +95,12 @@ func (s *actor) Drain(afterDrained ...func()) {
 			return
 		}
 
-		respMsgDrain := resp.(*RespMsgDrain)
+		respMsgDrain, ok := resp.(*RespMsgDrain)
+		if !ok {
+			log.SysLog.Errorw("drain resp failed  ", "resp", reflect.TypeOf(resp).String())
+			return
+		}
+
 		if respMsgDrain.Err != nil {
 			log.SysLog.Errorw("drain return err ", "err", respMsgDrain.Err)
 			return
