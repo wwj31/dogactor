@@ -89,7 +89,7 @@ func (s *actor) ID() string      { return s.id }
 func (s *actor) System() *System { return s.system }
 func (s *actor) Exit()           { _ = s.push(actorStop) }
 func (s *actor) Drain(afterDrained ...func()) {
-	s.Request(s.system.cluster.id, &ReqMsgDrain{}).Handle(func(resp interface{}, err error) {
+	s.Request(s.system.cluster.id, &ReqMsgDrain{}, 5*time.Minute).Handle(func(resp interface{}, err error) {
 		if err != nil {
 			log.SysLog.Errorw("drain failed ", "err", err)
 			return

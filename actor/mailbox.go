@@ -18,7 +18,7 @@ func (m *mailBox) recording(t time.Time, msgName string) {
 	m.processingTime = dur
 	m.lastMsgName = msgName
 
-	if dur > 150*time.Millisecond {
+	if dur > 1500*time.Millisecond {
 		log.SysLog.Warnw("too long to process time", "msg", msgName, "duration", dur)
 	}
 }
