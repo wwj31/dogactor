@@ -52,8 +52,11 @@ func (s *ActorMessage) Message() interface{} {
 func (msg *ActorMessage) Free() {
 	if msg.pool != nil && atomic.CompareAndSwapInt32(&msg.free, 1, 0) {
 		msg.message = nil
-		msg.SourceId, msg.TargetId = "", ""
+		msg.SourceId = ""
+		msg.TargetId = ""
+		msg.RequestId = ""
 		msg.MsgName = ""
+		msg.MapCarrier = nil
 		msg.Data = nil
 		msg.pool.Put(msg)
 	}

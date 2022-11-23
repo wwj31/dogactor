@@ -62,9 +62,11 @@ func (n *Nats) Connect(url string) (err error) {
 	if n.nc, err = nats.Connect(n.url, opts...); err != nil {
 		return
 	}
+
 	if n.js, err = n.nc.JetStream(); err != nil {
 		return
 	}
+
 	return
 }
 
@@ -90,11 +92,13 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 		return
 	}
 
+	consumerName := "consumer:" + subject
 	sub, subErr := n.js.PullSubscribe(
 		"",
-		"consumer:"+subject,
+		consumerName,
 		nats.BindStream(subject),
-		nats.AckAll())
+		nats.AckAll(),
+	)
 	if subErr != nil {
 		return subErr
 	}
@@ -134,7 +138,8 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 
 			tools.Try(func() {
 				if len(msgs) > 0 {
-					if err := msgs[len(msgs)-1].Ack(); err != nil {
+					latestMsg := msgs[len(msgs)-1]
+					if err := latestMsg.Ack(); err != nil {
 						log.SysLog.Errorf("msg ack failed ", "subject", subject, "err", err)
 					}
 				}
