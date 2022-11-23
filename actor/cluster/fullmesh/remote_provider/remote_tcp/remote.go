@@ -52,7 +52,6 @@ func (s *RemoteMgr) Start(h remote_provider.RemoteHandler) error {
 	if err != nil {
 		return err
 	}
-	ping.Free()
 
 	reg := actor_msg.NewActorMessage() // registry message
 	reg.MsgName = "$registry"
@@ -61,7 +60,6 @@ func (s *RemoteMgr) Start(h remote_provider.RemoteHandler) error {
 	if err != nil {
 		return err
 	}
-	reg.Free()
 
 	s.listener = listener
 	go s.keepAlive()

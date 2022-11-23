@@ -3,7 +3,7 @@ package remote_grpc
 import (
 	"errors"
 	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider"
-	internal2 "github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider/remote_grpc/internal"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider/remote_grpc/internal"
 
 	cmap "github.com/orcaman/concurrent-map"
 	"go.uber.org/atomic"
@@ -15,7 +15,7 @@ import (
 // 管理所有远端的session
 type RemoteMgr struct {
 	remoteHandler remote_provider.RemoteHandler
-	listener      *internal2.Server
+	listener      *internal.Server
 
 	stop     atomic.Int32
 	sessions cmap.ConcurrentMap //host=>session
@@ -36,7 +36,7 @@ func NewRemoteMgr() *RemoteMgr {
 func (s *RemoteMgr) Start(actorSystem remote_provider.RemoteHandler) error {
 	s.remoteHandler = actorSystem
 
-	listener, err := internal2.NewServer(s.remoteHandler.Address(), func() internal2.Handler { return &remoteHandler{remote: s} }, s)
+	listener, err := internal.NewServer(s.remoteHandler.Address(), func() internal.Handler { return &remoteHandler{remote: s} }, s)
 	if err != nil {
 		return err
 	}
@@ -44,7 +44,6 @@ func (s *RemoteMgr) Start(actorSystem remote_provider.RemoteHandler) error {
 	s.regist = actor_msg.NewActorMessage() // registry message
 	s.regist.MsgName = "$regist"
 	s.regist.Data = []byte(s.remoteHandler.Address())
-	s.regist.Free()
 
 	s.listener = listener
 	return err
@@ -55,19 +54,19 @@ func (s *RemoteMgr) Stop() {
 		if s.listener != nil {
 			s.listener.Stop()
 		}
-		s.clients.IterCb(func(key string, v interface{}) { v.(*internal2.Client).Stop() })
+		s.clients.IterCb(func(key string, v interface{}) { v.(*internal.Client).Stop() })
 	}
 }
 
 func (s *RemoteMgr) NewClient(host string) {
-	c := internal2.NewClient(host, func() internal2.Handler { return &remoteHandler{remote: s, peerHost: host} })
+	c := internal.NewClient(host, func() internal.Handler { return &remoteHandler{remote: s, peerHost: host} })
 	s.clients.Set(host, c)
 	_ = c.Start(true)
 }
 
 func (s *RemoteMgr) StopClient(host string) {
 	if c, ok := s.clients.Pop(host); ok {
-		c.(*internal2.Client).Stop()
+		c.(*internal.Client).Stop()
 	}
 }
 
@@ -82,7 +81,7 @@ func (s *RemoteMgr) SendMsg(addr string, netMsg *actor_msg.ActorMessage) error {
 
 ///////////////////////////////////////// remoteHandler /////////////////////////////////////////////
 type remoteHandler struct {
-	internal2.BaseHandler
+	internal.BaseHandler
 
 	remote   *RemoteMgr
 	peerHost string
