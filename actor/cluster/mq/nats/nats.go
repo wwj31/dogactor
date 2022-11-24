@@ -7,6 +7,7 @@ import (
 	"github.com/wwj31/dogactor/actor/cluster/mq"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
+	"strings"
 	"time"
 )
 
@@ -92,12 +93,19 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 		return
 	}
 
-	consumerName := "consumer:" + subject
+	consumer := consumerName(subject)
+	if _, err := n.js.AddConsumer(subject, &nats.ConsumerConfig{
+		Durable:   consumer,
+		Name:      consumer,
+		AckPolicy: nats.AckNonePolicy,
+	}); err != nil {
+		return err
+	}
+
 	sub, subErr := n.js.PullSubscribe(
 		"",
-		consumerName,
+		consumer,
 		nats.BindStream(subject),
-		nats.AckAll(),
 	)
 	if subErr != nil {
 		return subErr
@@ -137,12 +145,14 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 			}
 
 			tools.Try(func() {
-				if len(msgs) > 0 {
-					latestMsg := msgs[len(msgs)-1]
-					if err := latestMsg.Ack(); err != nil {
-						log.SysLog.Errorf("msg ack failed ", "subject", subject, "err", err)
-					}
-				}
+				//if len(msgs) > 0 {
+				//	latestMsg := msgs[len(msgs)-1]
+				//	md, _ := latestMsg.Metadata()
+				//	fmt.Printf("msg len:%v ack md:%+v\n", len(msgs), md)
+				//	if err := latestMsg.AckSync(); err != nil {
+				//		log.SysLog.Errorf("msg ack failed ", "subject", subject, "err", err)
+				//	}
+				//}
 
 				for _, msg := range msgs {
 					callback(msg.Data)
@@ -220,4 +230,14 @@ func (n *Nats) addStream(id string) error {
 		}
 	}
 	return nil
+}
+
+const consumePreName = "consumer:"
+
+func consumerName(str string) string {
+	builder := strings.Builder{}
+	builder.Grow(len(str) + len(consumePreName))
+	builder.WriteString(consumePreName)
+	builder.WriteString(str)
+	return builder.String()
 }
