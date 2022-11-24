@@ -1,9 +1,10 @@
 package actor
 
 import (
-	"github.com/wwj31/dogactor/log"
 	"reflect"
 	"time"
+
+	"github.com/wwj31/dogactor/log"
 )
 
 // WARN: Deadlock cause by multiple actor RequestWait to each other

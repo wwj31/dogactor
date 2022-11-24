@@ -1,9 +1,10 @@
 package actor
 
 import (
+	"time"
+
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
-	"time"
 )
 
 type mailBox struct {
