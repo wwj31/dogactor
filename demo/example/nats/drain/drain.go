@@ -2,17 +2,18 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/cluster/mq"
 	"github.com/wwj31/dogactor/actor/cluster/mq/nats"
 	"github.com/wwj31/dogactor/demo/example/nats/msg"
 	"github.com/wwj31/dogactor/logger"
 	"github.com/wwj31/dogactor/tools"
-	"math/rand"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 )
 
 var natsUrl = "nats://localhost:4222"
