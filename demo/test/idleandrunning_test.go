@@ -2,9 +2,10 @@ package test
 
 import (
 	"fmt"
-	"github.com/wwj31/dogactor/actor"
 	"testing"
 	"time"
+
+	"github.com/wwj31/dogactor/actor"
 )
 
 func TestIdleAndRunning(t *testing.T) {
