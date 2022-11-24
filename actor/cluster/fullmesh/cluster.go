@@ -51,14 +51,6 @@ type Cluster struct {
 }
 
 func (c *Cluster) OnInit() {
-	_ = c.System().RegistEvent(
-		c.ID(),
-		actor.EvNewActor{},
-		actor.EvDelActor{},
-		actor.EvClusterUpdate{},
-		actor.EvSessionClosed{},
-	)
-
 	if err := c.remote.Start(c); err != nil {
 		log.SysLog.Errorw("remote start error", "err", err)
 	}
@@ -66,6 +58,12 @@ func (c *Cluster) OnInit() {
 	if err := c.serviceMesh.Start(c); err != nil {
 		log.SysLog.Errorw("serviceMesh start error", "err", err)
 	}
+
+	c.System().OnEvent(c.ID(), c.OnEventNewActor)
+	c.System().OnEvent(c.ID(), c.OnEventDelActor)
+	c.System().OnEvent(c.ID(), c.OnEventClusterUpdate)
+	c.System().OnEvent(c.ID(), c.OnEventSessionClosed)
+	c.System().OnEvent(c.ID(), c.OnEventSessionOpened)
 
 	//c.RegistryCmd("clusterinfo", c.clusterinfo, "information of all cluster actor")
 	c.ready[c.System().Address()] = true
@@ -150,18 +148,6 @@ func (c *Cluster) OnSessionOpened(peerHost string) {
 	c.System().DispatchEvent(c.ID(), actor.EvSessionOpened{PeerHost: peerHost})
 }
 
-//func (c *Cluster) OnSessionRecv(sourceId, targetId, requestId string, msg proto.Message) {
-//	err := c.System().Send(sourceId, targetId, requestId, msg)
-//	if err != nil {
-//		log.SysLog.Errorw("cluster OnSessionRecv send error",
-//			"sourceId", sourceId,
-//			"targetId", targetId,
-//			"requestId", requestId,
-//			"err", err,
-//		)
-//	}
-//}
-
 func (c *Cluster) OnSessionRecv(msg *actor_msg.ActorMessage) {
 	err := c.System().Send(msg.SourceId, msg.TargetId, msg.RequestId, msg)
 	if err != nil {
@@ -234,31 +220,36 @@ func (c *Cluster) delRemoteActor(actorId actor.Id) {
 	}
 }
 
-func (c *Cluster) OnHandleEvent(event interface{}) {
-	switch e := event.(type) {
-	case actor.EvNewActor:
-		if e.Publish {
-			_ = c.serviceMesh.RegisterService(e.ActorId, c.System().Address())
+func (c *Cluster) OnEventNewActor(event actor.EvNewActor) {
+	if event.Publish {
+		_ = c.serviceMesh.RegisterService(event.ActorId, c.System().Address())
+	}
+}
+
+func (c *Cluster) OnEventDelActor(event actor.EvDelActor) {
+	if !event.FromCluster && event.Publish {
+		_ = c.serviceMesh.UnregisterService(event.ActorId)
+	}
+}
+
+func (c *Cluster) OnEventClusterUpdate(event actor.EvClusterUpdate) {
+	c.watchRemote(event.ActorId, event.Host, event.Add)
+}
+
+func (c *Cluster) OnEventSessionClosed(event actor.EvSessionClosed) {
+	delete(c.ready, event.PeerHost)
+	for actorId, host := range c.actors {
+		if host == event.PeerHost {
+			c.System().DispatchEvent(c.ID(), actor.EvDelActor{ActorId: actorId, FromCluster: true})
 		}
-	case actor.EvDelActor:
-		if !e.FromCluster && e.Publish {
-			_ = c.serviceMesh.UnregisterService(e.ActorId)
-		}
-	case actor.EvClusterUpdate:
-		c.watchRemote(e.ActorId, e.Host, e.Add)
-	case actor.EvSessionClosed:
-		delete(c.ready, e.PeerHost)
-		for actorId, host := range c.actors {
-			if host == e.PeerHost {
-				c.System().DispatchEvent(c.ID(), actor.EvDelActor{ActorId: actorId, FromCluster: true})
-			}
-		}
-	case actor.EvSessionOpened:
-		c.ready[e.PeerHost] = true
-		for actorId, host := range c.actors {
-			if host == e.PeerHost {
-				c.System().DispatchEvent(c.ID(), actor.EvNewActor{ActorId: actorId, FromCluster: true})
-			}
+	}
+}
+
+func (c *Cluster) OnEventSessionOpened(event actor.EvSessionOpened) {
+	c.ready[event.PeerHost] = true
+	for actorId, host := range c.actors {
+		if host == event.PeerHost {
+			c.System().DispatchEvent(c.ID(), actor.EvNewActor{ActorId: actorId, FromCluster: true})
 		}
 	}
 }
