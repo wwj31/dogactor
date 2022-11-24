@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -32,19 +31,19 @@ func main() {
 	drainActor1.HandleMessage = func(sourceId, targetId actor.Id, v interface{}) {
 		drainData := v.(*msg.DrainTest)
 		fmt.Println("drain actor 1 receive msg:", drainData.Data)
-		time.Sleep(time.Duration(rand.Intn(100)+100) * time.Millisecond)
+		//time.Sleep(time.Duration(rand.Intn(100)+100) * time.Millisecond)
 	}
 	drainActor2.HandleMessage = func(sourceId, targetId actor.Id, v interface{}) {
 		drainData := v.(*msg.DrainTest)
 		fmt.Println("drain actor 2 receive msg:", drainData.Data)
-		time.Sleep(time.Duration(rand.Intn(100)+100) * time.Millisecond)
+		//time.Sleep(time.Duration(rand.Intn(100)+100) * time.Millisecond)
 	}
 
 	_ = system1.Add(actor.New(name, &drainActor1, actor.SetMailBoxSize(50)))
 
 	drainActor1.Init = func() {
 		fmt.Println("init drain actor 1")
-		drainActor1.AddTimer(tools.XUID(), tools.Now().Add(500*time.Millisecond), func(dt time.Duration) {
+		drainActor1.AddTimer(tools.XUID(), tools.Now().Add(100*time.Millisecond), func(dt time.Duration) {
 			_ = system2.Send("", name, "", &msg.DrainTest{Data: time.Now().String()})
 		}, -1)
 
@@ -58,7 +57,7 @@ func main() {
 	}
 
 	drainActor2.Init = func() {
-		drainActor2.AddTimer(tools.XUID(), tools.Now().Add(500*time.Millisecond), func(dt time.Duration) {
+		drainActor2.AddTimer(tools.XUID(), tools.Now().Add(300*time.Millisecond), func(dt time.Duration) {
 			_ = system1.Send("", name, "", &msg.DrainTest{Data: time.Now().String()})
 		}, -1)
 

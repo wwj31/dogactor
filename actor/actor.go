@@ -143,7 +143,7 @@ func (s *actor) push(msg actor_msg.Message) error {
 	}
 
 	if l, c := len(s.mailBox.ch), cap(s.mailBox.ch); l > c*2/3 {
-		log.SysLog.Warnw("mail box will quickly full",
+		log.SysLog.Warnw("mail box is almost full",
 			"len", l,
 			"cap", c,
 			"actorId", s.id)
@@ -178,6 +178,7 @@ func (s *actor) init(ok chan<- struct{}) {
 
 func (s *actor) activate() {
 	if s.status.CompareAndSwap(idle, running) {
+		log.SysLog.Infow("actor into running", "actor", s.ID())
 		go s.run()
 	}
 }
