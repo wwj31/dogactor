@@ -2,6 +2,7 @@ package mq
 
 import (
 	"fmt"
+
 	"github.com/nats-io/nats.go"
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/actorerr"
