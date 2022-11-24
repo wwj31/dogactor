@@ -25,7 +25,6 @@ func (s *Entity) Id() string       { return s.id }
 func (s *Entity) SetType(t int64) { s.typ = t }
 func (s *Entity) Type() int64     { return s.typ }
 
-// 重复组件就替换，否则就添加
 func (s *Entity) SetComponent(c ...IComponent) {
 	upd := false
 	for _, comp := range c {

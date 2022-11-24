@@ -24,7 +24,6 @@ func NewRuntime() *Runtime {
 	return rt
 }
 
-// 返回此次更新运行总时长
 func (s *Runtime) Run(dt float64, time_set map[string]int64) int64 {
 	var t int64
 	for _, sys := range s.systems {
@@ -40,14 +39,14 @@ func (s *Runtime) Run(dt float64, time_set map[string]int64) int64 {
 	return t
 }
 
-//entity operate : add
+// entity operate : add
 func (s *Runtime) AddEntity(ent *Entity) error {
 	ent.runtime = s
 	s.updateECS(ent)
 	return s.entities.add(ent)
 }
 
-//entity operate : delete
+// entity operate : delete
 func (s *Runtime) DeleteEntity(eid string) bool {
 	for _, sys := range s.systems {
 		sys.base().delTuple(eid)
@@ -55,7 +54,6 @@ func (s *Runtime) DeleteEntity(eid string) bool {
 	return s.entities.del(eid)
 }
 
-//entity 组件发生变化，更新system关心的组件元组
 func (s *Runtime) updateECS(ent *Entity) {
 	combId := ent.ComponentCombId()
 	for _, sys := range s.systems {

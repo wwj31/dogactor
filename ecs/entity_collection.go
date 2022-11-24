@@ -20,7 +20,7 @@ func (s *EntityCollection) add(ent *Entity) error {
 		return errors.New("ent == nil")
 	}
 	if _, ok := s.entities[ent.Id()]; ok {
-		return errors.New(fmt.Sprint("repeated eid:%v", ent.Id()))
+		return errors.New(fmt.Sprintf("duplica eid:%v", ent.Id()))
 	}
 	s.entities[ent.Id()] = ent
 	return nil
