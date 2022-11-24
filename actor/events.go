@@ -1,10 +1,11 @@
 package actor
 
 import (
-	"github.com/wwj31/dogactor/actor/actorerr"
-	"github.com/wwj31/dogactor/log"
 	"reflect"
 	"sync"
+
+	"github.com/wwj31/dogactor/actor/actorerr"
+	"github.com/wwj31/dogactor/log"
 )
 
 type Handler interface{}
