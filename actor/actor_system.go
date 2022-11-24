@@ -2,7 +2,6 @@ package actor
 
 import (
 	"fmt"
-	"github.com/wwj31/dogactor/expect"
 	"reflect"
 	"runtime"
 	"sync"
@@ -12,6 +11,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )
