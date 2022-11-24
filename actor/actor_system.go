@@ -115,7 +115,10 @@ func (s *System) Stop() {
 				time.Sleep(time.Second)
 				runtime.Gosched()
 			}
-			_ = s.Send("", s.requestWaiter, "", "stop")
+
+			if err := s.Send("", s.requestWaiter, "", "stop"); err != nil {
+				log.SysLog.Errorw("stop request waiter send failed", "err", err)
+			}
 
 			s.waitStop.Wait()
 			close(s.newList)

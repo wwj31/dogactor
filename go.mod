@@ -15,7 +15,7 @@ require (
 	go.etcd.io/etcd/api/v3 v3.5.1
 	go.etcd.io/etcd/client/v3 v3.5.1
 	go.uber.org/atomic v1.9.0
-	go.uber.org/zap v1.19.1
+	go.uber.org/zap v1.21.0
 	google.golang.org/grpc v1.42.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )

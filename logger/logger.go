@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"time"
 )
 
 type Option struct {
@@ -37,10 +38,19 @@ func New(opt Option) *Logger {
 	if opt.DisplayConsole {
 		writers = append(writers, os.Stdout)
 	}
+
 	//output = bufio.NewWriter(io.MultiWriter(writers...))
 
 	// zap
-	encoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+	cfg := zap.NewProductionEncoderConfig()
+	cfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	cfg.EncodeTime = func(t time.Time, encoder zapcore.PrimitiveArrayEncoder) {
+		defaultFormat := "2006-01-02 15:04:05.000"
+		defaultFormat = time.RFC3339
+		encoder.AppendString(t.Format(defaultFormat))
+	}
+
+	encoder := zapcore.NewConsoleEncoder(cfg)
 	//encoder := zapcore.NewJSONEncoder(zap.NewDevelopmentEncoderConfig())
 	//core := zapcore.NewCore(encoder, &sync{Writer: output}, opt.Level)
 	core := zapcore.NewCore(encoder, zapcore.AddSync(io.MultiWriter(writers...)), opt.Level)

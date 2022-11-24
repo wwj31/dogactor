@@ -72,6 +72,12 @@ func (c *Cluster) OnInit() {
 func (c *Cluster) OnStop() bool {
 	return false
 }
+func (c *Cluster) stop() {
+	c.System().CancelAll(c.ID())
+	c.serviceMesh.Stop()
+	c.remote.Stop()
+	c.Exit()
+}
 
 func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string, msg interface{}) (respErr error) {
 	_, reqTargetId, _, _ := actor.ParseRequestId(requestId)
@@ -93,10 +99,7 @@ func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string,
 	if ok {
 		switch str {
 		case "stop":
-			c.System().CancelAll(c.ID())
-			c.serviceMesh.Stop()
-			c.remote.Stop()
-			c.Exit()
+			c.stop()
 
 		case "nodeinfo":
 			respErr = c.Response(requestId, c.clusterInfo())
@@ -122,10 +125,7 @@ func (c *Cluster) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) 
 	}
 
 	if str, ok := msg.(string); ok && str == "stop" {
-		c.System().CancelAll(c.ID())
-		c.serviceMesh.Stop()
-		c.remote.Stop()
-		c.Exit()
+		c.stop()
 	} else {
 		log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
 	}
@@ -229,6 +229,12 @@ func (c *Cluster) OnEventNewActor(event actor.EvNewActor) {
 func (c *Cluster) OnEventDelActor(event actor.EvDelActor) {
 	if !event.FromCluster && event.Publish {
 		_ = c.serviceMesh.UnregisterService(event.ActorId)
+	}
+
+	// 等待requestWaiter退出后，才能退出Cluster
+	if event.ActorId == c.System().WaiterId() {
+		log.SysLog.Infow("waiter was stopped")
+		c.stop()
 	}
 }
 
