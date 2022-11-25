@@ -12,9 +12,9 @@ import (
 	"github.com/wwj31/dogactor/tools"
 )
 
-func newTcpSession(conn net.Conn, coder DecodeEncoder, handler ...NetSessionHandler) *TcpSession {
+func newTcpSession(conn net.Conn, coder DecodeEncoder, handler ...SessionHandler) *TcpSession {
 	session := &TcpSession{
-		id:      GenNetSessionId(),
+		id:      GenSessionId(),
 		conn:    conn,
 		coder:   coder,
 		handler: handler,
@@ -37,7 +37,7 @@ type TcpSession struct {
 
 	running atomic.Value // 1.running 0.stop
 	coder   DecodeEncoder
-	handler []NetSessionHandler
+	handler []SessionHandler
 	sendQue chan []byte
 }
 

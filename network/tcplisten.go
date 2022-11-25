@@ -11,7 +11,7 @@ import (
 
 type OptionListen func(l *TcpListener)
 
-func StartTcpListen(addr string, newCodec func() DecodeEncoder, newHandler func() NetSessionHandler, op ...OptionListen) Listener {
+func StartTcpListen(addr string, newCodec func() DecodeEncoder, newHandler func() SessionHandler, op ...OptionListen) Listener {
 	l := &TcpListener{
 		addr:       addr,
 		newCodec:   newCodec,
@@ -29,7 +29,7 @@ type TcpListener struct {
 	listener   net.Listener
 	running    int32
 	newCodec   func() DecodeEncoder
-	newHandler func() NetSessionHandler
+	newHandler func() SessionHandler
 }
 
 func (s *TcpListener) Start() error {

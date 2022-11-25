@@ -2,12 +2,13 @@ package network
 
 import (
 	"errors"
-	"github.com/wwj31/dogactor/log"
-	"github.com/wwj31/dogactor/tools"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 )
 
 type OptionClient func(l *TcpClient)
@@ -17,7 +18,7 @@ type TcpClient struct {
 	running int32
 
 	newCodec    func() DecodeEncoder
-	handlersFun []func() NetSessionHandler
+	handlersFun []func() SessionHandler
 
 	session    *TcpSession
 	reconTimes int
@@ -31,10 +32,10 @@ func NewTcpClient(addr string, newCodec func() DecodeEncoder, opt ...OptionClien
 		addr:        addr,
 		running:     1,
 		newCodec:    newCodec,
-		handlersFun: make([]func() NetSessionHandler, 0),
+		handlersFun: make([]func() SessionHandler, 0),
 		recon:       make(chan struct{}, 1),
 	}
-	h := func() NetSessionHandler {
+	h := func() SessionHandler {
 		return &tcpReconnectHandler{reconnect: c.recon}
 	}
 	c.AddHandler(h)
@@ -46,7 +47,7 @@ func NewTcpClient(addr string, newCodec func() DecodeEncoder, opt ...OptionClien
 }
 
 // AddHandler add handler to tail of list
-func (s *TcpClient) AddHandler(hander func() NetSessionHandler) {
+func (s *TcpClient) AddHandler(hander func() SessionHandler) {
 	s.handlersFun = append(s.handlersFun, hander)
 }
 
@@ -88,7 +89,7 @@ func (s *TcpClient) connect() error {
 		return err
 	}
 
-	var handlers []NetSessionHandler
+	var handlers []SessionHandler
 	for _, f := range s.handlersFun {
 		handlers = append(handlers, f())
 	}

@@ -7,5 +7,5 @@ type tcpReconnectHandler struct {
 func (s *tcpReconnectHandler) OnSessionClosed() {
 	s.reconnect <- struct{}{}
 }
-func (s *tcpReconnectHandler) OnSessionCreated(NetSession) {}
-func (s *tcpReconnectHandler) OnRecv([]byte)               {}
+func (s *tcpReconnectHandler) OnSessionCreated(Session) {}
+func (s *tcpReconnectHandler) OnRecv([]byte)            {}

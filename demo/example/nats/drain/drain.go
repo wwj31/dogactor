@@ -31,12 +31,12 @@ func main() {
 	drainActor1.HandleMessage = func(sourceId, targetId actor.Id, v interface{}) {
 		drainData := v.(*msg.DrainTest)
 		fmt.Println("drain actor 1 receive msg:", drainData.Data)
-		//time.Sleep(time.Duration(rand.Intn(100)+100) * time.Millisecond)
+		time.Sleep(200 * time.Millisecond)
 	}
 	drainActor2.HandleMessage = func(sourceId, targetId actor.Id, v interface{}) {
 		drainData := v.(*msg.DrainTest)
 		fmt.Println("drain actor 2 receive msg:", drainData.Data)
-		//time.Sleep(time.Duration(rand.Intn(100)+100) * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 
 	_ = system1.Add(actor.New(name, &drainActor1, actor.SetMailBoxSize(50)))

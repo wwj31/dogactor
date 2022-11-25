@@ -20,12 +20,12 @@ type Listener interface {
 
 type Client interface {
 	SendMsg([]byte) error
-	AddHandler(handler func() NetSessionHandler)
+	AddHandler(handler func() SessionHandler)
 	Start(reconnect bool) error
 	Stop()
 }
 
-type NetSession interface {
+type Session interface {
 	Id() uint64
 	LocalAddr() net.Addr
 	RemoteAddr() net.Addr
@@ -38,14 +38,14 @@ type NetSession interface {
 	Type() SessionType
 }
 
-type NetSessionHandler interface {
-	OnSessionCreated(NetSession)
+type SessionHandler interface {
+	OnSessionCreated(Session)
 	OnSessionClosed()
 	OnRecv([]byte)
 }
 
 var sessionGenId uint64
 
-func GenNetSessionId() uint64 {
+func GenSessionId() uint64 {
 	return atomic.AddUint64(&sessionGenId, 1)
 }

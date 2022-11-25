@@ -38,7 +38,7 @@ func (s *RemoteMgr) Start(h remote_provider.RemoteHandler) error {
 
 	listener := network.StartTcpListen(s.remoteHandler.Address(),
 		func() network.DecodeEncoder { return &network.StreamCode{} },
-		func() network.NetSessionHandler { return &remoteHandler{remote: s} },
+		func() network.SessionHandler { return &remoteHandler{remote: s} },
 	)
 
 	err := listener.Start()
@@ -78,7 +78,7 @@ func (s *RemoteMgr) Stop() {
 
 func (s *RemoteMgr) NewClient(host string) {
 	c := network.NewTcpClient(host, func() network.DecodeEncoder { return &network.StreamCode{} })
-	c.AddHandler(func() network.NetSessionHandler { return &remoteHandler{remote: s, peerHost: host} })
+	c.AddHandler(func() network.SessionHandler { return &remoteHandler{remote: s, peerHost: host} })
 	s.clients.Set(host, c)
 	expect.Nil(c.Start(true))
 }
@@ -121,15 +121,15 @@ func (s *RemoteMgr) SendMsg(addr string, bytes []byte) error {
 	return session.(*remoteHandler).SendMsg(bytes)
 }
 
-///////////////////////////////////////// remoteHandler /////////////////////////////////////////////
+// /////////////////////////////////////// remoteHandler /////////////////////////////////////////////
 type remoteHandler struct {
-	network.NetSession
+	network.Session
 	remote   *RemoteMgr
 	peerHost string
 }
 
-func (s *remoteHandler) OnSessionCreated(sess network.NetSession) {
-	s.NetSession = sess
+func (s *remoteHandler) OnSessionCreated(sess network.Session) {
+	s.Session = sess
 	err := sess.SendMsg(s.remote.registry)
 	if err != nil {
 		log.SysLog.Errorw("OnSessionCreated error", "err", err)
