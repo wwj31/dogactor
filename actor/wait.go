@@ -22,6 +22,8 @@ type waiter struct {
 	Base
 }
 
+func (s *waiter) OnInit() {}
+
 func (s *waiter) OnHandleMessage(sourceId, targetId string, msg interface{}) {
 	switch data := msg.(type) {
 	case *requestWait:
