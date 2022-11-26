@@ -49,6 +49,7 @@ func main() {
 
 	logger.Close()
 }
+
 func (s *Student) OnInit() {
 	if s.Name == "LiLei" {
 		s.AddTimer(tools.XUID(), tools.Now().Add(2*time.Second), func(dt time.Duration) {
@@ -60,19 +61,19 @@ func (s *Student) OnInit() {
 func (s *Student) OnHandleMessage(sourceId, targetId actor.Id, v interface{}) {
 	switch m := v.(type) {
 	case *msg.LileiSay:
-		fmt.Println(string(m.Data))
+		fmt.Println(m.Data)
 
 		s.Send(sourceId, &msg.HanMeimeiSay{
 			Data: "hi~! Li Lei, I'm HanMeimei",
 		})
 	case *msg.HanMeimeiSay:
-		fmt.Println(string(m.Data))
+		fmt.Println(m.Data)
 
 		resp, _ := s.RequestWait(sourceId, &msg.LileiSay{
 			Data: "Be my grilfriend?",
 		})
 		// waiting....
-		fmt.Println(string(resp.(*msg.HanMeimeiSay).Data))
+		fmt.Println(resp.(*msg.HanMeimeiSay).Data)
 
 		s.Request(sourceId, &msg.LileiSay{
 			Data: "it's ok! I will protect you.",
