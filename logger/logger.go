@@ -79,61 +79,97 @@ type Logger struct {
 }
 
 func (s *Logger) Close() {
+	if s == nil {
+		return
+	}
 	_ = s.sugar.Sync()
 	_ = s.rotater.Close()
 }
 
 func (s *Logger) DefaultMsg(msg string) *Logger {
+	if s == nil {
+		return nil
+	}
 	s.defMsg = msg + " "
 	return s
 }
 
 func (s *Logger) Color(c TColor) *Logger {
+	if s == nil {
+		return nil
+	}
 	s.color = c
 	return s
 }
 
 func (s *Logger) CleanColor() *Logger {
+	if s == nil {
+		return nil
+	}
 	s.color = 0
 	return s
 }
 
 func (s *Logger) Debugf(msg string, args ...interface{}) {
+	if s == nil {
+		return
+	}
 	msg = color[s.color].B + s.defMsg + msg + color[s.color].E
 	s.sugar.Debugf(msg, args...)
 }
 
 func (s *Logger) Infof(msg string, args ...interface{}) {
+	if s == nil {
+		return
+	}
 	msg = color[s.color].B + s.defMsg + msg + color[s.color].E
 	s.sugar.Infof(msg, args...)
 }
 
 func (s *Logger) Warnf(msg string, args ...interface{}) {
+	if s == nil {
+		return
+	}
 	msg = color[s.color].B + s.defMsg + msg + color[s.color].E
 	s.sugar.Warnf(msg, args...)
 }
 
 func (s *Logger) Errorf(msg string, args ...interface{}) {
+	if s == nil {
+		return
+	}
 	msg = color[s.color].B + s.defMsg + msg + color[s.color].E
 	s.sugar.Errorf(msg, args...)
 }
 
 func (s *Logger) Debugw(msg string, args ...interface{}) {
+	if s == nil {
+		return
+	}
 	msg = color[s.color].B + s.defMsg + msg + color[s.color].E
 	s.sugar.Debugw(msg, args...)
 }
 
 func (s *Logger) Infow(msg string, args ...interface{}) {
+	if s == nil {
+		return
+	}
 	msg = color[s.color].B + s.defMsg + msg + color[s.color].E
 	s.sugar.Infow(msg, args...)
 }
 
 func (s *Logger) Warnw(msg string, args ...interface{}) {
+	if s == nil {
+		return
+	}
 	msg = color[s.color].B + s.defMsg + msg + color[s.color].E
 	s.sugar.Warnw(msg, args...)
 }
 
 func (s *Logger) Errorw(msg string, args ...interface{}) {
+	if s == nil {
+		return
+	}
 	msg = color[s.color].B + s.defMsg + msg + color[s.color].E
 	s.sugar.Errorw(msg, args...)
 }
