@@ -7,7 +7,9 @@ import (
 	"io"
 	"os"
 	"path"
+	"reflect"
 	"time"
+	"unsafe"
 )
 
 type Option struct {
@@ -53,8 +55,10 @@ func New(opt Option) *Logger {
 	encoder := zapcore.NewConsoleEncoder(cfg)
 	//encoder := zapcore.NewJSONEncoder(zap.NewDevelopmentEncoderConfig())
 	//core := zapcore.NewCore(encoder, &sync{Writer: output}, opt.Level)
-	core := zapcore.NewCore(encoder, zapcore.AddSync(io.MultiWriter(writers...)), opt.Level)
-	sugar := zap.New(core,
+	zcore := zapcore.NewCore(encoder, zapcore.AddSync(io.MultiWriter(writers...)), opt.Level)
+	p := (*ioCore)(unsafe.Pointer(reflect.ValueOf(zcore).Pointer()))
+
+	sugar := zap.New(zcore,
 		zap.AddStacktrace(zap.ErrorLevel),
 		zap.AddCallerSkip(opt.Skip),
 		zap.AddCaller(),
@@ -64,6 +68,7 @@ func New(opt Option) *Logger {
 		Option:  opt,
 		rotater: lj,
 		sugar:   sugar,
+		core:    p,
 	}
 
 	loggers = append(loggers, logger)
@@ -74,8 +79,15 @@ type Logger struct {
 	Option
 	rotater *lumberjack.Logger
 	sugar   *zap.SugaredLogger
+	core    *ioCore
 	color   TColor
 	defMsg  string
+}
+
+type ioCore struct {
+	zapcore.LevelEnabler
+	enc zapcore.Encoder
+	out zapcore.WriteSyncer
 }
 
 func (s *Logger) Close() {
@@ -91,6 +103,14 @@ func (s *Logger) DefaultMsg(msg string) *Logger {
 		return nil
 	}
 	s.defMsg = msg + " "
+	return s
+}
+
+func (s *Logger) Level(lv Level) *Logger {
+	if s == nil {
+		return nil
+	}
+	s.core.LevelEnabler = lv
 	return s
 }
 

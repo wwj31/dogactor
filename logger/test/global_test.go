@@ -4,6 +4,7 @@ import (
 	"github.com/wwj31/dogactor/logger"
 	"github.com/wwj31/dogactor/tools"
 	"testing"
+	"time"
 )
 
 func TestGLogger(t *testing.T) {
@@ -22,9 +23,22 @@ func GOGO() {
 		DisplayConsole: true,
 	})
 
+	var n int
 	for {
-		//time.Sleep(1 * time.Second)
-		ln.Errorw("this is error",
+		if n == 10 {
+			ln.Level(logger.WarnLevel)
+		}
+		n++
+		time.Sleep(time.Second)
+		ln.Warnw("this is error",
+			"k", "v",
+			"val", 123,
+			"uuid", tools.XUID())
+		ln.Infow("this is info",
+			"k", "v",
+			"val", 123,
+			"uuid", tools.XUID())
+		ln.Debugw("this is debug",
 			"k", "v",
 			"val", 123,
 			"uuid", tools.XUID())
