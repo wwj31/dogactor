@@ -13,34 +13,40 @@ import (
 )
 
 type Option struct {
-	Level          Level  // 日志级别
-	LogPath        string // 日志保存路径
-	FileName       string // 日志文件名称
-	FileMaxAge     int    // 文件保存时间(天)
-	FileMaxSize    int    // 文件切割大小MB
-	FileMaxBackups int    // 最大备份数量
-	DisplayConsole bool   // 是否在控制台显示
-	Skip           int    // 跳过的栈底
+	Level          Level       // 日志级别
+	LogPath        string      // 日志保存路径
+	FileName       string      // 日志文件名称
+	FileMaxAge     int         // 文件保存时间(天)
+	FileMaxSize    int         // 文件切割大小MB
+	FileMaxBackups int         // 最大备份数量
+	DisplayConsole bool        // 是否在控制台显示
+	Skip           int         // 跳过的栈底
+	ExtraWriter    []io.Writer // 扩展输出
 }
 
 func New(opt Option) *Logger {
 	var (
-		//output *bufio.Writer
-		lj *lumberjack.Logger
+		lj      *lumberjack.Logger
+		writers []io.Writer
 	)
-	//lumberjack
-	lj = &lumberjack.Logger{
-		Filename:   path.Join(opt.LogPath, opt.FileName),
-		MaxSize:    opt.FileMaxSize,
-		MaxBackups: opt.FileMaxBackups,
-		MaxAge:     opt.FileMaxAge, //days
-		Compress:   true,           // disabled by default
+
+	if opt.LogPath != "" {
+		//lumberjack
+		lj = &lumberjack.Logger{
+			Filename:   path.Join(opt.LogPath, opt.FileName),
+			MaxSize:    opt.FileMaxSize,
+			MaxBackups: opt.FileMaxBackups,
+			MaxAge:     opt.FileMaxAge, //days
+			Compress:   true,           // disabled by default
+		}
+		writers = append(writers, lj)
 	}
-	writers := []io.Writer{lj}
+
 	if opt.DisplayConsole {
 		writers = append(writers, os.Stdout)
 	}
 
+	writers = append(writers, opt.ExtraWriter...)
 	//output = bufio.NewWriter(io.MultiWriter(writers...))
 
 	// zap
@@ -103,6 +109,14 @@ func (s *Logger) DefaultMsg(msg string) *Logger {
 		return nil
 	}
 	s.defMsg = msg + " "
+	return s
+}
+
+func (s *Logger) Storage(lv Level) *Logger {
+	if s == nil {
+		return nil
+	}
+	s.core.LevelEnabler = lv
 	return s
 }
 

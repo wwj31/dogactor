@@ -15,7 +15,7 @@ func TestGLogger(t *testing.T) {
 func GOGO() {
 	ln := logger.New(logger.Option{
 		Level:          logger.DebugLevel,
-		LogPath:        "./testLog",
+		LogPath:        "",
 		FileName:       "test.log",
 		FileMaxAge:     1,
 		FileMaxSize:    10,
