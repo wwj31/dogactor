@@ -45,7 +45,7 @@ func New(opt Option) *Logger {
 	if opt.DisplayConsole {
 		writers = append(writers, os.Stdout)
 	}
-	io.WriteString()
+
 	writers = append(writers, opt.ExtraWriter...)
 	//output = bufio.NewWriter(io.MultiWriter(writers...))
 
