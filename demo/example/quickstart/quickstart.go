@@ -28,19 +28,19 @@ func (s *PingActor) OnInit() {
 		s.Send("pong", "this is data")
 	}, -1)
 }
-func (s *PingActor) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) {
-	switch msg {
+func (s *PingActor) OnHandle(msg actor.Message) {
+	switch msg.Message() {
 	case 99999:
-		fmt.Println(sourceId, targetId)
+		fmt.Println(msg.GetSourceId(), msg.GetTargetId())
 		fmt.Println()
 	}
 }
 
 // OnHandleMessage PongActor
-func (s *PongActor) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) {
-	switch msg {
+func (s *PongActor) OnHandle(msg actor.Message) {
+	switch msg.Message() {
 	case "this is data":
-		fmt.Println(sourceId, targetId)
-		s.Send(sourceId, 99999)
+		fmt.Println(msg.GetSourceId(), msg.GetTargetId())
+		s.Send(msg.GetSourceId(), 99999)
 	}
 }

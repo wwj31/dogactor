@@ -30,6 +30,16 @@ type (
 		Response(requestId string, msg interface{}) error
 	}
 
+	Message interface {
+		Free()
+		GetSourceId() Id
+		GetTargetId() Id
+		GetRequestId() string
+		GetMsgName() string
+		Message() interface{}
+		String() string
+	}
+
 	// spawnActor used to init actor
 	spawnActor interface {
 		actorHandler
@@ -42,11 +52,7 @@ type (
 
 		// OnStop true if right now stop，false if late stop
 		OnStop() bool
-
-		// OnHandleMessage process message
-		OnHandleMessage(sourceId, targetId Id, msg interface{})
-		// OnHandleRequest process request
-		OnHandleRequest(sourceId, targetId Id, requestId string, msg interface{}) error
+		OnHandle(message Message)
 	}
 
 	// only Base implement

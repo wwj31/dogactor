@@ -16,16 +16,6 @@ func init() {
 	_msgPool.New = func() interface{} { return &ActorMessage{pool: &_msgPool} }
 }
 
-type Message interface {
-	Free()
-	GetSourceId() string
-	GetTargetId() string
-	GetRequestId() string
-	GetMsgName() string
-	Message() interface{}
-	String() string
-}
-
 func NewActorMessage() *ActorMessage {
 	msg := _msgPool.Get().(*ActorMessage)
 	atomic.StoreInt32(&msg.free, 1)

@@ -28,13 +28,13 @@ func main() {
 	name := "drainActor"
 	drainActor1 := actor.TmpActor{}
 	drainActor2 := actor.TmpActor{}
-	drainActor1.HandleMessage = func(sourceId, targetId actor.Id, v interface{}) {
-		drainData := v.(*msg.DrainTest)
+	drainActor1.Handle = func(v actor.Message) {
+		drainData := v.Message().(*msg.DrainTest)
 		fmt.Println("drain actor 1 receive msg:", drainData.Data)
 		time.Sleep(200 * time.Millisecond)
 	}
-	drainActor2.HandleMessage = func(sourceId, targetId actor.Id, v interface{}) {
-		drainData := v.(*msg.DrainTest)
+	drainActor2.Handle = func(v actor.Message) {
+		drainData := v.Message().(*msg.DrainTest)
 		fmt.Println("drain actor 2 receive msg:", drainData.Data)
 		time.Sleep(100 * time.Millisecond)
 	}

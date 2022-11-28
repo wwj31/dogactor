@@ -3,12 +3,11 @@ package actor
 import (
 	"time"
 
-	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
 )
 
 type mailBox struct {
-	ch             chan actor_msg.Message
+	ch             chan Message
 	lastMsgName    string
 	processingTime time.Duration
 }

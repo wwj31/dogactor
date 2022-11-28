@@ -58,47 +58,42 @@ func (s *Student) OnInit() {
 	}
 }
 
-func (s *Student) OnHandleMessage(sourceId, targetId actor.Id, v interface{}) {
-	switch m := v.(type) {
+func (s *Student) OnHandle(v actor.Message) {
+	switch m := v.Message().(type) {
 	case *msg.LileiSay:
 		fmt.Println(m.Data)
 
-		s.Send(sourceId, &msg.HanMeimeiSay{
-			Data: "hi~! Li Lei, I'm HanMeimei",
-		})
+		if v.GetRequestId() != "" {
+			s.Response(v.GetRequestId(), &msg.HanMeimeiSay{
+				Data: "no!",
+			})
+		} else {
+			s.Send(v.GetSourceId(), &msg.HanMeimeiSay{
+				Data: "hi~! Li Lei, I'm HanMeimei",
+			})
+		}
+
 	case *msg.HanMeimeiSay:
 		fmt.Println(m.Data)
 
-		resp, _ := s.RequestWait(sourceId, &msg.LileiSay{
+		resp, _ := s.RequestWait(v.GetSourceId(), &msg.LileiSay{
 			Data: "Be my grilfriend?",
 		})
 		// waiting....
 		fmt.Println(resp.(*msg.HanMeimeiSay).Data)
 
-		s.Request(sourceId, &msg.LileiSay{
+		s.Request(v.GetSourceId(), &msg.LileiSay{
 			Data: "it's ok! I will protect you.",
 		}).Handle(func(resp interface{}, err error) {
 			fmt.Println(resp.(*msg.HanMeimeiSay).Data)
 		})
 
 		s.AddTimer(tools.XUID(), tools.Now().Add(time.Second), func(dt time.Duration) {
-			resp, _ := s.RequestWait(sourceId, &msg.LileiSay{
+			resp, _ := s.RequestWait("HanMeimei", &msg.LileiSay{
 				Data: "please~",
 			})
 			fmt.Println(resp.(*msg.HanMeimeiSay).Data)
 
 		}, -1)
 	}
-}
-
-func (s *Student) OnHandleRequest(sourceId, targetId actor.Id, requestId string, v interface{}) error {
-	switch m := v.(type) {
-	case *msg.LileiSay:
-		fmt.Println(m.Data)
-
-		s.Response(requestId, &msg.HanMeimeiSay{
-			Data: "no!",
-		})
-	}
-	return nil
 }

@@ -92,46 +92,53 @@ func (c *Cluster) stop() {
 	c.Exit()
 }
 
-func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string, msg interface{}) (respErr error) {
-	reqSourceId, reqTargetId, _, _ := actor.ParseRequestId(requestId)
-	if c.ID() != reqTargetId {
-		if sourceId == reqTargetId {
-			targetId = reqSourceId
-		} else {
-			targetId = reqTargetId
-		}
+//func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string, msg interface{}) (respErr error) {
+//	reqSourceId, reqTargetId, _, _ := actor.ParseRequestId(requestId)
+//	if c.ID() != reqTargetId {
+//		if sourceId == reqTargetId {
+//			targetId = reqSourceId
+//		} else {
+//			targetId = reqTargetId
+//		}
+//
+//		err := c.mq.Pub(subFormat(targetId), msg.([]byte))
+//		if err != nil {
+//			log.SysLog.Errorw("remote actor send failed",
+//				"id", c.ID(),
+//				"sourceId", sourceId,
+//				"targetId", targetId,
+//				"requestId", requestId,
+//				"err", err,
+//			)
+//		}
+//		return
+//	}
+//
+//	switch msg.(type) {
+//	case *actor.ReqMsgDrain:
+//		err := c.mq.UnSub(subFormat(sourceId), true)
+//		_ = c.Response(requestId, &actor.RespMsgDrain{Err: err})
+//	}
+//	return
+//}
 
-		err := c.mq.Pub(subFormat(targetId), msg.([]byte))
-		if err != nil {
-			log.SysLog.Errorw("remote actor send failed",
-				"id", c.ID(),
-				"sourceId", sourceId,
-				"targetId", targetId,
-				"requestId", requestId,
-				"err", err,
-			)
-		}
-		return
-	}
-
-	switch msg.(type) {
-	case *actor.ReqMsgDrain:
-		err := c.mq.UnSub(subFormat(sourceId), true)
-		_ = c.Response(requestId, &actor.RespMsgDrain{Err: err})
-	}
-	return
-}
-func (c *Cluster) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) {
-	if targetId != c.ID() {
-		if e := c.mq.Pub(subFormat(targetId), msg.([]byte)); e != nil {
+func (c *Cluster) OnHandle(msg actor.Message) {
+	if msg.GetTargetId() != c.ID() {
+		if e := c.mq.Pub(subFormat(msg.GetTargetId()), msg.Message().([]byte)); e != nil {
 			log.SysLog.Errorw("cluster handle message",
 				"id", c.ID(),
-				"sourceId", sourceId,
-				"targetId", targetId,
+				"sourceId", msg.GetSourceId(),
+				"targetId", msg.GetTargetId(),
 				"err", e,
 			)
 		}
 		return
+	}
+
+	switch msg.Message().(type) {
+	case *actor.ReqMsgDrain:
+		err := c.mq.UnSub(subFormat(msg.GetSourceId()), true)
+		_ = c.Response(msg.GetRequestId(), &actor.RespMsgDrain{Err: err})
 	}
 }
 

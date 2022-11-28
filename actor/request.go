@@ -117,7 +117,7 @@ func (s *actor) doneRequest(requestId string, resp interface{}) {
 	}
 }
 
-// actorId-incId-targetId#sourceAddr
+// actorId@incId@targetId#sourceAddr
 func requestId(actorId, targetId, sourceAddr string) string {
 	return fmt.Sprintf("%s@%d@%s#%s", actorId, atomic.AddInt64(&_id, 1), targetId, sourceAddr)
 }
@@ -126,15 +126,17 @@ func ParseRequestId(requestId string) (sourceId string, targetId string, sourceA
 	if len(requestId) == 0 {
 		return
 	}
+
 	split := strings.Split(requestId, "#")
 	if len(split) != 2 {
 		return
 	}
+
 	sourceAddr = split[1]
 	split = strings.Split(split[0], "@")
 	if len(split) != 3 {
 		return
 	}
-	ok = true
-	return split[0], split[2], sourceAddr, ok
+
+	return split[0], split[2], sourceAddr, true
 }

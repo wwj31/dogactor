@@ -9,7 +9,6 @@ import (
 	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/actor/internal/script"
-	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 	"github.com/wwj31/jtimer"
@@ -64,7 +63,7 @@ func New(id Id, handler spawnActor, opt ...Option) *actor {
 		id:      id,
 		handler: handler,
 		mailBox: mailBox{
-			ch: make(chan actor_msg.Message, 100),
+			ch: make(chan Message, 100),
 		},
 		remote:    true, // 默认都能被远端发现
 		timerMgr:  jtimer.New(),
@@ -137,7 +136,7 @@ func (s *actor) CancelTimer(timerId string) {
 	s.resetTime()
 }
 
-func (s *actor) push(msg actor_msg.Message) error {
+func (s *actor) push(msg Message) error {
 	if msg == nil {
 		return actorerr.ActorPushMsgErr
 	}
@@ -220,20 +219,25 @@ func (s *actor) run() {
 				s.resetIdleTime()
 				break
 			}
-			s.status.Store(idle)
-			log.SysLog.Infow("actor into idle", "actor", s.ID())
 
 			// check sent after the timeout
+			if len(s.mailBox.ch) == 0 {
+				s.status.Store(idle)
+				log.SysLog.Infow("actor into idle", "actor", s.ID())
+			}
+
+			//double check
 			if len(s.mailBox.ch) > 0 {
 				s.activate()
 			}
+
 			// there are the return just for idle with the mailBox was empty and the timerMgr was empty
 			return
 		}
 	}
 }
 
-func (s *actor) handleMsg(msg actor_msg.Message) {
+func (s *actor) handleMsg(msg Message) {
 	message := msg.Message()
 
 	var msgType string
@@ -241,11 +245,13 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 	if actMsg, ok := message.(*actor_msg.ActorMessage); ok {
 		if actMsg.Data != nil && actMsg.MsgName != "" {
 			defer actMsg.Free()
-
 			msgType = actMsg.GetMsgName()
 			message = actMsg.Fill(s.system.protoIndex)
+			actMsg.SetMessage(message)
+			msg = actMsg
 		}
 	}
+
 	if message == nil {
 		return
 	}
@@ -257,17 +263,10 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 	s.mailBox.processingTime = 0
 	defer s.mailBox.recording(time.Now(), msgType)
 
-	reqSourceId, _, _, reqOK := ParseRequestId(msg.GetRequestId())
-	if reqOK {
-		//rev Response
-		if s.id == reqSourceId {
-			s.doneRequest(msg.GetRequestId(), message)
-			return
-		}
-		// rev Request
-		if e := s.handler.OnHandleRequest(msg.GetSourceId(), msg.GetTargetId(), msg.GetRequestId(), message); e != nil {
-			expect.Nil(s.Response(msg.GetRequestId(), &actor_msg.RequestDeadLetter{Err: e.Error()}))
-		}
+	reqSourceId, _, _, _ := ParseRequestId(msg.GetRequestId())
+	if s.id == reqSourceId {
+		//handle Response
+		s.doneRequest(msg.GetRequestId(), message)
 		return
 	}
 
@@ -277,7 +276,7 @@ func (s *actor) handleMsg(msg actor_msg.Message) {
 		return
 	}
 
-	s.handler.OnHandleMessage(msg.GetSourceId(), msg.GetTargetId(), message)
+	s.handler.OnHandle(msg)
 }
 
 // system close
@@ -312,7 +311,7 @@ func (s *actor) resetTime() {
 	}
 }
 
-func (s *actor) isStop(msg actor_msg.Message) bool {
+func (s *actor) isStop(msg Message) bool {
 	message, ok := msg.(*actor_msg.ActorMessage)
 	if ok && message == actorStop {
 		return true
@@ -340,7 +339,7 @@ func (s *actor) exit(emitEvent bool) {
 
 func SetMailBoxSize(boxSize int) Option {
 	return func(a *actor) {
-		a.mailBox.ch = make(chan actor_msg.Message, boxSize)
+		a.mailBox.ch = make(chan Message, boxSize)
 	}
 }
 
