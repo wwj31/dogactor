@@ -43,8 +43,6 @@ type (
 		// OnStop true if right now stop，false if late stop
 		OnStop() bool
 
-		// OnHandleEvent process event
-		OnHandleEvent(event interface{})
 		// OnHandleMessage process message
 		OnHandleMessage(sourceId, targetId Id, msg interface{})
 		// OnHandleRequest process request

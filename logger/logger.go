@@ -45,7 +45,7 @@ func New(opt Option) *Logger {
 	if opt.DisplayConsole {
 		writers = append(writers, os.Stdout)
 	}
-
+	io.WriteString()
 	writers = append(writers, opt.ExtraWriter...)
 	//output = bufio.NewWriter(io.MultiWriter(writers...))
 
@@ -71,10 +71,10 @@ func New(opt Option) *Logger {
 	).Sugar()
 
 	logger := &Logger{
-		Option:  opt,
-		rotater: lj,
-		sugar:   sugar,
-		core:    p,
+		Option: opt,
+		rotate: lj,
+		sugar:  sugar,
+		core:   p,
 	}
 
 	loggers = append(loggers, logger)
@@ -83,11 +83,11 @@ func New(opt Option) *Logger {
 
 type Logger struct {
 	Option
-	rotater *lumberjack.Logger
-	sugar   *zap.SugaredLogger
-	core    *ioCore
-	color   TColor
-	defMsg  string
+	rotate *lumberjack.Logger
+	sugar  *zap.SugaredLogger
+	core   *ioCore
+	color  TColor
+	defMsg string
 }
 
 type ioCore struct {
@@ -101,7 +101,7 @@ func (s *Logger) Close() {
 		return
 	}
 	_ = s.sugar.Sync()
-	_ = s.rotater.Close()
+	_ = s.rotate.Close()
 }
 
 func (s *Logger) DefaultMsg(msg string) *Logger {

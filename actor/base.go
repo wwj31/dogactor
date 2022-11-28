@@ -29,17 +29,12 @@ func (s *Base) OnHandleRequest(sourceId, targetId Id, requestId string, msg inte
 	return actorerr.ActorUnimplemented
 }
 
-func (s *Base) OnHandleEvent(event interface{}) {
-	log.SysLog.Warnw("not implement OnHandleEvent", "actorId", s.ID())
-}
-
 type TmpActor struct {
 	Base
 	Init          func()
 	Stop          func() bool
 	HandleMessage func(sourceId, targetId Id, msg interface{})
 	HandleRequest func(sourceId, targetId Id, requestId string, msg interface{}) error
-	HandleEvent   func(event interface{})
 }
 
 func (s *TmpActor) OnInit() {
@@ -68,10 +63,4 @@ func (s *TmpActor) OnHandleRequest(sourceId, targetId Id, requestId string, msg 
 	}
 
 	return nil
-}
-
-func (s *TmpActor) OnHandleEvent(event interface{}) {
-	if s.HandleEvent != nil {
-		s.HandleEvent(event)
-	}
 }

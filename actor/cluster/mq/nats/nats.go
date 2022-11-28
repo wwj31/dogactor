@@ -24,29 +24,32 @@ func New() *Nats {
 
 var _ mq.MQ = &Nats{}
 
-type SubInfo struct {
-	cancel context.CancelFunc
-	sub    *nats.Subscription
-	exit   chan struct{}
-}
-type Nats struct {
-	ctx    context.Context
-	cancel context.CancelFunc
+type (
+	Nats struct {
+		ctx    context.Context
+		cancel context.CancelFunc
 
-	url  string
-	nc   *nats.Conn
-	js   nats.JetStreamContext
-	subs map[string]*SubInfo
-}
+		url  string
+		nc   *nats.Conn
+		js   nats.JetStreamContext
+		subs map[string]*SubInfo
+	}
+
+	SubInfo struct {
+		cancel context.CancelFunc
+		sub    *nats.Subscription
+		exit   chan struct{}
+	}
+)
 
 func (n *Nats) Connect(url string) (err error) {
 	n.url = url
 
 	opts := []nats.Option{
-		nats.ReconnectWait(3 * time.Second),
+		nats.ReconnectWait(2 * time.Second),
 		nats.MaxReconnects(300),
 		nats.ReconnectHandler(func(conn *nats.Conn) {
-			log.SysLog.Errorw("nats reconnect to server", "url", conn.ConnectedUrl())
+			log.SysLog.Warnw("nats reconnect to server", "url", conn.ConnectedUrl())
 		}),
 
 		nats.DisconnectErrHandler(func(conn *nats.Conn, err error) {
@@ -59,6 +62,7 @@ func (n *Nats) Connect(url string) (err error) {
 			log.SysLog.Infow("nats connect closed successfully", "url", conn.ConnectedUrl())
 		}),
 	}
+
 	// Connect to a server with nats.GetDefaultOptions()
 	if n.nc, err = nats.Connect(n.url, opts...); err != nil {
 		return
