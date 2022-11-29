@@ -77,7 +77,7 @@ func (s *Student) OnHandle(v actor.Message) {
 
 		reqId := actor.RequestId(v.GetRequestId())
 		if reqId.Valid() {
-			s.Response(reqId, &msg.HanMeimeiSay{
+			s.Response(reqId.String(), &msg.HanMeimeiSay{
 				Data: "no!",
 			})
 		} else {

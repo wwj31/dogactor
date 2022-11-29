@@ -73,7 +73,7 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 	}
 
 	req.timeoutId = s.AddTimer(tools.XUID(), tools.Now().Add(interval), func(dt time.Duration) {
-		expect.Nil(s.Response(req.id, &actor_msg.RequestDeadLetter{Err: "Request timeout"}))
+		expect.Nil(s.Response(req.id.String(), &actor_msg.RequestDeadLetter{Err: "Request timeout"}))
 	})
 	return req
 }
@@ -84,12 +84,13 @@ func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Du
 }
 
 // Response response a result
-func (s *actor) Response(requestId RequestId, msg interface{}) error {
-	reqSourceId, _, _, ok := requestId.Parse()
+func (s *actor) Response(requestId string, msg interface{}) error {
+	reqId := RequestId(requestId)
+	reqSourceId, _, _, ok := reqId.Parse()
 	if !ok {
 		return fmt.Errorf("error requestId:%v", requestId)
 	}
-	return s.system.Send(s.id, reqSourceId, requestId, msg)
+	return s.system.Send(s.id, reqSourceId, reqId, msg)
 }
 
 // process to Response msg
