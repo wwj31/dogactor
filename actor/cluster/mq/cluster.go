@@ -58,7 +58,7 @@ func (c *Cluster) OnInit() {
 					log.SysLog.Errorf("unmarshal msg failed", "err", err)
 					return
 				}
-				expect.Nil(c.System().Send(msg.SourceId, msg.TargetId, msg.RequestId, msg))
+				expect.Nil(c.System().Send(msg.SourceId, msg.TargetId, actor.RequestId(msg.RequestId), msg))
 			})
 
 			if err != nil {
