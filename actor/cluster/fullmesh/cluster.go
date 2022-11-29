@@ -80,56 +80,26 @@ func (c *Cluster) stop() {
 	c.Exit()
 }
 
-func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string, msg interface{}) (respErr error) {
-	_, reqTargetId, _, _ := actor.ParseRequestId(requestId)
-	if c.ID() != reqTargetId {
-		if err := c.sendRemote(targetId, requestId, msg.([]byte)); err != nil {
+func (c *Cluster) OnHandle(msg actor.Message) {
+	if c.ID() != msg.GetTargetId() {
+		if err := c.sendRemote(msg.GetTargetId(), msg.GetRequestId(), msg.Message().([]byte)); err != nil {
 			log.SysLog.Errorw("remote actor send failed",
 				"id", c.ID(),
-				"sourceId", sourceId,
-				"targetId", targetId,
-				"requestId", requestId,
+				"sourceId", msg.GetSourceId(),
+				"targetId", msg.GetTargetId(),
+				"requestId", msg.GetRequestId(),
 				"err", err,
 			)
-			return err
 		}
 		return
 	}
 
-	str, ok := msg.(string)
-	if ok {
-		switch str {
-		case "stop":
-			c.stop()
-
-		case "nodeinfo":
-			respErr = c.Response(requestId, c.clusterInfo())
-		default:
-			log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
-		}
-	}
-	return
-}
-
-func (c *Cluster) OnHandleMessage(sourceId, targetId actor.Id, msg interface{}) {
-	// cluster 只特殊处理 stop 消息，其余消息全部转发remote
-	if targetId != c.ID() {
-		if e := c.sendRemote(targetId, "", msg.([]byte)); e != nil {
-			log.SysLog.Errorw("cluster handle message",
-				"id", c.ID(),
-				"sourceId", sourceId,
-				"targetId", targetId,
-				"err", e,
-			)
-		}
-		return
-	}
-
-	if str, ok := msg.(string); ok && str == "stop" {
+	if str, ok := msg.Message().(string); ok && str == "stop" {
 		c.stop()
 	} else {
 		log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)
 	}
+	return
 }
 
 // OnNewServ dispatch a new remote
