@@ -11,11 +11,10 @@ type (
 		System() *System
 		Exit()
 		Drain(afterDrained ...func())
+		CallLua(name string, ret int, args ...lua.LValue) []lua.LValue
 
 		Timer
 		Sender
-
-		CallLua(name string, ret int, args ...lua.LValue) []lua.LValue
 	}
 
 	Timer interface {
@@ -31,13 +30,13 @@ type (
 	}
 
 	Message interface {
-		Free()
 		GetSourceId() Id
 		GetTargetId() Id
 		GetRequestId() string
 		GetMsgName() string
 		Message() interface{}
 		String() string
+		Free()
 	}
 
 	// spawnActor used to init actor
@@ -49,8 +48,6 @@ type (
 	// actorHandler
 	actorHandler interface {
 		OnInit()
-
-		// OnStop true if right now stop，false if late stop
 		OnStop() bool
 		OnHandle(message Message)
 	}
