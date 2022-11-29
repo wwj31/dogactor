@@ -19,7 +19,7 @@ func (s *Base) initActor(actor Actor) {
 
 func (s *Base) OnInit()              { log.SysLog.Warnw("actor default init", "actorId", s.ID()) }
 func (s *Base) OnStop() bool         { return true }
-func (s *Base) OnHandle(msg Message) {}
+func (s *Base) OnHandle(msg Message) { log.SysLog.Warnw("actor default hande", "actorId", s.ID()) }
 
 type TmpActor struct {
 	Base

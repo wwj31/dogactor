@@ -34,8 +34,8 @@ type System struct {
 	exiting       int32           // state of stopping
 	actorCache    sync.Map        // all local actor
 	newList       chan *actor     // newcomers
-	cluster       *actor
-	requestWaiter string
+	cluster       *actor          // exactly one of etcd(based service discovery) or mq
+	requestWaiter string          // implement sync request
 	protoIndex    *tools.ProtoIndex
 	evDispatcher
 }
