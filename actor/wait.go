@@ -25,7 +25,7 @@ type waiter struct {
 func (s *waiter) OnInit() {}
 
 func (s *waiter) OnHandle(msg Message) {
-	switch data := msg.Message().(type) {
+	switch data := msg.RawMsg().(type) {
 	case *requestWait:
 		req := s.Request(data.targetId, data.msg, data.timeout)
 		req.Handle(func(resp interface{}, e error) {

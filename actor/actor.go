@@ -238,7 +238,7 @@ func (s *actor) run() {
 }
 
 func (s *actor) handleMsg(msg Message) {
-	message := msg.Message()
+	message := msg.RawMsg()
 
 	var msgType string
 	// message is ActorMessage when msg from remote OnRecv

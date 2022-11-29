@@ -59,7 +59,7 @@ func (s *Student) OnInit() {
 }
 
 func (s *Student) OnHandle(v actor.Message) {
-	switch m := v.Message().(type) {
+	switch m := v.RawMsg().(type) {
 	case *msg.LileiSay:
 		fmt.Println(m.Data)
 

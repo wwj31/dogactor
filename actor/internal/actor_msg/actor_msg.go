@@ -35,7 +35,7 @@ type ActorMessage struct {
 	MapCarrier map[string]string `protobuf:"bytes,6,rep,name=MapCarrier,proto3" json:"MapCarrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
-func (s *ActorMessage) Message() interface{} {
+func (s *ActorMessage) RawMsg() interface{} {
 	return s.message
 }
 

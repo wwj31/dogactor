@@ -29,7 +29,7 @@ func (s *PingActor) OnInit() {
 	}, -1)
 }
 func (s *PingActor) OnHandle(msg actor.Message) {
-	switch msg.Message() {
+	switch msg.RawMsg() {
 	case 99999:
 		fmt.Println(msg.GetSourceId(), msg.GetTargetId())
 		fmt.Println()
@@ -38,7 +38,7 @@ func (s *PingActor) OnHandle(msg actor.Message) {
 
 // OnHandleMessage PongActor
 func (s *PongActor) OnHandle(msg actor.Message) {
-	switch msg.Message() {
+	switch msg.RawMsg() {
 	case "this is data":
 		fmt.Println(msg.GetSourceId(), msg.GetTargetId())
 		s.Send(msg.GetSourceId(), 99999)
