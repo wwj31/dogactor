@@ -26,7 +26,7 @@ type (
 		Send(targetId Id, msg interface{}) error
 		Request(targetId Id, msg interface{}, timeout ...time.Duration) (req *request)
 		RequestWait(targetId Id, msg interface{}, timeout ...time.Duration) (result interface{}, err error)
-		Response(requestId string, msg interface{}) error
+		Response(requestId RequestId, msg interface{}) error
 	}
 
 	Message interface {

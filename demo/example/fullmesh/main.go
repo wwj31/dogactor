@@ -75,8 +75,9 @@ func (s *Student) OnHandle(v actor.Message) {
 	case *msg.LileiSay:
 		log.Infof(m.Data)
 
-		if v.GetRequestId() != "" {
-			s.Response(v.GetRequestId(), &msg.HanMeimeiSay{
+		reqId := actor.RequestId(v.GetRequestId())
+		if reqId.Valid() {
+			s.Response(reqId, &msg.HanMeimeiSay{
 				Data: "no!",
 			})
 		} else {

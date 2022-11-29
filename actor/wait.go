@@ -11,7 +11,7 @@ import (
 
 type (
 	requestWait struct {
-		targetId string
+		targetId Id
 		timeout  time.Duration
 		msg      interface{}
 		c        chan result

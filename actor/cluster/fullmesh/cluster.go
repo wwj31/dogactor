@@ -82,7 +82,7 @@ func (c *Cluster) stop() {
 
 func (c *Cluster) OnHandle(msg actor.Message) {
 	if c.ID() != msg.GetTargetId() {
-		if err := c.sendRemote(msg.GetTargetId(), msg.GetRequestId(), msg.RawMsg().([]byte)); err != nil {
+		if err := c.sendRemote(msg.GetTargetId(), actor.RequestId(msg.GetRequestId()), msg.RawMsg().([]byte)); err != nil {
 			log.SysLog.Errorw("remote actor send failed",
 				"id", c.ID(),
 				"sourceId", msg.GetSourceId(),
@@ -120,7 +120,7 @@ func (c *Cluster) OnSessionOpened(peerHost string) {
 }
 
 func (c *Cluster) OnSessionRecv(msg *actor_msg.ActorMessage) {
-	err := c.System().Send(msg.SourceId, msg.TargetId, msg.RequestId, msg)
+	err := c.System().Send(msg.SourceId, msg.TargetId, actor.RequestId(msg.RequestId), msg)
 	if err != nil {
 		log.SysLog.Errorw("cluster OnSessionRecv send error", "msg", msg.String(), "err", err)
 	}
@@ -128,10 +128,10 @@ func (c *Cluster) OnSessionRecv(msg *actor_msg.ActorMessage) {
 
 ////////////////////////////////////// RemoteHandler /////////////////////////////////////////////////////////////////
 
-func (c *Cluster) sendRemote(targetId actor.Id, requestId string, bytes []byte) error {
+func (c *Cluster) sendRemote(targetId actor.Id, requestId actor.RequestId, bytes []byte) error {
 	//Response的时候地址由requestId解析提供
 	var addr string
-	if reqSourceId, _, _addr, _ := actor.ParseRequestId(requestId); reqSourceId == targetId {
+	if reqSourceId, _, _addr, _ := requestId.Parse(); reqSourceId == targetId {
 		addr = _addr
 	} else if addr = c.actors[targetId]; addr == "" {
 		return errors.New("target actor not find")

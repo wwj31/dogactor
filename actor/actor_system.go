@@ -151,7 +151,7 @@ func (s *System) Add(actor *actor) error {
 }
 
 // Send try to send the message to target
-func (s *System) Send(sourceId, targetId Id, requestId string, msg interface{}) (err error) {
+func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg interface{}) (err error) {
 	defer func() {
 		if err != nil {
 			err = errFormat(err, sourceId, targetId, requestId, reflect.TypeOf(msg).String())
@@ -178,7 +178,7 @@ func (s *System) Send(sourceId, targetId Id, requestId string, msg interface{}) 
 			actorMsg := &actor_msg.ActorMessage{
 				SourceId:  sourceId,
 				TargetId:  targetId,
-				RequestId: requestId,
+				RequestId: requestId.String(),
 				MsgName:   s.protoIndex.MsgName(pt),
 				Data:      bytes,
 			}
@@ -196,7 +196,7 @@ func (s *System) Send(sourceId, targetId Id, requestId string, msg interface{}) 
 	localMsg := actor_msg.NewActorMessage() // local message
 	localMsg.SourceId = sourceId
 	localMsg.TargetId = targetId
-	localMsg.RequestId = requestId
+	localMsg.RequestId = requestId.String()
 	localMsg.SetMessage(msg)
 
 	return atr.push(localMsg)
@@ -275,6 +275,6 @@ func Addr(addr string) SystemOption {
 	}
 }
 
-func errFormat(err error, sourceId, targetId, requestId, msg string) error {
+func errFormat(err error, sourceId, targetId Id, requestId RequestId, msg string) error {
 	return fmt.Errorf("%w s:[%v] t:[%v],r:[%v] msg:[%v]", err, sourceId, targetId, requestId, msg)
 }

@@ -3,7 +3,7 @@ package actor
 import (
 	"errors"
 	"fmt"
-	"github.com/wwj31/dogactor/log"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -11,6 +11,7 @@ import (
 
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/expect"
+	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -28,9 +29,9 @@ type (
 	}
 
 	request struct {
-		id       string
-		sourceId string
-		targetId string
+		id       RequestId
+		sourceId Id
+		targetId Id
 
 		result    result
 		fn        func(resp interface{}, err error)
@@ -83,8 +84,8 @@ func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Du
 }
 
 // Response response a result
-func (s *actor) Response(requestId string, msg interface{}) error {
-	reqSourceId, _, _, ok := ParseRequestId(requestId)
+func (s *actor) Response(requestId RequestId, msg interface{}) error {
+	reqSourceId, _, _, ok := requestId.Parse()
 	if !ok {
 		return fmt.Errorf("error requestId:%v", requestId)
 	}
@@ -93,14 +94,14 @@ func (s *actor) Response(requestId string, msg interface{}) error {
 
 // process to Response msg
 func (s *actor) doneRequest(requestId string, resp interface{}) {
-	req, ok := s.requests[requestId]
+	req, ok := s.requests[RequestId(requestId)]
 	if !ok {
 		log.SysLog.Warnw("can not find request", "requestId", requestId, "actorId", s.id)
 		return
 	}
 
 	s.CancelTimer(req.timeoutId)
-	delete(s.requests, requestId)
+	delete(s.requests, RequestId(requestId))
 
 	switch r := resp.(type) {
 	case *actor_msg.RequestDeadLetter:
@@ -117,17 +118,36 @@ func (s *actor) doneRequest(requestId string, resp interface{}) {
 	}
 }
 
+type RequestId string
+
 // actorId@incId@targetId#sourceAddr
-func requestId(actorId, targetId, sourceAddr string) string {
-	return fmt.Sprintf("%s@%d@%s#%s", actorId, atomic.AddInt64(&_id, 1), targetId, sourceAddr)
+func requestId(actorId, targetId, sourceAddr string) RequestId {
+	var builder strings.Builder
+	builder.Grow(100)
+	builder.WriteString(actorId)
+	builder.WriteString("@")
+	builder.WriteString(strconv.Itoa(int(atomic.AddInt64(&_id, 1))))
+	builder.WriteString("@")
+	builder.WriteString(targetId)
+	builder.WriteString("#")
+	builder.WriteString(sourceAddr)
+	return RequestId(builder.String())
 }
 
-func ParseRequestId(requestId string) (sourceId string, targetId string, sourceAddr string, ok bool) {
-	if len(requestId) == 0 {
+func (r RequestId) String() string {
+	return string(r)
+}
+
+func (r RequestId) Valid() bool {
+	return string(r) != ""
+}
+
+func (r RequestId) Parse() (sourceId string, targetId string, sourceAddr string, ok bool) {
+	if len(r) == 0 {
 		return
 	}
 
-	split := strings.Split(requestId, "#")
+	split := strings.Split(string(r), "#")
 	if len(split) != 2 {
 		return
 	}

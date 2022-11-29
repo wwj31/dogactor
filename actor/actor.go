@@ -44,7 +44,7 @@ type (
 		luapath string
 
 		// record Request msg and delete after done
-		requests map[string]*request
+		requests map[RequestId]*request
 
 		// actor status schedule
 		status    atomic.Value
@@ -68,7 +68,7 @@ func New(id Id, handler spawnActor, opt ...Option) *actor {
 		remote:    true, // 默认都能被远端发现
 		timerMgr:  jtimer.New(),
 		timer:     globalTimerPool.Get(math.MaxInt),
-		requests:  make(map[string]*request),
+		requests:  make(map[RequestId]*request),
 		idleTimer: globalTimerPool.Get(math.MaxInt),
 	}
 	a.status.Store(starting)
@@ -238,40 +238,41 @@ func (s *actor) run() {
 }
 
 func (s *actor) handleMsg(msg Message) {
-	message := msg.RawMsg()
+	rawMsg := msg.RawMsg()
 
 	var msgType string
 	// message is ActorMessage when msg from remote OnRecv
-	if actMsg, ok := message.(*actor_msg.ActorMessage); ok {
+	if actMsg, ok := rawMsg.(*actor_msg.ActorMessage); ok {
 		if actMsg.Data != nil && actMsg.MsgName != "" {
 			defer actMsg.Free()
 			msgType = actMsg.GetMsgName()
-			message = actMsg.Fill(s.system.protoIndex)
-			actMsg.SetMessage(message)
+			rawMsg = actMsg.Fill(s.system.protoIndex)
+			actMsg.SetMessage(rawMsg)
 			msg = actMsg
 		}
 	}
 
-	if message == nil {
+	if rawMsg == nil {
 		return
 	}
 
 	if msgType == "" {
-		msgType = reflect.TypeOf(message).String()
+		msgType = reflect.TypeOf(rawMsg).String()
 	}
 
 	s.mailBox.processingTime = 0
 	defer s.mailBox.recording(time.Now(), msgType)
 
-	reqSourceId, _, _, _ := ParseRequestId(msg.GetRequestId())
+	reqId := RequestId(msg.GetRequestId())
+	reqSourceId, _, _, _ := reqId.Parse()
 	if s.id == reqSourceId {
 		//handle Response
-		s.doneRequest(msg.GetRequestId(), message)
+		s.doneRequest(msg.GetRequestId(), rawMsg)
 		return
 	}
 
 	// fn
-	if fn, ok := message.(func()); ok {
+	if fn, ok := rawMsg.(func()); ok {
 		fn()
 		return
 	}
