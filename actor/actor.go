@@ -296,6 +296,7 @@ func (s *actor) stop() {
 
 // resetIdleTime reset idleTimer
 func (s *actor) resetIdleTime() {
+	globalTimerPool.Put(s.idleTimer)
 	s.idleTimer = globalTimerPool.Get(time.Minute)
 }
 
@@ -307,6 +308,7 @@ func (s *actor) resetTime() {
 	}
 
 	if !nextAt.Equal(s.nextAt) {
+		globalTimerPool.Put(s.timer)
 		s.timer = globalTimerPool.Get(nextAt.Sub(tools.Now()))
 		s.nextAt = nextAt
 	}
