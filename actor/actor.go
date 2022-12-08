@@ -47,8 +47,8 @@ type (
 		requests map[RequestId]*request
 
 		// actor status schedule
-		status    atomic.Value
-		idleTimer *time.Timer
+		status   atomic.Value
+		handleAt time.Time
 
 		// drain
 		draining     atomic.Value
@@ -65,16 +65,14 @@ func New(id Id, handler spawnActor, opt ...Option) *actor {
 		mailBox: mailBox{
 			ch: make(chan Message, 100),
 		},
-		remote:    true, // 默认都能被远端发现
-		timerMgr:  jtimer.New(),
-		timer:     globalTimerPool.Get(math.MaxInt),
-		requests:  make(map[RequestId]*request),
-		idleTimer: globalTimerPool.Get(math.MaxInt),
+		remote:   true, // 默认都能被远端发现
+		timerMgr: jtimer.New(),
+		timer:    globalTimerPool.Get(math.MaxInt),
+		requests: make(map[RequestId]*request),
 	}
 	a.status.Store(starting)
 	a.draining.Store(false)
 	a.timer.Stop()
-	a.idleTimer.Stop()
 
 	handler.initActor(a)
 
@@ -183,7 +181,9 @@ func (s *actor) activate() {
 }
 
 func (s *actor) run() {
-	s.resetIdleTime()
+	idleTicker := time.NewTicker(time.Minute)
+	defer idleTicker.Stop()
+
 	for {
 		select {
 		case msg := <-s.mailBox.ch:
@@ -198,6 +198,7 @@ func (s *actor) run() {
 				// upset timer
 				s.timerMgr.Update(tools.Now())
 			})
+			s.handleAt = tools.Now()
 			msg.Free()
 
 			if s.draining.Load() == true && s.mailBox.Empty() {
@@ -210,18 +211,17 @@ func (s *actor) run() {
 			}
 
 			s.resetTime()
-			s.resetIdleTime()
 		case <-s.timer.C:
 			_ = s.push(timerTickMsg)
 
-		case <-s.idleTimer.C:
+		case <-idleTicker.C:
 			if s.timerMgr.Len() > 0 {
-				s.resetIdleTime()
+				s.timerMgr.Update(tools.Now())
 				break
 			}
 
 			// check sent after the timeout
-			if len(s.mailBox.ch) == 0 {
+			if len(s.mailBox.ch) == 0 && tools.Now().Sub(s.handleAt) > 5*time.Minute {
 				s.status.Store(idle)
 				log.SysLog.Infow("actor into idle", "actor", s.ID())
 			}
@@ -292,12 +292,6 @@ func (s *actor) stop() {
 	if stop {
 		_ = s.push(actorStop)
 	}
-}
-
-// resetIdleTime reset idleTimer
-func (s *actor) resetIdleTime() {
-	globalTimerPool.Put(s.idleTimer)
-	s.idleTimer = globalTimerPool.Get(time.Minute)
 }
 
 // resetTime reset timer of timerMgr
