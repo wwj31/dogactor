@@ -10,8 +10,8 @@ import (
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/actor/internal/script"
 	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/timer"
 	"github.com/wwj31/dogactor/tools"
-	"github.com/wwj31/jtimer"
 )
 
 const (
@@ -35,7 +35,7 @@ type (
 		remote bool
 
 		// timer
-		timerMgr *jtimer.Manager
+		timerMgr *timer.Manager
 		timer    *time.Timer
 		nextAt   time.Time
 
@@ -66,7 +66,7 @@ func New(id Id, handler spawnActor, opt ...Option) *actor {
 			ch: make(chan Message, 100),
 		},
 		remote:   true, // 默认都能被远端发现
-		timerMgr: jtimer.New(),
+		timerMgr: timer.New(),
 		timer:    globalTimerPool.Get(math.MaxInt),
 		requests: make(map[RequestId]*request),
 	}
@@ -220,7 +220,6 @@ func (s *actor) run() {
 				break
 			}
 
-			// check sent after the timeout
 			if len(s.mailBox.ch) == 0 && tools.Now().Sub(s.handleAt) > 5*time.Minute {
 				s.status.Store(idle)
 				log.SysLog.Infow("actor into idle", "actor", s.ID())
@@ -297,7 +296,7 @@ func (s *actor) stop() {
 // resetTime reset timer of timerMgr
 func (s *actor) resetTime() {
 	nextAt := s.timerMgr.NextUpdateAt()
-	if nextAt.Unix() == 0 {
+	if nextAt.IsZero() {
 		return
 	}
 
