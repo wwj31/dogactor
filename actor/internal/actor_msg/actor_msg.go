@@ -74,6 +74,10 @@ func (msg *ActorMessage) Fill(pi *tools.ProtoIndex) interface{} {
 		return nil
 	}
 
+	if msg.Data == nil {
+		return pt
+	}
+
 	if err := proto.Unmarshal(msg.Data, pt.(proto.Message)); err != nil {
 		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", msg.MsgName)
 		return nil

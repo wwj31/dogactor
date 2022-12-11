@@ -18,6 +18,10 @@ type EvClusterUpdate struct {
 	Add     bool
 }
 
+type EvActorSubMqFin struct {
+	ActorId Id
+}
+
 type EvSessionClosed struct {
 	PeerHost string
 }

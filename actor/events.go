@@ -91,7 +91,9 @@ func (ed *evDispatcher) DispatchEvent(sourceId Id, event interface{}) {
 	defer ed.RUnlock()
 
 	if listeners := ed.listeners[rType.String()]; listeners != nil {
-		for actorId, fnMeta := range listeners {
+		for k, v := range listeners {
+			actorId := k
+			fnMeta := v
 			err := ed.sys.Send(sourceId, actorId, "", func() {
 				if fnMeta.ArgType.Kind() != rType.Kind() {
 					log.SysLog.Errorw("param type kind not equal", "fnMeta.ArgType", fnMeta.ArgType.Kind(), "rType", rType.Kind())

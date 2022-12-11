@@ -242,7 +242,7 @@ func (s *actor) handleMsg(msg Message) {
 	var msgType string
 	// message is ActorMessage when msg from remote OnRecv
 	if actMsg, ok := rawMsg.(*actor_msg.ActorMessage); ok {
-		if actMsg.Data != nil && actMsg.MsgName != "" {
+		if actMsg.MsgName != "" {
 			defer actMsg.Free()
 			msgType = actMsg.GetMsgName()
 			rawMsg = actMsg.Fill(s.system.protoIndex)
