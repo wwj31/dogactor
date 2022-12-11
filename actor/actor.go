@@ -295,10 +295,14 @@ func (s *actor) stop() {
 
 // resetTime reset timer of timerMgr
 func (s *actor) resetTime(n ...time.Time) {
-	if len(n) > 0 {
+	reset := func(nt time.Time) {
 		globalTimerPool.Put(s.timer)
-		s.timer = globalTimerPool.Get(n[0].Sub(tools.Now()))
-		s.nextAt = n[0]
+		s.timer = globalTimerPool.Get(nt.Sub(tools.Now()))
+		s.nextAt = nt
+	}
+
+	if len(n) > 0 {
+		reset(n[0])
 		return
 	}
 
@@ -308,9 +312,7 @@ func (s *actor) resetTime(n ...time.Time) {
 	}
 
 	if !nextAt.Equal(s.nextAt) {
-		globalTimerPool.Put(s.timer)
-		s.timer = globalTimerPool.Get(nextAt.Sub(tools.Now()))
-		s.nextAt = nextAt
+		reset(nextAt)
 	}
 }
 
