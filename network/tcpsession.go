@@ -106,7 +106,7 @@ func (s *TcpSession) read() {
 	buffer := make([]byte, 1024*8)
 
 	for {
-		if err := s.conn.SetReadDeadline(tools.Now().Add(time.Second * 30)); err != nil {
+		if err := s.conn.SetReadDeadline(time.Now().Add(time.Second * 30)); err != nil {
 			log.SysLog.Infow("tcp read SetReadDeadline", "sessionId", s.Id(), "err", err)
 			break
 		}
@@ -141,7 +141,7 @@ func (s *TcpSession) read() {
 
 func (s *TcpSession) write() {
 	for data := range s.sendQue {
-		if err := s.conn.SetWriteDeadline(tools.Now().Add(time.Second * 5)); err != nil {
+		if err := s.conn.SetWriteDeadline(time.Now().Add(time.Second * 5)); err != nil {
 			log.SysLog.Infow("tcp read SetWriteDeadline", "sessionId", s.Id(), "err", err)
 			break
 		}
