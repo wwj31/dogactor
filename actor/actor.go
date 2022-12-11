@@ -159,8 +159,7 @@ func (s *actor) push(msg Message) error {
 }
 
 var (
-	timerTickMsg = &actor_msg.ActorMessage{MsgName: "timerTickMsg"} // timer tick msg
-	actorStop    = &actor_msg.ActorMessage{MsgName: "actorStop"}    // actor stop msg
+	actorStop = &actor_msg.ActorMessage{MsgName: "actorStop"} // actor stop msg
 )
 
 func (s *actor) init(ok chan<- struct{}) {
@@ -192,12 +191,7 @@ func (s *actor) run() {
 				return
 			}
 
-			tools.Try(func() {
-				s.handleMsg(msg)
-
-				// upset timer
-				s.timerMgr.Update(tools.Now())
-			})
+			tools.Try(func() { s.handleMsg(msg) })
 			s.handleAt = tools.Now()
 			msg.Free()
 
@@ -212,7 +206,13 @@ func (s *actor) run() {
 
 			s.resetTime()
 		case <-s.timer.C:
-			_ = s.push(timerTickMsg)
+			tools.Try(func() {
+				// upset timer
+				now := tools.Now()
+				if d := s.timerMgr.Update(now); d > 0 {
+					s.resetTime(now.Add(d))
+				}
+			})
 
 		case <-idleTicker.C:
 			if s.timerMgr.Len() > 0 {
@@ -294,7 +294,14 @@ func (s *actor) stop() {
 }
 
 // resetTime reset timer of timerMgr
-func (s *actor) resetTime() {
+func (s *actor) resetTime(n ...time.Time) {
+	if len(n) > 0 {
+		globalTimerPool.Put(s.timer)
+		s.timer = globalTimerPool.Get(n[0].Sub(tools.Now()))
+		s.nextAt = n[0]
+		return
+	}
+
 	nextAt := s.timerMgr.NextUpdateAt()
 	if nextAt.IsZero() {
 		return

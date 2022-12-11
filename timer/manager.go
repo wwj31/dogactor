@@ -81,11 +81,11 @@ func (m *Manager) NextUpdateAt() (at time.Time) {
 	return headTimer.endAt
 }
 
-func (m *Manager) Update(now time.Time) {
+func (m *Manager) Update(now time.Time) time.Duration {
 	for m.heap.peek() != nil {
 		headTimer := m.heap.peek()
 		if now.Before(headTimer.endAt) {
-			return
+			return headTimer.endAt.Sub(now)
 		}
 
 		if headTimer.remove {
@@ -115,6 +115,7 @@ func (m *Manager) Update(now time.Time) {
 			m.remove(headTimer.id, false)
 		}
 	}
+	return 0
 }
 
 func (m *Manager) remove(id Id, softRemove bool) {
