@@ -83,46 +83,6 @@ func (c *Cluster) OnInit() {
 	})
 }
 
-func (c *Cluster) OnStop() bool {
-	return false
-}
-
-func (c *Cluster) stop() {
-	c.System().CancelAll(c.ID())
-	c.mq.Close()
-	c.Exit()
-}
-
-//func (c *Cluster) OnHandleRequest(sourceId, targetId actor.Id, requestId string, msg interface{}) (respErr error) {
-//	reqSourceId, reqTargetId, _, _ := actor.ParseRequestId(requestId)
-//	if c.ID() != reqTargetId {
-//		if sourceId == reqTargetId {
-//			targetId = reqSourceId
-//		} else {
-//			targetId = reqTargetId
-//		}
-//
-//		err := c.mq.Pub(subFormat(targetId), msg.([]byte))
-//		if err != nil {
-//			log.SysLog.Errorw("remote actor send failed",
-//				"id", c.ID(),
-//				"sourceId", sourceId,
-//				"targetId", targetId,
-//				"requestId", requestId,
-//				"err", err,
-//			)
-//		}
-//		return
-//	}
-//
-//	switch msg.(type) {
-//	case *actor.ReqMsgDrain:
-//		err := c.mq.UnSub(subFormat(sourceId), true)
-//		_ = c.Response(requestId, &actor.RespMsgDrain{Err: err})
-//	}
-//	return
-//}
-
 func (c *Cluster) OnHandle(msg actor.Message) {
 	if msg.GetTargetId() != c.ID() {
 		if e := c.mq.Pub(subFormat(msg.GetTargetId()), msg.RawMsg().([]byte)); e != nil {
@@ -141,6 +101,16 @@ func (c *Cluster) OnHandle(msg actor.Message) {
 		err := c.mq.UnSub(subFormat(msg.GetSourceId()), true)
 		_ = c.Response(msg.GetRequestId(), &actor.RespMsgDrain{Err: err})
 	}
+}
+
+func (c *Cluster) OnStop() bool {
+	return false
+}
+
+func (c *Cluster) stop() {
+	c.System().CancelAll(c.ID())
+	c.mq.Close()
+	c.Exit()
 }
 
 func subFormat(str actor.Id) string {

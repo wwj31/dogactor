@@ -149,15 +149,6 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 			}
 
 			tools.Try(func() {
-				//if len(msgs) > 0 {
-				//	latestMsg := msgs[len(msgs)-1]
-				//	md, _ := latestMsg.Metadata()
-				//	fmt.Printf("msg len:%v ack md:%+v\n", len(msgs), md)
-				//	if err := latestMsg.AckSync(); err != nil {
-				//		log.SysLog.Errorf("msg ack failed ", "subject", subject, "err", err)
-				//	}
-				//}
-
 				for _, msg := range msgs {
 					callback(msg.Data)
 				}
