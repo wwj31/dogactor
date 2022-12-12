@@ -223,15 +223,16 @@ func (s *actor) run() {
 			if len(s.mailBox.ch) == 0 && tools.Now().Sub(s.handleAt) > 5*time.Minute {
 				s.status.Store(idle)
 				log.SysLog.Infow("actor into idle", "actor", s.ID())
+
+				//double check
+				if len(s.mailBox.ch) > 0 {
+					s.activate()
+				}
+
+				// there are the return just for idle with the mailBox was empty and the timerMgr was empty
+				return
 			}
 
-			//double check
-			if len(s.mailBox.ch) > 0 {
-				s.activate()
-			}
-
-			// there are the return just for idle with the mailBox was empty and the timerMgr was empty
-			return
 		}
 	}
 }
