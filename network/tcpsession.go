@@ -107,7 +107,7 @@ func (s *TcpSession) read() {
 
 	for {
 		if err := s.conn.SetReadDeadline(time.Now().Add(time.Second * 30)); err != nil {
-			log.SysLog.Infow("tcp read SetReadDeadline", "sessionId", s.Id(), "err", err)
+			log.SysLog.Errorf("tcp read SetReadDeadline", "sessionId", s.Id(), "err", err)
 			break
 		}
 
@@ -116,7 +116,7 @@ func (s *TcpSession) read() {
 			if operr, ok := err.(*net.OpError); ok && (operr.Err == syscall.EAGAIN || operr.Err == syscall.EWOULDBLOCK) { //没数据了
 				continue
 			}
-			log.SysLog.Infow("tcp read buff failed", "sessionId", s.Id(), "err", err)
+			log.SysLog.Errorw("tcp read buff failed", "sessionId", s.Id(), "err", err)
 			break
 		}
 
@@ -126,7 +126,7 @@ func (s *TcpSession) read() {
 
 		datas, err := s.coder.Decode(buffer[:n])
 		if err != nil {
-			log.SysLog.Infow("tcp decode failed", "sessionId", s.Id(), "err", err)
+			log.SysLog.Errorw("tcp decode failed", "sessionId", s.Id(), "err", err)
 			break
 		}
 
@@ -142,12 +142,12 @@ func (s *TcpSession) read() {
 func (s *TcpSession) write() {
 	for data := range s.sendQue {
 		if err := s.conn.SetWriteDeadline(time.Now().Add(time.Second * 5)); err != nil {
-			log.SysLog.Infow("tcp read SetWriteDeadline", "sessionId", s.Id(), "err", err)
+			log.SysLog.Errorw("tcp read SetWriteDeadline", "sessionId", s.Id(), "err", err)
 			break
 		}
 
 		if _, err := s.conn.Write(s.coder.Encode(data)); err != nil {
-			log.SysLog.Infow("tcp session write error", "sessionId", s.Id(), "err", err)
+			log.SysLog.Errorw("tcp session write error", "sessionId", s.Id(), "err", err)
 			break
 		}
 	}

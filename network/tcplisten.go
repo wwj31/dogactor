@@ -33,13 +33,7 @@ type TcpListener struct {
 }
 
 func (s *TcpListener) Start() error {
-	err := s.listen()
-	if err == nil {
-		log.SysLog.Infow("tcp listen success", "addr", s.addr)
-		return nil
-	}
-	log.SysLog.Infow("tcp listen failed", "addr", s.addr, "err", err)
-	return err
+	return s.listen()
 }
 
 func (s *TcpListener) listen() error {
@@ -55,7 +49,7 @@ func (s *TcpListener) listen() error {
 				if strings.Contains(err.Error(), "use of closed network connection") {
 					break
 				}
-				log.SysLog.Infow("tcp accept error", "addr", s.addr, "err", err)
+				log.SysLog.Errorw("tcp accept error", "addr", s.addr, "err", err)
 			} else {
 				newTcpSession(conn, s.newCodec(), s.newHandler()).start()
 			}
