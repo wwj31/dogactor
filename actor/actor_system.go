@@ -2,6 +2,7 @@ package actor
 
 import (
 	"fmt"
+	"io"
 	"reflect"
 	"runtime"
 	"sync"
@@ -13,6 +14,7 @@ import (
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/logger"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -272,6 +274,20 @@ func ProtoIndex(pi *tools.ProtoIndex) SystemOption {
 func Addr(addr string) SystemOption {
 	return func(system *System) error {
 		system.sysAddr = addr
+		return nil
+	}
+}
+
+func LogLevel(level logger.Level) SystemOption {
+	return func(system *System) error {
+		log.Option.Level = level
+		return nil
+	}
+}
+
+func Output(out io.Writer) SystemOption {
+	return func(system *System) error {
+		log.Option.ExtraWriter = append(log.Option.ExtraWriter, out)
 		return nil
 	}
 }
