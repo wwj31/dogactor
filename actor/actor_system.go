@@ -54,6 +54,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 			return nil, fmt.Errorf("%w %v", actorerr.ActorSystemOptionErr, e.Error())
 		}
 	}
+	log.Init()
 
 	if &s.protoIndex == nil {
 		log.SysLog.Warnw("without protobuf index,can't find ptoro struct")

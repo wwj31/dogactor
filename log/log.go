@@ -4,10 +4,11 @@ import (
 	"github.com/wwj31/dogactor/logger"
 )
 
-var SysLog *logger.Logger
+var (
+	SysLog *logger.Logger
+	Option = defaultOption
 
-func init() {
-	SysLog = logger.New(logger.Option{
+	defaultOption = logger.Option{
 		Level:          logger.InfoLevel,
 		LogPath:        "./syslog",
 		FileName:       "sys.err.log",
@@ -16,7 +17,10 @@ func init() {
 		FileMaxBackups: 50,
 		DisplayConsole: true,
 		Skip:           1,
-	})
+	}
+)
 
+func Init() {
+	SysLog = logger.New(Option)
 	SysLog.Color(logger.Gray)
 }
