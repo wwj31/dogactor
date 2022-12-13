@@ -22,5 +22,5 @@ var (
 
 func Init() {
 	SysLog = logger.New(Option)
-	SysLog.Color(logger.Gray)
+	SysLog.Color(logger.Cyan)
 }
