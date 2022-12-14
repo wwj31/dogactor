@@ -13,7 +13,7 @@ const (
 )
 
 var (
-	TimeZero       = Unix(0, 0)
+	TimeZero       = time.Unix(0, 0)
 	TimeOffset     int64
 	TimeOffsetPath = "./.timeoffset"
 )
@@ -48,32 +48,12 @@ func Now() time.Time {
 	return time.Now().UTC().Add(time.Duration(TimeOffset))
 }
 
-func Unix(sec int64, nsec int64) time.Time {
-	return time.Unix(sec, nsec).UTC()
-}
-
-func Milliseconds() int64 {
-	return NowTime() / int64(time.Millisecond)
-}
-
-func NowTime() int64 {
-	return Now().UnixNano()
-}
-
-func Seconds() int64 {
-	return NowTime() / int64(time.Second)
-}
-
 func Date(year int, month time.Month, day, hour, min, sec, nsec int) time.Time {
 	return time.Date(year, month, day, hour, min, sec, nsec, time.UTC)
 }
 
 func IsSameDay(time1 time.Time, time2 time.Time) bool {
 	return time1.Year() == time2.Year() && time1.YearDay() == time2.YearDay()
-}
-
-func IsInvalidTime(data time.Time) bool {
-	return data.Equal(TimeZero)
 }
 
 func TimeFormat(data time.Time) string {

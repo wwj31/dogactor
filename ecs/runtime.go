@@ -27,11 +27,11 @@ func NewRuntime() *Runtime {
 func (s *Runtime) Run(dt float64, time_set map[string]int64) int64 {
 	var t int64
 	for _, sys := range s.systems {
-		st1 := tools.Milliseconds()
+		st1 := tools.Now().UnixMilli()
 
 		sys.UpdateFrame(dt)
 
-		st2 := tools.Milliseconds()
+		st2 := tools.Now().UnixMilli()
 		st := st2 - st1
 		time_set[sys.base().Type()] = st
 		t += st
