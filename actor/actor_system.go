@@ -63,7 +63,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 		log.SysLog.Warnw("without protobuf index,can't find ptoro struct")
 	}
 
-	s.requestWaiter = "wait_" + tools.XUID()
+	s.requestWaiter = "waiter_" + s.name + tools.XUID()
 	_ = s.Add(New(s.requestWaiter, &waiter{}))
 
 	// first,create waiter and cluster
