@@ -31,6 +31,7 @@ type SystemOption func(*System) error
 type System struct {
 	Stopped chan struct{}
 
+	name          string
 	sysAddr       string          // cluster listen addr
 	waitStop      *sync.WaitGroup // stop wait
 	exiting       int32           // state of stopping
@@ -274,6 +275,13 @@ func ProtoIndex(pi *tools.ProtoIndex) SystemOption {
 func Addr(addr string) SystemOption {
 	return func(system *System) error {
 		system.sysAddr = addr
+		return nil
+	}
+}
+
+func Name(name string) SystemOption {
+	return func(system *System) error {
+		system.name = name
 		return nil
 	}
 }
