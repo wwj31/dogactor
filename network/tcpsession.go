@@ -116,7 +116,7 @@ func (s *TcpSession) read() {
 			if operr, ok := err.(*net.OpError); ok && (operr.Err == syscall.EAGAIN || operr.Err == syscall.EWOULDBLOCK) { //没数据了
 				continue
 			}
-			log.SysLog.Errorw("tcp read buff failed", "sessionId", s.Id(), "err", err)
+			log.SysLog.Warnw("tcp read buff failed", "sessionId", s.Id(), "err", err)
 			break
 		}
 
@@ -147,7 +147,7 @@ func (s *TcpSession) write() {
 		}
 
 		if _, err := s.conn.Write(s.coder.Encode(data)); err != nil {
-			log.SysLog.Errorw("tcp session write error", "sessionId", s.Id(), "err", err)
+			log.SysLog.Warnw("tcp session write error", "sessionId", s.Id(), "err", err)
 			break
 		}
 	}
