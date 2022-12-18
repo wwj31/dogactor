@@ -1,8 +1,8 @@
 package rank
 
 import (
+	"github.com/wwj31/dogactor/tools"
 	"math"
-	"time"
 )
 
 type num int64 // 分数类型
@@ -35,7 +35,7 @@ func score(scores ...int64) []num {
 		nums = append(nums, num(i64))
 	}
 
-	nums = append(nums, num(math.MaxInt64-(int64(time.Now().Nanosecond())+_inc)))
+	nums = append(nums, num(math.MaxInt64-(int64(tools.Now().Nanosecond())+_inc)))
 	_inc++
 	return nums
 }

@@ -37,7 +37,7 @@ func (s *Message) Proto() proto.Message { return s.pb }
 func (s *Message) parse(data []byte, mm *tools.ProtoIndex) *Message {
 	dlen := len(data)
 	if dlen < 4 {
-		log.SysLog.Errorw("actorerr msg length", "data", data)
+		log.SysLog.Errorw("actor err msg length", "data", data)
 		return nil
 	}
 

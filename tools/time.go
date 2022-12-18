@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	SecondsPerDay  = 24 * 60 * 60
-	SecondsForever = SecondsPerDay * 365 * 10 //10年(int32~(2020+17))
+	SecondsPerDay = 24 * 60 * 60
 )
 
 var (
@@ -45,15 +44,7 @@ func ModifyTimeOffset(add int64) {
 }
 
 func Now() time.Time {
-	return time.Now().UTC().Add(time.Duration(TimeOffset))
-}
-
-func Date(year int, month time.Month, day, hour, min, sec, nsec int) time.Time {
-	return time.Date(year, month, day, hour, min, sec, nsec, time.UTC)
-}
-
-func IsSameDay(time1 time.Time, time2 time.Time) bool {
-	return time1.Year() == time2.Year() && time1.YearDay() == time2.YearDay()
+	return time.Now().Add(time.Duration(TimeOffset))
 }
 
 func TimeFormat(data time.Time) string {
@@ -76,20 +67,6 @@ func TimeParseFormat(layout, value string) (time.Time, error) {
 	return t.UTC(), nil
 }
 
-func GetNextTime(hour, minute int) time.Time {
-	now := Now()
-
-	if hour < 0 || hour > 24 || minute < 0 || minute > 60 {
-		fmt.Println("Wrong hour minute", hour, minute)
-		return now
-	}
-	todayTime := BeginningOfTheDay(now).Add(time.Duration(hour) * time.Hour).Add(time.Duration(minute) * time.Minute)
-	if todayTime.After(now) {
-		return todayTime
-	}
-	return todayTime.Add(24 * 60 * 60 * time.Second)
-}
-
 func GetNextHour() time.Time {
 	return Now().Truncate(time.Hour).Add(time.Hour)
 }
@@ -98,40 +75,12 @@ func GetNextMinute() time.Time {
 	return Now().Truncate(time.Minute).Add(time.Minute)
 }
 
-func GetTimeWithoutHours(t time.Time) time.Time {
-	return t.Truncate(time.Hour).Add(-time.Duration(t.Hour()) * time.Hour)
-}
-
 func BeginningOfTheDay(t time.Time) time.Time {
 	return t.Truncate(24 * 60 * 60 * time.Second)
 }
 
-func MidOfTheDay(t time.Time) time.Time {
-	return t.Truncate(24 * 60 * 60 * time.Second).Add(24 * 60 * 60 * time.Second / 2)
-}
-
 func EndingOfTheDay(t time.Time) time.Time {
 	return t.Truncate(24 * 60 * 60 * time.Second).Add(24 * 60 * 60 * time.Second)
-}
-
-func MondayBeginWeek() int64 {
-	now := Now()
-	offset := int64(time.Monday - now.Weekday())
-	if offset > 0 {
-		offset = -6
-	}
-	monday := now.Unix() + offset*SecondsPerDay
-	return monday - (monday % SecondsPerDay)
-}
-
-func NextMondayBeginWeek() int64 {
-	return MondayBeginWeek() + SecondsPerDay*7
-}
-
-func DiffDay(t1, t2 time.Time) int32 {
-	t1Start := BeginningOfTheDay(t1)
-	t2Start := BeginningOfTheDay(t2)
-	return int32(t1Start.Sub(t2Start).Seconds() / SecondsPerDay)
 }
 
 // 以当天开始时间为初始值 间隔 intervalSeconds触发一次，返回下次触发的时间

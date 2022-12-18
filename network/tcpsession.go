@@ -124,9 +124,9 @@ func (s *TcpSession) read() {
 			continue
 		}
 
-		datas, err := s.coder.Decode(buffer[:n])
-		if err != nil {
-			log.SysLog.Errorw("tcp decode failed", "sessionId", s.Id(), "err", err)
+		datas, decErr := s.coder.Decode(buffer[:n])
+		if decErr != nil {
+			log.SysLog.Errorw("tcp decode failed", "sessionId", s.Id(), "err", decErr)
 			break
 		}
 

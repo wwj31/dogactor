@@ -14,33 +14,6 @@ type DecodeEncoder interface {
 
 var ErrRecvLen = errors.New("data is too long")
 
-type EchoCode struct {
-	MaxDecode int
-
-	context bytes.Buffer
-}
-
-func (s *EchoCode) Decode(data []byte) ([][]byte, error) {
-	s.context.Write(data)
-	var ret [][]byte = nil
-	for {
-		d, err := s.context.ReadBytes('\n')
-		if err != nil {
-			break
-		}
-		if s.MaxDecode > 0 && len(ret) > s.MaxDecode {
-			return nil, ErrRecvLen
-		}
-		ret = append(ret, d[:len(d)-1])
-	}
-	return ret, nil
-}
-
-func (s *EchoCode) Encode(data []byte) []byte {
-	data = append(data, '\n')
-	return data
-}
-
 // the message package base infrastructure
 //
 //		├──── 4bytes ─────┼────────────── body size ─────────────────┤

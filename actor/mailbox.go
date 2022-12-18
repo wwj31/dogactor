@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"github.com/wwj31/dogactor/tools"
 	"time"
 
 	"github.com/wwj31/dogactor/log"
@@ -14,7 +15,7 @@ type mailBox struct {
 
 // recording record slow processed of message
 func (m *mailBox) recording(t time.Time, msgName string) {
-	dur := time.Now().Sub(t)
+	dur := tools.Now().Sub(t)
 	m.processingTime = dur
 	m.lastMsgName = msgName
 

@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	_id         = time.Now().UnixNano()
+	_id         = tools.Now().UnixNano()
 	requestPool = sync.Pool{New: func() interface{} { return &request{} }}
 )
 

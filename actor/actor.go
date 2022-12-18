@@ -261,7 +261,7 @@ func (s *actor) handleMsg(msg Message) {
 	}
 
 	s.mailBox.processingTime = 0
-	defer s.mailBox.recording(time.Now(), msgType)
+	defer s.mailBox.recording(tools.Now(), msgType)
 
 	reqId := RequestId(msg.GetRequestId())
 	reqSourceId, _, _, _ := reqId.Parse()

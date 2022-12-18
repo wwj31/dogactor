@@ -10,7 +10,6 @@ type SessionType int
 const (
 	TypeTCP SessionType = 1
 	TypeUDP SessionType = 2
-	TypeWS  SessionType = 3
 )
 
 type Listener interface {
