@@ -18,7 +18,7 @@ type (
 	}
 
 	Timer interface {
-		AddTimer(timeId string, endAt time.Time, callback func(dt time.Duration), triggerCount ...int) string
+		AddTimer(timeId string, endAt time.Time, callback func(dt time.Duration), times ...int) string
 		CancelTimer(timerId string)
 	}
 

@@ -28,11 +28,11 @@ func (s *waiter) OnHandle(msg Message) {
 	switch data := msg.RawMsg().(type) {
 	case *requestWait:
 		req := s.Request(data.targetId, data.msg, data.timeout)
-		req.Handle(func(resp interface{}, e error) {
+		req.Handle(func(resp interface{}, er error) {
 			go func() {
 				deadline := globalTimerPool.Get(10 * time.Second)
 				select {
-				case data.c <- result{data: resp, err: e}:
+				case data.c <- result{data: resp, err: er}:
 				case <-deadline.C:
 					log.SysLog.Warnw("waiter result put time out sourceId:%v targetId:%v", msg.GetSourceId(), data.targetId)
 					break

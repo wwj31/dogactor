@@ -12,20 +12,20 @@ type (
 		id        Id
 		startAt   time.Time
 		endAt     time.Time
-		callback  CallbackFn
-		execCount int
-		remove    bool // soft remove flags
+		callback CallbackFn
+		times    int
+		remove   bool // soft remove flags
 		index     int
 	}
 )
 
 func (t *timer) spareCount() bool {
-	return t.execCount > 0 || t.execCount < 0
+	return t.times > 0 || t.times < 0
 }
 
 func (t *timer) consumeCount(count int) {
-	if t.execCount > 0 {
-		t.execCount -= min(t.execCount, count)
+	if t.times > 0 {
+		t.times -= min(t.times, count)
 	}
 }
 

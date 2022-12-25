@@ -113,15 +113,16 @@ func (s *actor) Send(targetId string, msg interface{}) error {
 }
 
 // AddTimer default value of timeId is uuid.
-// if count == -1 timer will repack in timer system infinitely util call CancelTimer,
+// if you need to ensure idempotency of the method,explicit the timeId.
 // when timeId is existed the timer will update with endAt and callback and count.
-func (s *actor) AddTimer(timeId string, endAt time.Time, callback func(dt time.Duration), count ...int) string {
-	c := 1
-	if len(count) > 0 {
-		c = count[0]
+// if times == -1 timer will repack in timer system infinitely util call CancelTimer.
+func (s *actor) AddTimer(timeId string, endAt time.Time, callback func(dt time.Duration), times ...int) string {
+	n := 1
+	if len(times) > 0 {
+		n = times[0]
 	}
 
-	timeId = s.timerMgr.Add(tools.Now(), endAt, callback, c, timeId)
+	timeId = s.timerMgr.Add(tools.Now(), endAt, callback, n, timeId)
 
 	s.resetTime()
 	s.activate()

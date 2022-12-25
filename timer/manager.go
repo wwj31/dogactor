@@ -27,7 +27,7 @@ func New() *Manager {
 	}
 }
 
-func (m *Manager) Add(now, endAt time.Time, callback CallbackFn, execCount int, id ...Id) Id {
+func (m *Manager) Add(now, endAt time.Time, callback CallbackFn, times int, id ...Id) Id {
 	var timerId Id
 	if len(id) > 0 {
 		timerId = id[0]
@@ -43,7 +43,7 @@ func (m *Manager) Add(now, endAt time.Time, callback CallbackFn, execCount int, 
 		oldTimer.startAt = now
 		oldTimer.endAt = endAt
 		oldTimer.callback = callback
-		oldTimer.execCount = execCount
+		oldTimer.times = times
 		heap.Fix(&m.heap, oldTimer.index)
 		return oldTimer.id
 	}
@@ -53,7 +53,7 @@ func (m *Manager) Add(now, endAt time.Time, callback CallbackFn, execCount int, 
 	newTimer.startAt = now
 	newTimer.endAt = endAt
 	newTimer.callback = callback
-	newTimer.execCount = execCount
+	newTimer.times = times
 
 	heap.Push(&m.heap, newTimer)
 	m.timers[timerId] = newTimer
