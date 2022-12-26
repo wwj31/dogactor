@@ -108,7 +108,7 @@ func (s *System) Stop() {
 					}
 
 					actorId = key.(string)
-					log.SysLog.Warnw("interrupt stopping", "actorId", actorId)
+					log.SysLog.Warnw("spare actor...", "actorId", actorId)
 					return false
 				})
 
