@@ -3,6 +3,7 @@ package actor
 import (
 	"errors"
 	"fmt"
+	"github.com/wwj31/dogactor/actor/actorerr"
 	"strconv"
 	"strings"
 	"sync"
@@ -80,6 +81,10 @@ func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Durati
 
 // RequestWait sync request
 func (s *actor) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (resp interface{}, err error) {
+	if targetId == s.id {
+		return nil, actorerr.ActorForbiddenToCallOneself
+	}
+
 	return s.System().RequestWait(targetId, msg, timeout...)
 }
 

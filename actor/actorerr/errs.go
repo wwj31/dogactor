@@ -9,9 +9,7 @@ import (
 var (
 	//errors about event
 
-	RegisterEventErr = errors.New("RegisterEvent only accept ptr param")
-	CancelEventErr   = errors.New("CancelEvent only accept ptr param")
-	DispatchEventErr = errors.New("DispatchEvent only accept ptr param")
+	CancelEventErr = errors.New("CancelEvent only accept ptr param")
 
 	// errors about actor system
 
@@ -23,5 +21,5 @@ var (
 	ActorNotFoundErr            = errors.New("local actor not found")
 	ActorMsgTypeCanNotRemoteErr = errors.New("msg type can not remote")
 	ActorPushMsgErr             = errors.New("push a nil msg to actor")
-	ActorUnimplemented          = errors.New("actor has no implemented OnHandleRequest")
+	ActorForbiddenToCallOneself = errors.New("request wait not call one self")
 )
