@@ -6,6 +6,7 @@ a actor model framework written in Go, two ways to communicate internally：
 <p align="center">
 # <img align="left" src="https://github.com/wwj31/dogactor/raw/master/.github/images/image.png" alt="img" title="img" />
 </p>
+<h1></h1>
 # 1.Installation
 #### To start using dogactor, install Go and run `go get`:
 ```sh
