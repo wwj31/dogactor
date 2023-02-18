@@ -61,8 +61,3 @@ func (s *PongActor) OnHandleMessage(sourceId, targetId string, msg interface{}) 
 	}
 }
 ```
-
-# 3.Cluster
-One of the following modes is required for **dogactor** startup with distributed services:
-* Full Mesh 
-* Based On MQ (developing...)
