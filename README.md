@@ -1,7 +1,9 @@
 <p align="center">game server framework</a></p>
 
 a actor model framework written in Go.
-it has implemented server discovery using ETCD.
+two ways to communicate internally：
+1.Service discovery based on ETCD.
+2.Use NATS(jetStream) as a means of communication.
 
 # Getting Started
 
