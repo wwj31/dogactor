@@ -21,6 +21,11 @@ func (s *Base) OnInit()              { log.SysLog.Warnw("actor default init", "a
 func (s *Base) OnStop() bool         { return true }
 func (s *Base) OnHandle(msg Message) { log.SysLog.Warnw("actor default hande", "actorId", s.ID()) }
 
+// create functional actor by TmpActor ,example:
+// bar := TmpActor{}
+// bar.Init = func(){}
+// bar.Handle = func(msg Message){}
+
 type TmpActor struct {
 	Base
 	Init   func()

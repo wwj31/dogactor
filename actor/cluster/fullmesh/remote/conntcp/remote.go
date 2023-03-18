@@ -1,9 +1,9 @@
-package remote_tcp
+package conntcp
 
 import (
 	"errors"
 	cmap "github.com/orcaman/concurrent-map"
-	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote"
 	"github.com/wwj31/dogactor/expect"
 	"go.uber.org/atomic"
 	"time"
@@ -14,7 +14,7 @@ import (
 )
 
 type RemoteMgr struct {
-	remoteHandler remote_provider.RemoteHandler
+	remoteHandler remote.Handler
 	listener      network.Listener
 
 	stop     atomic.Int32
@@ -33,7 +33,7 @@ func NewRemoteMgr() *RemoteMgr {
 	return mgr
 }
 
-func (s *RemoteMgr) Start(h remote_provider.RemoteHandler) error {
+func (s *RemoteMgr) Start(h remote.Handler) error {
 	s.remoteHandler = h
 
 	listener := network.StartTcpListen(s.remoteHandler.Address(),
@@ -100,12 +100,12 @@ func (s *RemoteMgr) keepAlive() {
 		select {
 		case <-ticker.C:
 			s.sessions.IterCb(func(key string, v interface{}) {
-				remote, _ := v.(*remoteHandler)
+				handler, _ := v.(*remoteHandler)
 				err := v.(*remoteHandler).SendMsg(s.ping)
 				if err != nil {
 					log.SysLog.Errorw("keepAlive SendMsg",
 						"err", err,
-						"remote", remote.RemoteIP())
+						"handler", handler.RemoteIP())
 				}
 			})
 		}

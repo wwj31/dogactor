@@ -1,19 +1,19 @@
 package fullmesh
 
 import (
-	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider"
-	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh_provider"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh"
 )
 
 type ServiceMeshProvider interface {
-	Start(servmesh_provider.ServMeshHander) error
+	Start(servmesh.ServMeshHander) error
 	Stop()
 	RegisterService(key string, value string) error
 	UnregisterService(key string) error
 }
 
 type RemoteProvider interface {
-	Start(remote_provider.RemoteHandler) error
+	Start(remote.Handler) error
 	Stop()
 	NewClient(host string)
 	StopClient(host string)

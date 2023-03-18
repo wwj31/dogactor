@@ -1,9 +1,9 @@
-package remote_grpc
+package conngrpc
 
 import (
 	"errors"
-	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider"
-	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider/remote_grpc/internal"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote/conngrpc/internal"
 
 	cmap "github.com/orcaman/concurrent-map"
 	"go.uber.org/atomic"
@@ -14,7 +14,7 @@ import (
 
 // 管理所有远端的session
 type RemoteMgr struct {
-	remoteHandler remote_provider.RemoteHandler
+	remoteHandler remote.Handler
 	listener      *internal.Server
 
 	stop     atomic.Int32
@@ -33,7 +33,7 @@ func NewRemoteMgr() *RemoteMgr {
 	return mgr
 }
 
-func (s *RemoteMgr) Start(actorSystem remote_provider.RemoteHandler) error {
+func (s *RemoteMgr) Start(actorSystem remote.Handler) error {
 	s.remoteHandler = actorSystem
 
 	listener, err := internal.NewServer(s.remoteHandler.Address(), func() internal.Handler { return &remoteHandler{remote: s} }, s)

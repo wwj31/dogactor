@@ -1,10 +1,9 @@
-package remote_tcp
+package conngrpc
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/wwj31/dogactor/log"
+	"strings"
 )
 
 func (s *RemoteMgr) remoteinfo(param ...string) {

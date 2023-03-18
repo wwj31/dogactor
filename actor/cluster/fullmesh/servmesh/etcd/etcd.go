@@ -3,7 +3,7 @@ package etcd
 import (
 	"context"
 	"errors"
-	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh_provider"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh"
 	"go.etcd.io/etcd/api/v3/mvccpb"
 	etcd "go.etcd.io/etcd/client/v3"
 	"go.uber.org/atomic"
@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/wwj31/dogactor/log"
-	"github.com/wwj31/dogactor/tools"
 )
 
 const (
@@ -29,10 +28,10 @@ type Etcd struct {
 	etcdClient *etcd.Client
 	leaseId    atomic.Int64 // 租约
 	revision   int64        // 当前监听版本号
-	registErr  error        // 注册错误(当任意注册发生错误，则全部推倒重来)
+	retry      bool         // 当出现任何错误时，重新建立链接
 
 	localActors sync.Map //
-	hander      servmesh_provider.ServMeshHander
+	handler     servmesh.ServMeshHander
 	stop        atomic.Int32
 	wg          sync.WaitGroup
 }
@@ -46,32 +45,29 @@ func NewEtcd(endpoints, prefix string) *Etcd {
 	return nEtcd
 }
 
-func (s *Etcd) Start(h servmesh_provider.ServMeshHander) error {
-	s.hander = h
+func (s *Etcd) Start(h servmesh.ServMeshHander) (err error) {
+	s.handler = h
 
 	logInfo := []interface{}{"endpoints", s.endpoints, "prefix", s.prefix}
 	log.SysLog.Infow("etcd start", logInfo...)
 
-	client, err := etcd.New(etcd.Config{Endpoints: strings.Split(s.endpoints, "_"), DialTimeout: timeout})
+	s.etcdClient, err = etcd.New(etcd.Config{Endpoints: strings.Split(s.endpoints, "_"), DialTimeout: timeout})
 	if err != nil {
 		log.SysLog.Errorw("new etcd client failed", append(logInfo, "err", err)...)
 		return err
 	}
 
-	s.etcdClient = client
 	s.wg.Add(1)
-	go tools.Try(func() {
+	go func() {
 		defer s.wg.Done()
-		for {
-			if s.IsStop() {
-				log.SysLog.Infow("etcd stop", logInfo...)
-				return
-			}
+		for !s.IsStop() {
 			s.run()
 			time.Sleep(time.Second)
 		}
-	})
-	return nil
+
+		log.SysLog.Infow("etcd stop", logInfo...)
+	}()
+	return
 }
 
 func (s *Etcd) Stop() {
@@ -84,13 +80,15 @@ func (s *Etcd) IsStop() bool {
 	return s.stop.Load() == 1
 }
 
-// 注册kv
+// RegisterService register node to etcd
 func (s *Etcd) RegisterService(key, value string) error {
 	s.localActors.Store(key, value)
+
 	if s.IsStop() {
-		s.registErr = errors.New("etcd has stopped")
-		return s.registErr
+		s.retry = true
+		return errors.New("etcd has stopped")
 	}
+
 	leaseId := s.getLeaseID()
 	for leaseId == invalidLeaseId {
 		time.Sleep(100 * time.Millisecond)
@@ -107,17 +105,19 @@ func (s *Etcd) RegisterService(key, value string) error {
 			"key", key,
 			"value", value,
 		)
-		s.registErr = err
+		s.retry = true
 	}
 	return err
 }
 
 func (s *Etcd) UnregisterService(key string) error {
 	s.localActors.Delete(key)
+
 	if s.IsStop() {
-		s.registErr = errors.New("etcd has stoped")
-		return s.registErr
+		s.retry = true
+		return errors.New("etcd has stopped")
 	}
+
 	resp, err := s.etcdClient.Delete(context.TODO(), path.Join(s.prefix, key))
 	if err != nil {
 		log.SysLog.Errorf("UnregisterService etcd failed",
@@ -125,47 +125,39 @@ func (s *Etcd) UnregisterService(key string) error {
 			"revision", resp.Header.GetRevision(),
 			"key", key,
 		)
-		s.registErr = err
+		s.retry = true
 	}
 	return err
 }
 
 //////////////////////////////////////////////// inner func ///////////////////////////////////////////
-func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelFunc, etcd.WatchChan, context.CancelFunc, bool) {
+func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelFunc, bool) {
 	if s.IsStop() {
-		return nil, nil, nil, nil, false
+		return nil, nil, false
 	}
 
 	s.setLeaseID(invalidLeaseId)
 
+	// Grant authorization to obtain a lease
 	ctx, _ := context.WithTimeout(context.TODO(), timeout)
 	lease, err := s.etcdClient.Grant(ctx, grantTTL)
 	if err != nil {
 		log.SysLog.Errorw("etcd keepAlive create lease failed", "err", err)
-		return nil, nil, nil, nil, false
+		return nil, nil, false
 	}
 
 	ctx, cancelAlive := context.WithCancel(context.TODO())
 	alive, err := s.etcdClient.KeepAlive(ctx, lease.ID)
 	if err != nil {
 		log.SysLog.Errorw("etcd keepAlive failed", "err", err)
-		return alive, cancelAlive, nil, nil, false
+		return alive, cancelAlive, false
 	}
 
 	s.setLeaseID(lease.ID)
 
-	s.registErr = nil
-	if err := s.syncLocalToEtcd(); err != nil {
-		log.SysLog.Errorw("etcd syncLocalToEtcd failed", "err", err)
-		return alive, cancelAlive, nil, nil, false
-	}
-
-	ctx, cancelWatch := context.WithCancel(context.TODO())
-	watch := s.etcdClient.Watch(ctx, s.prefix, etcd.WithPrefix(), etcd.WithPrevKV())
-	s.initAlreadyInEtcd()
-
+	s.retry = false
 	log.SysLog.Infow("etcd keepAlive success!", "lease", s.getLeaseID())
-	return alive, cancelAlive, watch, cancelWatch, true
+	return alive, cancelAlive, true
 }
 
 func (s *Etcd) getLeaseID() etcd.LeaseID {
@@ -176,14 +168,14 @@ func (s *Etcd) setLeaseID(leaseID etcd.LeaseID) {
 	s.leaseId.Store((int64)(leaseID))
 }
 
-func (s *Etcd) initAlreadyInEtcd() {
+func (s *Etcd) fetchNode() {
 	resp, err := etcd.NewKV(s.etcdClient).Get(context.Background(), s.prefix, etcd.WithPrefix())
 	if err != nil {
 		return
 	}
 	for _, kv := range resp.Kvs {
 		key, val := s.shiftStruct(kv)
-		s.hander.OnNewServ(key, val, true)
+		s.handler.OnNewServ(key, val, true)
 	}
 }
 
@@ -199,31 +191,35 @@ func (s *Etcd) syncLocalToEtcd() (err error) {
 }
 
 func (s *Etcd) run() {
-	alive, cancelAlive, watch, cancelWatch, ok := s.keepAlive()
-	defer func() {
-		if cancelAlive != nil {
-			cancelAlive()
-		}
-		if cancelWatch != nil {
-			cancelWatch()
-		}
-	}()
-
+	alive, cancelAlive, ok := s.keepAlive()
 	if !ok {
 		return
 	}
+	defer cancelAlive()
 
-	ticker := time.NewTicker(time.Second * 5) //间隔检查注册错误
+	if err := s.syncLocalToEtcd(); err != nil {
+		log.SysLog.Errorw("failed to synchronize local node to etcd.", "err", err)
+		return
+	}
+
+	ctx, cancelWatch := context.WithCancel(context.TODO())
+	defer cancelWatch()
+	watch := s.etcdClient.Watch(ctx, s.prefix, etcd.WithPrefix(), etcd.WithPrevKV())
+
+	s.fetchNode()
+
+	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ticker.C:
-			if s.registErr != nil || s.IsStop() {
+			if s.retry || s.IsStop() {
 				return
 			}
 		case resp := <-alive:
 			if resp == nil {
+				log.SysLog.Warnw("etcd keepalive response a nil")
 				return
 			}
 		case watchResp := <-watch:
@@ -242,7 +238,7 @@ func (s *Etcd) run() {
 			for _, e := range watchResp.Events {
 				key, val := s.shiftStruct(e.Kv)
 				log.SysLog.Infow("watch etcd", "actorId", key, "revision", revision, "put", e.Type == etcd.EventTypePut)
-				s.hander.OnNewServ(key, val, e.Type == etcd.EventTypePut)
+				s.handler.OnNewServ(key, val, e.Type == etcd.EventTypePut)
 			}
 		}
 	}

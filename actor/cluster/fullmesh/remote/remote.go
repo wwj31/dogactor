@@ -1,10 +1,10 @@
-package remote_provider
+package remote
 
 import (
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 )
 
-type RemoteHandler interface {
+type Handler interface {
 	Address() string
 	OnSessionClosed(peerHost string)
 	OnSessionOpened(peerHost string)

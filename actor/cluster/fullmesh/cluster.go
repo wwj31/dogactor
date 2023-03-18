@@ -9,16 +9,16 @@ import (
 
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/actorerr"
-	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote_provider/remote_tcp"
-	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh_provider/etcd"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote/conntcp"
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh/etcd"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )
 
-func WithRemote(ectdAddr, prefix string) actor.SystemOption {
+func WithRemote(etcdAddr, prefix string) actor.SystemOption {
 	return func(system *actor.System) error {
-		cluster := newCluster(etcd.NewEtcd(ectdAddr, prefix), remote_tcp.NewRemoteMgr())
+		cluster := newCluster(etcd.NewEtcd(etcdAddr, prefix), conntcp.NewRemoteMgr())
 		clusterActor := actor.New("cluster_"+tools.XUID(), cluster, actor.SetLocalized(), actor.SetMailBoxSize(5000))
 		if e := system.Add(clusterActor); e != nil {
 			return fmt.Errorf("%w %v", actorerr.RegisterClusterErr, e)
@@ -46,9 +46,9 @@ type Cluster struct {
 	serviceMesh ServiceMeshProvider
 	remote      RemoteProvider
 
-	actors map[string]string          //actorId=>host
-	hosts  map[string]map[string]bool //host=>actorIds
-	ready  map[string]bool            //host=>true
+	actors map[string]string          //map[actorID]host
+	hosts  map[string]map[string]bool //map[host]actorIds
+	ready  map[string]bool            //map[host]true
 }
 
 func (c *Cluster) OnInit() {
@@ -66,7 +66,6 @@ func (c *Cluster) OnInit() {
 	c.System().OnEvent(c.ID(), c.OnEventSessionClosed)
 	c.System().OnEvent(c.ID(), c.OnEventSessionOpened)
 
-	//c.RegistryCmd("clusterinfo", c.clusterinfo, "information of all cluster actor")
 	c.ready[c.System().Address()] = true
 }
 
@@ -102,7 +101,7 @@ func (c *Cluster) OnHandle(msg actor.Message) {
 	return
 }
 
-// OnNewServ dispatch a new remote
+// OnNewServ dispatch a new remote node
 func (c *Cluster) OnNewServ(actorId, host string, add bool) {
 	c.System().DispatchEvent("", actor.EvClusterUpdate{ActorId: actorId, Host: host, Add: add})
 }
@@ -142,7 +141,7 @@ func (c *Cluster) sendRemote(targetId actor.Id, requestId actor.RequestId, bytes
 func (c *Cluster) watchRemote(actorId actor.Id, host string, add bool) {
 	if add {
 		defer func() {
-			log.SysLog.Infow("remote actor regist",
+			log.SysLog.Infow("remote actor register",
 				"host", host,
 				"actorId", actorId,
 				"ready", c.ready[host],
