@@ -9,7 +9,7 @@ import (
 
 type ILua interface {
 	Load(path string)
-	Register(fname string, f golua.LGFunction)
+	Register(methodName string, f golua.LGFunction)
 	CallFun(name string, ret int, args ...golua.LValue) []golua.LValue
 }
 
@@ -24,22 +24,22 @@ func New() ILua {
 	l.ls = state
 	return l
 }
-func (s *lua) Load(lmain string) {
+func (s *lua) Load(main string) {
 	var err error
-	err = s.ls.DoFile(lmain)
-	expect.Nil(err, "lmain", lmain)
+	err = s.ls.DoFile(main)
+	expect.Nil(err, "main", main)
 
-	dir, _ := path.Split(lmain)
+	dir, _ := path.Split(main)
 	err = s.ls.CallByParam(golua.P{
 		Fn:      s.ls.GetGlobal("main"),
 		NRet:    0,
 		Protect: true,
 	}, golua.LString(dir))
-	expect.Nil(err, "lmain", lmain)
+	expect.Nil(err, "main", main)
 }
 
-func (s *lua) Register(fname string, f golua.LGFunction) {
-	s.ls.Register(fname, f)
+func (s *lua) Register(methodName string, f golua.LGFunction) {
+	s.ls.Register(methodName, f)
 }
 
 func (s *lua) CallFun(name string, ret int, args ...golua.LValue) []golua.LValue {
@@ -49,7 +49,7 @@ func (s *lua) CallFun(name string, ret int, args ...golua.LValue) []golua.LValue
 		Protect: true,
 	}, args...)
 	expect.Nil(err, "name", name)
-	res := []golua.LValue{}
+	var res []golua.LValue
 	for i := -1; i >= -ret; i-- {
 		res = append(res, s.ls.Get(i))
 	}

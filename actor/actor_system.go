@@ -76,11 +76,11 @@ func NewSystem(op ...SystemOption) (*System, error) {
 	go func() {
 		for {
 			select {
-			case actor, ok := <-s.newList:
+			case newcomer, ok := <-s.newList:
 				if !ok {
 					return
 				}
-				s.runActor(actor, nil)
+				s.runActor(newcomer, nil)
 			}
 		}
 	}()
