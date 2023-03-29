@@ -61,32 +61,8 @@ func TimeParse(data string) time.Time {
 	return t
 }
 
-func TimeParseFormat(layout, value string) (time.Time, error) {
-	t, err := time.Parse(layout, value)
-	if err != nil {
-		return TimeZero, err
-	}
-	return t.UTC(), nil
-}
-
-func GetNextHour() time.Time {
-	return Now().Truncate(time.Hour).Add(time.Hour)
-}
-
-func GetNextMinute() time.Time {
-	return Now().Truncate(time.Minute).Add(time.Minute)
-}
-
-func BeginningOfTheDay(t time.Time) time.Time {
-	return t.Truncate(24 * 60 * 60 * time.Second)
-}
-
-func EndingOfTheDay(t time.Time) time.Time {
-	return t.Truncate(24 * 60 * 60 * time.Second).Add(24 * 60 * 60 * time.Second)
-}
-
 // NextIntervalTime 以当天开始时间为初始值 间隔 intervalSeconds触发一次，返回下次触发的时间
-func NextIntervalTime(t1 time.Time, intervalSeconds int) time.Time {
+func NextIntervalTime(t time.Time, intervalSeconds int) time.Time {
 	if intervalSeconds <= 0 {
 		fmt.Println("wrong1 intervalSeconds")
 		return Now()
@@ -95,9 +71,9 @@ func NextIntervalTime(t1 time.Time, intervalSeconds int) time.Time {
 		fmt.Println("wrong2 intervalSeconds")
 	}
 
-	begin := BeginningOfTheDay(t1)
-	duration := int(t1.Sub(begin).Seconds())
+	beginOfDay := NewTimeEx(t).BeginOfToday()
+	duration := int(t.Sub(beginOfDay).Seconds())
 	next := intervalSeconds * (duration/intervalSeconds + 1)
 
-	return begin.Add(time.Second * time.Duration(next))
+	return beginOfDay.Add(time.Second * time.Duration(next))
 }
