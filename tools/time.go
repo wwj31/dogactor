@@ -9,6 +9,7 @@ import (
 
 const (
 	SecondsPerDay = 24 * 60 * 60
+	StdTimeLayout = "2006-01-02 15:04:05"
 )
 
 var (
@@ -48,15 +49,16 @@ func Now() time.Time {
 }
 
 func TimeFormat(data time.Time) string {
-	return data.Format(time.RFC3339Nano)
+	//time.RFC3339Nano
+	return data.Format(StdTimeLayout)
 }
 
 func TimeParse(data string) time.Time {
-	t, err := time.Parse(time.RFC3339Nano, data)
+	t, err := time.ParseInLocation(StdTimeLayout, data, time.Local)
 	if err != nil {
 		return TimeZero
 	}
-	return t.UTC()
+	return t
 }
 
 func TimeParseFormat(layout, value string) (time.Time, error) {
@@ -83,7 +85,7 @@ func EndingOfTheDay(t time.Time) time.Time {
 	return t.Truncate(24 * 60 * 60 * time.Second).Add(24 * 60 * 60 * time.Second)
 }
 
-// 以当天开始时间为初始值 间隔 intervalSeconds触发一次，返回下次触发的时间
+// NextIntervalTime 以当天开始时间为初始值 间隔 intervalSeconds触发一次，返回下次触发的时间
 func NextIntervalTime(t1 time.Time, intervalSeconds int) time.Time {
 	if intervalSeconds <= 0 {
 		fmt.Println("wrong1 intervalSeconds")
