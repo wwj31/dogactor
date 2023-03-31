@@ -1,7 +1,6 @@
 package actor
 
 import (
-	"math"
 	"reflect"
 	"sync/atomic"
 	"time"
@@ -56,37 +55,11 @@ type (
 	}
 )
 
-// New build a new actor
-// id is invalid if contain '@' or '$'
-func New(id Id, handler spawnActor, opt ...Option) *actor {
-	a := &actor{
-		id:      id,
-		handler: handler,
-		mailBox: mailBox{
-			ch: make(chan Message, 100),
-		},
-		remote:   true, // 默认都能被远端发现
-		timerMgr: timer.New(),
-		timer:    globalTimerPool.Get(math.MaxInt),
-		requests: make(map[RequestId]*request),
-	}
-	a.status.Store(starting)
-	a.draining.Store(false)
-	a.timer.Stop()
-
-	handler.initActor(a)
-
-	for _, f := range opt {
-		f(a)
-	}
-	return a
-}
-
 func (s *actor) ID() string      { return s.id }
 func (s *actor) System() *System { return s.system }
 func (s *actor) Exit()           { _ = s.push(actorStop) }
 func (s *actor) Drain(afterDrained ...func()) {
-	s.Request(s.system.cluster.id, &ReqMsgDrain{}, 5*time.Minute).Handle(func(resp interface{}, err error) {
+	s.Request(s.system.clusterId, &ReqMsgDrain{}, 5*time.Minute).Handle(func(resp interface{}, err error) {
 		if err != nil {
 			log.SysLog.Errorw("drain failed ", "err", err)
 			return

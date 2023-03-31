@@ -39,7 +39,7 @@ func main() {
 		time.Sleep(100 * time.Millisecond)
 	}
 
-	_ = system1.Add(actor.New(name, &drainActor1, actor.SetMailBoxSize(50)))
+	_ = system1.NewActor(name, &drainActor1, actor.SetMailBoxSize(50))
 
 	drainActor1.Init = func() {
 		fmt.Println("init drain actor 1")
@@ -51,7 +51,7 @@ func main() {
 			fmt.Println("drain 1")
 			drainActor1.Drain(func() {
 				fmt.Println("drain over drainActor1")
-				system2.Add(actor.New(name, &drainActor2, actor.SetMailBoxSize(100)))
+				_ = system2.NewActor(name, &drainActor2, actor.SetMailBoxSize(100))
 			})
 		})
 	}
@@ -65,7 +65,7 @@ func main() {
 			fmt.Println("drain 2")
 			drainActor2.Drain(func() {
 				fmt.Println("drain over drainActor2")
-				system1.Add(actor.New(name, &drainActor1, actor.SetMailBoxSize(100)))
+				_ = system1.NewActor(name, &drainActor1, actor.SetMailBoxSize(100))
 			})
 		})
 	}

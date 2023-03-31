@@ -46,11 +46,8 @@ func main() {
 	system2, _ := actor.NewSystem(actor.Addr("127.0.0.1:5001"),
 		fullmesh.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.ProtoIndex(protoIndex))
 
-	lilei := actor.New("LiLei", &Student{Name: "LiLei", Age: 19})
-	hanmeimei := actor.New("HanMeimei", &Student{Name: "HanMeimei", Age: 15})
-
-	system1.Add(lilei)
-	system2.Add(hanmeimei)
+	_ = system1.NewActor("LiLei", &Student{Name: "LiLei", Age: 19})
+	_ = system2.NewActor("HanMeimei", &Student{Name: "HanMeimei", Age: 15})
 
 	c := make(chan os.Signal)
 	signal.Notify(c, syscall.SIGKILL, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)

@@ -3,6 +3,7 @@ package actor
 import (
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 	"runtime"
 	"sync"
@@ -16,6 +17,7 @@ import (
 	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/logger"
+	"github.com/wwj31/dogactor/timer"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -38,7 +40,7 @@ type System struct {
 	exiting       int32           // state of stopping
 	actorCache    sync.Map        // all local actor
 	newList       chan *actor     // newcomers
-	cluster       *actor          // exactly one of etcd(based service discovery) or mq
+	clusterId     Id              // exactly one of etcd(based service discovery) or mq
 	requestWaiter string          // implement sync request
 	protoIndex    *tools.ProtoIndex
 	evDispatcher
@@ -65,7 +67,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 	}
 
 	s.requestWaiter = "waiter_" + s.name + "_" + tools.XUID()
-	_ = s.Add(New(s.requestWaiter, &waiter{}))
+	_ = s.NewActor(s.requestWaiter, &waiter{})
 
 	// first,create waiter and cluster
 	for len(s.newList) > 0 {
@@ -104,7 +106,7 @@ func (s *System) Stop() {
 				var actorId string
 
 				s.actorCache.Range(func(key, value interface{}) bool {
-					if key == s.cluster.id || key == s.requestWaiter {
+					if key == s.clusterId || key == s.requestWaiter {
 						return true
 					}
 
@@ -133,8 +135,34 @@ func (s *System) Stop() {
 	}
 }
 
+// NewActor new an actor for system
+// id is invalid if contain '@' or '$'
+func (s *System) NewActor(id Id, handler spawnActor, opt ...Option) error {
+	newer := &actor{
+		id:      id,
+		handler: handler,
+		mailBox: mailBox{
+			ch: make(chan Message, 100),
+		},
+		remote:   true, // 默认都能被远端发现
+		timerMgr: timer.New(),
+		timer:    globalTimerPool.Get(math.MaxInt),
+		requests: make(map[RequestId]*request),
+	}
+	newer.status.Store(starting)
+	newer.draining.Store(false)
+	newer.timer.Stop()
+
+	handler.initActor(newer)
+
+	for _, f := range opt {
+		f(newer)
+	}
+	return s.add(newer)
+}
+
 // Add startup a new actor
-func (s *System) Add(actor *actor) error {
+func (s *System) add(actor *actor) error {
 	if atomic.LoadInt32(&s.exiting) == 1 {
 		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSystemErr, actor.ID())
 	}
@@ -173,7 +201,8 @@ func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg interface{
 	if atr == nil || atr.draining.Load() == true {
 		pt, canRemote := msg.(proto.Message)
 		if canRemote {
-			atr = s.Cluster()
+			v, _ := s.actorCache.Load(s.Cluster())
+			atr = v.(*actor)
 			bytes, marshalErr := proto.Marshal(pt)
 			if marshalErr != nil {
 				return fmt.Errorf("%w %v", actorerr.ProtoMarshalErr, err)
@@ -249,12 +278,12 @@ func (s *System) WaiterId() string {
 	return s.requestWaiter
 }
 
-func (s *System) SetCluster(act *actor) {
-	s.cluster = act
+func (s *System) SetCluster(id Id) {
+	s.clusterId = id
 }
 
-func (s *System) Cluster() *actor {
-	return s.cluster
+func (s *System) Cluster() Id {
+	return s.clusterId
 }
 
 func (s *System) ProtoIndex() *tools.ProtoIndex {

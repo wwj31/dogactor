@@ -29,10 +29,8 @@ type PongActor struct{ actor.Base }
 
 func main() {
 	system, _ := actor.NewSystem()
-	ping := actor.New("ping", &PingActor{})
-	pong := actor.New("pong", &PongActor{})
-	system.Add(ping)
-	system.Add(pong)
+	system.NewActor("ping", &PingActor{})
+	system.NewActor("pong", &PongActor{})
 
 	<-system.CStop
 	fmt.Println("stop")

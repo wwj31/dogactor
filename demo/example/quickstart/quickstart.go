@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/tools"
-	"time"
 )
 
 type PingActor struct{ actor.Base }
@@ -12,10 +13,8 @@ type PongActor struct{ actor.Base }
 
 func main() {
 	system, _ := actor.NewSystem()
-	ping := actor.New("ping", &PingActor{}, actor.SetMailBoxSize(500))
-	pong := actor.New("pong", &PongActor{}, actor.SetMailBoxSize(500))
-	system.Add(ping)
-	system.Add(pong)
+	system.NewActor("ping", &PingActor{}, actor.SetMailBoxSize(500))
+	system.NewActor("pong", &PongActor{}, actor.SetMailBoxSize(500))
 
 	<-system.Stopped
 
