@@ -1,8 +1,9 @@
 package actor
 
 import (
-	lua "github.com/yuin/gopher-lua"
 	"time"
+
+	lua "github.com/yuin/gopher-lua"
 )
 
 type (

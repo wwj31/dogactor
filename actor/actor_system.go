@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+
 	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/expect"
@@ -226,13 +227,9 @@ func (s *System) RequestWait(targetId string, msg interface{}, timeout ...time.D
 	return res.data, res.err
 }
 
-func (s *System) LocalActor(actorId string) *actor {
-	v, ok := s.actorCache.Load(actorId)
-	if ok {
-		return v.(*actor)
-	}
-
-	return nil
+func (s *System) HasActor(actorId string) bool {
+	_, ok := s.actorCache.Load(actorId)
+	return ok
 }
 
 // if ok != nil, caller wait for actor call init to finish
