@@ -9,23 +9,23 @@ type Id = string
 
 type (
 	timer struct {
-		id        Id
-		startAt   time.Time
-		endAt     time.Time
-		callback CallbackFn
-		times    int
-		remove   bool // soft remove flags
-		index     int
+		id          Id
+		startAt     time.Time
+		endAt       time.Time
+		handler     callback
+		repeatCount int
+		remove      bool // soft remove flags
+		index       int
 	}
 )
 
 func (t *timer) spareCount() bool {
-	return t.times > 0 || t.times < 0
+	return t.repeatCount > 0 || t.repeatCount < 0
 }
 
 func (t *timer) consumeCount(count int) {
-	if t.times > 0 {
-		t.times -= min(t.times, count)
+	if t.repeatCount > 0 {
+		t.repeatCount -= min(t.repeatCount, count)
 	}
 }
 

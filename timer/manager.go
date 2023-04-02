@@ -10,7 +10,7 @@ import (
 
 var timerPool = sync.Pool{New: func() interface{} { return new(timer) }}
 
-type CallbackFn func(dt time.Duration)
+type callback func(dt time.Duration)
 
 type Manager struct {
 	timers map[Id]*timer
@@ -27,7 +27,7 @@ func New() *Manager {
 	}
 }
 
-func (m *Manager) Add(now, endAt time.Time, callback CallbackFn, times int, id ...Id) Id {
+func (m *Manager) Add(now, endAt time.Time, timerCallback callback, times int, id ...Id) Id {
 	var timerId Id
 	if len(id) > 0 {
 		timerId = id[0]
@@ -42,8 +42,8 @@ func (m *Manager) Add(now, endAt time.Time, callback CallbackFn, times int, id .
 	if oldTimer, exist := m.timers[timerId]; exist {
 		oldTimer.startAt = now
 		oldTimer.endAt = endAt
-		oldTimer.callback = callback
-		oldTimer.times = times
+		oldTimer.handler = timerCallback
+		oldTimer.repeatCount = times
 		heap.Fix(&m.heap, oldTimer.index)
 		return oldTimer.id
 	}
@@ -52,8 +52,8 @@ func (m *Manager) Add(now, endAt time.Time, callback CallbackFn, times int, id .
 	newTimer.id = timerId
 	newTimer.startAt = now
 	newTimer.endAt = endAt
-	newTimer.callback = callback
-	newTimer.times = times
+	newTimer.handler = timerCallback
+	newTimer.repeatCount = times
 
 	heap.Push(&m.heap, newTimer)
 	m.timers[timerId] = newTimer
@@ -112,8 +112,8 @@ func (m *Manager) processTimer(now time.Time) {
 		headTimer.startAt = headTimer.startAt.Add(elapsedDuration)
 		headTimer.endAt = headTimer.startAt.Add(timerDuration)
 
-		if headTimer.callback != nil {
-			headTimer.callback(elapsedDuration)
+		if headTimer.handler != nil {
+			headTimer.handler(elapsedDuration)
 		}
 	}
 
