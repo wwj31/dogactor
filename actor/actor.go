@@ -104,7 +104,7 @@ func (s *actor) AddTimer(timeId string, endAt time.Time, callback func(dt time.D
 
 // CancelTimer remote a timer with
 func (s *actor) CancelTimer(timerId string) {
-	s.timerMgr.Remove(timerId)
+	s.timerMgr.Cancel(timerId)
 	s.resetTime()
 }
 

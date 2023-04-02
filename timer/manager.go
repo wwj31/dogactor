@@ -60,12 +60,12 @@ func (m *Manager) Add(now, endAt time.Time, callback CallbackFn, times int, id .
 	return newTimer.id
 }
 
-func (m *Manager) Remove(id Id, softRemove ...bool) {
-	var softrm bool
+func (m *Manager) Cancel(id Id, softRemove ...bool) {
+	var soft bool
 	if len(softRemove) > 0 && softRemove[0] {
-		softrm = true
+		soft = true
 	}
-	m.remove(id, softrm)
+	m.remove(id, soft)
 }
 
 func (m *Manager) Len() int {
@@ -88,34 +88,40 @@ func (m *Manager) Update(now time.Time) time.Duration {
 			return headTimer.endAt.Sub(now)
 		}
 
-		if headTimer.remove {
-			m.remove(headTimer.id, false)
-			continue
-		}
+		m.processTimer(now)
+	}
 
-		timerDuration := headTimer.endAt.Sub(headTimer.startAt)
-		totalElapsed := now.Sub(headTimer.startAt)
+	return 0
+}
 
-		if headTimer.spareCount() {
-			count := totalElapsed / timerDuration
-			elapsedDuration := count * timerDuration
+func (m *Manager) processTimer(now time.Time) {
+	headTimer := m.heap.peek()
+	if headTimer.remove {
+		m.remove(headTimer.id, false)
+		return
+	}
 
-			headTimer.consumeCount(int(count))
-			headTimer.startAt = headTimer.startAt.Add(elapsedDuration)
-			headTimer.endAt = headTimer.startAt.Add(timerDuration)
+	timerDuration := headTimer.endAt.Sub(headTimer.startAt)
+	totalElapsed := now.Sub(headTimer.startAt)
 
-			if headTimer.callback != nil {
-				headTimer.callback(elapsedDuration)
-			}
-		}
+	if headTimer.spareCount() {
+		count := totalElapsed / timerDuration
+		elapsedDuration := count * timerDuration
 
-		if headTimer.spareCount() && !headTimer.remove && m.timers[headTimer.id] != nil {
-			heap.Fix(&m.heap, headTimer.index)
-		} else {
-			m.remove(headTimer.id, false)
+		headTimer.consumeCount(int(count))
+		headTimer.startAt = headTimer.startAt.Add(elapsedDuration)
+		headTimer.endAt = headTimer.startAt.Add(timerDuration)
+
+		if headTimer.callback != nil {
+			headTimer.callback(elapsedDuration)
 		}
 	}
-	return 0
+
+	if headTimer.spareCount() && !headTimer.remove && m.timers[headTimer.id] != nil {
+		heap.Fix(&m.heap, headTimer.index)
+	} else {
+		m.remove(headTimer.id, false)
+	}
 }
 
 func (m *Manager) remove(id Id, softRemove bool) {
