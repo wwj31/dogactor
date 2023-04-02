@@ -174,13 +174,15 @@ func (s *System) add(actor *actor) error {
 	}
 
 	s.waitStop.Add(1)
+	var err error
 	tools.Try(
 		func() { s.newList <- actor },
 		func(ex interface{}) {
 			s.waitStop.Done()
 			s.actorCache.Delete(actor.ID())
+			err = fmt.Errorf("add actor failed with exception:%v ", ex)
 		})
-	return nil
+	return err
 }
 
 // Send try to send the message to target

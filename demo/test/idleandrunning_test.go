@@ -11,11 +11,11 @@ import (
 func TestIdleAndRunning(t *testing.T) {
 	system, _ := actor.NewSystem()
 	a := &actor.TmpActor{}
-	_ = system.Add(actor.New("tmp", a))
+	_ = system.NewActor("tmp", a)
 	a.Init = func() {
 		fmt.Println("actor init")
 	}
-	a.HandleMessage = func(sourceId, targetId actor.Id, msg interface{}) {
+	a.Handle = func(msg actor.Message) {
 		fmt.Println("processing msg", msg)
 	}
 
