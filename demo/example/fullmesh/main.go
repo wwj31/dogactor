@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	ETCD_ADDR   = "127.0.0.1:2379"
-	ETCD_PREFIX = "dog"
+	EtcdAddr   = "127.0.0.1:2379"
+	EtcdPrefix = "dog"
 )
 
 type Student struct {
@@ -42,9 +42,9 @@ func main() {
 	}, tools.EnumIdx{})
 
 	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:5000"),
-		fullmesh.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.ProtoIndex(protoIndex))
+		fullmesh.WithRemote(EtcdAddr, EtcdPrefix), actor.ProtoIndex(protoIndex))
 	system2, _ := actor.NewSystem(actor.Addr("127.0.0.1:5001"),
-		fullmesh.WithRemote(ETCD_ADDR, ETCD_PREFIX), actor.ProtoIndex(protoIndex))
+		fullmesh.WithRemote(EtcdAddr, EtcdPrefix), actor.ProtoIndex(protoIndex))
 
 	_ = system1.NewActor("LiLei", &Student{Name: "LiLei", Age: 19})
 	_ = system2.NewActor("HanMeimei", &Student{Name: "HanMeimei", Age: 15})
