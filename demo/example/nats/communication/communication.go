@@ -80,7 +80,7 @@ func (s *Student) OnHandle(v actor.Message) {
 
 		s.Request(v.GetSourceId(), &msg.LileiSay{
 			Data: "it's ok! I will protect you.",
-		}).Handle(func(resp interface{}, err error) {
+		}).Handle(func(resp any, err error) {
 			fmt.Println(resp.(*msg.HanMeimeiSay).Data)
 		})
 

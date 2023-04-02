@@ -94,14 +94,14 @@ func (s *Student) OnHandle(v actor.Message) {
 
 		s.Request(v.GetSourceId(), &msg.LileiSay{
 			Data: "it's ok! I will protect you.",
-		}).Handle(func(resp interface{}, err error) {
+		}).Handle(func(resp any, err error) {
 			log.Infof(resp.(*msg.HanMeimeiSay).Data)
 		})
 
 		s.AddTimer(tools.XUID(), tools.Now().Add(time.Second), func(dt time.Duration) {
 			s.Request("HanMeimei", &msg.LileiSay{
 				Data: "please~",
-			}).Handle(func(resp interface{}, err error) {
+			}).Handle(func(resp any, err error) {
 				log.Infof(resp.(*msg.HanMeimeiSay).Data)
 			})
 		}, -1)

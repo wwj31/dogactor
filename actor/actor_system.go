@@ -186,7 +186,7 @@ func (s *System) add(actor *actor) error {
 }
 
 // Send try to send the message to target
-func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg interface{}) (err error) {
+func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg any) (err error) {
 	defer func() {
 		if err != nil {
 			err = errFormat(err, sourceId, targetId, requestId, reflect.TypeOf(msg).String())
@@ -239,7 +239,7 @@ func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg interface{
 }
 
 // RequestWait sync request
-func (s *System) RequestWait(targetId string, msg interface{}, timeout ...time.Duration) (resp interface{}, err error) {
+func (s *System) RequestWait(targetId string, msg any, timeout ...time.Duration) (resp any, err error) {
 	var t time.Duration
 	if len(timeout) > 0 && timeout[0] > 0 {
 		t = timeout[0]
@@ -250,7 +250,7 @@ func (s *System) RequestWait(targetId string, msg interface{}, timeout ...time.D
 		targetId: targetId,
 		timeout:  t,
 		msg:      msg,
-		c:        waitRsp,
+		response: waitRsp,
 	}))
 
 	// wait to result

@@ -32,30 +32,31 @@ func main() {
 	system.NewActor("ping", &PingActor{})
 	system.NewActor("pong", &PongActor{})
 
-	<-system.CStop
+	<-system.Stopped
+
 	fmt.Println("stop")
 }
 
 // OnInit PingActor
 func (s *PingActor) OnInit() {
-	s.AddTimer("5h4j3kg4a3v9", tools.NowTime()+int64(1*time.Second), func(dt int64) {
-		s.Send("pong", "this is data")
+	s.AddTimer(tools.XUID(), tools.Now().Add(time.Second), func(dt time.Duration) {
+		s.Send("pong", "this is a msg from pong")
 	}, -1)
 }
-func (s *PingActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
-	switch msg {
+func (s *PingActor) OnHandle(msg actor.Message) {
+	switch msg.RawMsg() {
 	case 99999:
-		fmt.Println(sourceId, targetId)
+		fmt.Println(msg.GetSourceId(), msg.GetTargetId())
 		fmt.Println()
 	}
 }
 
-// OnHandleMessage PongActor
-func (s *PongActor) OnHandleMessage(sourceId, targetId string, msg interface{}) {
-	switch msg {
-	case "this is data":
-		fmt.Println(sourceId, targetId)
-		s.Send(sourceId, 99999)
+// OnHandle PongActor
+func (s *PongActor) OnHandle(msg actor.Message) {
+	switch msg.RawMsg() {
+	case "this is a msg from pong":
+		fmt.Println(msg.GetSourceId(), msg.GetTargetId())
+		s.Send(msg.GetSourceId(), 99999)
 	}
 }
 ```

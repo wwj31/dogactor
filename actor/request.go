@@ -40,7 +40,7 @@ type (
 	}
 )
 
-func (s *request) Handle(fn func(resp interface{}, err error)) {
+func (s *request) Handle(fn func(resp any, err error)) {
 	if s.fn != nil {
 		log.SysLog.Errorw("repeated set handle request id", "requestId", s.id)
 		return
@@ -52,7 +52,7 @@ func (s *request) Handle(fn func(resp interface{}, err error)) {
 	}
 }
 
-func (s *actor) Request(targetId string, msg interface{}, timeout ...time.Duration) (req *request) {
+func (s *actor) Request(targetId string, msg any, timeout ...time.Duration) (req *request) {
 	req = requestPool.Get().(*request)
 	req.id = requestId(s.ID(), targetId, s.system.Address())
 	req.sourceId = s.ID()
