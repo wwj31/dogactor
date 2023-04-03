@@ -1,14 +1,13 @@
-//go:build ignored
-
 package internal
 
 import (
 	"context"
 	"errors"
-	"go.uber.org/atomic"
-	"google.golang.org/grpc"
 	"sync"
 	"time"
+
+	"go.uber.org/atomic"
+	"google.golang.org/grpc"
 
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
@@ -23,7 +22,7 @@ func NewClient(host string, newHandler func() Handler) *Client {
 		host:             host,
 		sessionReconnect: make(chan struct{}, 1),
 	}
-	c.newHandler = func() Handler { return &ClientHander{client: c, handler: newHandler()} }
+	c.newHandler = func() Handler { return &ClientHandler{client: c, handler: newHandler()} }
 	return c
 }
 
@@ -105,22 +104,22 @@ func (g *Client) reconnect() {
 	}
 }
 
-type ClientHander struct {
+type ClientHandler struct {
 	BaseHandler
 	client  *Client
 	handler Handler
 }
 
-func (s *ClientHander) OnSessionCreated() {
+func (s *ClientHandler) OnSessionCreated() {
 	s.handler.setSession(s.BaseHandler.Session)
 	s.handler.OnSessionCreated()
 }
 
-func (s *ClientHander) OnSessionClosed() {
+func (s *ClientHandler) OnSessionClosed() {
 	s.handler.OnSessionClosed()
 	s.client.sessionReconnect <- struct{}{}
 }
 
-func (s *ClientHander) OnRecv(msg *actor_msg.ActorMessage) {
+func (s *ClientHandler) OnRecv(msg *actor_msg.ActorMessage) {
 	s.handler.OnRecv(msg)
 }

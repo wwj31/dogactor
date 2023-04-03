@@ -2,6 +2,7 @@ package conngrpc
 
 import (
 	"errors"
+
 	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote"
 	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote/conngrpc/internal"
 
@@ -70,7 +71,6 @@ func (s *RemoteMgr) StopClient(host string) {
 	}
 }
 
-// 远端actor发送消息
 func (s *RemoteMgr) SendMsg(addr string, netMsg *actor_msg.ActorMessage) error {
 	session, ok := s.sessions.Get(addr)
 	if !ok {
@@ -79,7 +79,7 @@ func (s *RemoteMgr) SendMsg(addr string, netMsg *actor_msg.ActorMessage) error {
 	return session.(*remoteHandler).Send(netMsg)
 }
 
-///////////////////////////////////////// remoteHandler /////////////////////////////////////////////
+// /////////////////////////////////////// remoteHandler /////////////////////////////////////////////
 type remoteHandler struct {
 	internal.BaseHandler
 

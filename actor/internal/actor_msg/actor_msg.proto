@@ -19,5 +19,4 @@ message RequestDeadLetter
 
 service ActorService {
     rpc Receive(stream actor_msg.ActorMessage) returns (stream actor_msg.ActorMessage);
-    rpc Test(stream actor_msg.ActorMessage)returns (actor_msg.ActorMessage);
 }

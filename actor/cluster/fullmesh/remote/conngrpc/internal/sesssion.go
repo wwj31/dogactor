@@ -1,12 +1,11 @@
-//go:build ignored
-
 package internal
 
 import (
 	"errors"
+	"sync"
+
 	"go.uber.org/atomic"
 	"google.golang.org/grpc"
-	"sync"
 
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
