@@ -29,8 +29,6 @@ const (
 	DefaultSysAddr = ":8888"
 )
 
-type SystemOption func(*System) error
-
 type System struct {
 	Stopped chan struct{}
 
@@ -290,6 +288,8 @@ func (s *System) ProtoIndex() *tools.ProtoIndex {
 	return s.protoIndex
 }
 
+type SystemOption func(*System) error
+
 // ProtoIndex index proto struct
 func ProtoIndex(pi *tools.ProtoIndex) SystemOption {
 	return func(system *System) error {
@@ -314,14 +314,15 @@ func Name(name string) SystemOption {
 
 func LogLevel(level logger.Level) SystemOption {
 	return func(system *System) error {
-		log.Option.Level = level
+		log.SysLogOption.Level = level
 		return nil
 	}
 }
 
 func Output(out io.Writer) SystemOption {
 	return func(system *System) error {
-		log.Option.ExtraWriter = append(log.Option.ExtraWriter, out)
+		log.SysLogOption.ExtraWriter = append(log.SysLogOption.ExtraWriter, out)
+		log.SysLogOption.LogPath = ""
 		return nil
 	}
 }
