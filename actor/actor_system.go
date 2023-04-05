@@ -139,12 +139,10 @@ func (s *System) Stop() {
 // id is invalid if contain '@' or '$'
 func (s *System) NewActor(id Id, handler spawnActor, opt ...Option) error {
 	newer := &actor{
-		id:      id,
-		handler: handler,
-		mailBox: mailBox{
-			ch: make(chan Message, 100),
-		},
-		remote:   true, // 默认都能被远端发现
+		id:       id,
+		handler:  handler,
+		mailBox:  mailBox{ch: make(chan Message, 100)},
+		remote:   true,
 		timerMgr: timer.New(),
 		timer:    globalTimerPool.Get(math.MaxInt),
 		requests: make(map[RequestId]*request),

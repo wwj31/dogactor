@@ -5,7 +5,6 @@ import (
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 	"sync"
-	"sync/atomic"
 )
 
 var (
@@ -18,13 +17,11 @@ func init() {
 
 func NewActorMessage() *ActorMessage {
 	msg := _msgPool.Get().(*ActorMessage)
-	atomic.StoreInt32(&msg.free, 1)
 	return msg
 }
 
 type ActorMessage struct {
 	pool    *sync.Pool
-	free    int32
 	message interface{}
 
 	SourceId   string            `protobuf:"bytes,1,opt,name=SourceId,proto3" json:"SourceId,omitempty"`
@@ -35,51 +32,44 @@ type ActorMessage struct {
 	MapCarrier map[string]string `protobuf:"bytes,6,rep,name=MapCarrier,proto3" json:"MapCarrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
-func (s *ActorMessage) RawMsg() interface{} {
-	return s.message
+func (m *ActorMessage) RawMsg() interface{} {
+	return m.message
 }
 
-func (msg *ActorMessage) Free() {
-	if msg.pool != nil && atomic.CompareAndSwapInt32(&msg.free, 1, 0) {
-		msg.message = nil
-		msg.SourceId = ""
-		msg.TargetId = ""
-		msg.RequestId = ""
-		msg.MsgName = ""
-		msg.MapCarrier = nil
-		msg.Data = nil
-		msg.pool.Put(msg)
+func (m *ActorMessage) Free() {
+	if m.pool != nil {
+		m.message = nil
+		m.SourceId = ""
+		m.TargetId = ""
+		m.RequestId = ""
+		m.MsgName = ""
+		m.MapCarrier = nil
+		m.Data = nil
+		m.pool.Put(m)
 	}
 }
 
-func (msg *ActorMessage) LockFree() {
-	atomic.StoreInt32(&msg.free, 0)
-}
-func (msg *ActorMessage) UnlockFree() {
-	atomic.StoreInt32(&msg.free, 1)
+func (m *ActorMessage) SetMessage(v interface{}) {
+	m.message = v
 }
 
-func (s *ActorMessage) SetMessage(v interface{}) {
-	s.message = v
-}
-
-func (msg *ActorMessage) Fill(pi *tools.ProtoIndex) interface{} {
+func (m *ActorMessage) Fill(pi *tools.ProtoIndex) interface{} {
 	if pi == nil {
 		log.SysLog.Errorf("protoIndex is nil")
 		return nil
 	}
-	pt, ok := pi.FindMsgByName(msg.MsgName)
+	pt, ok := pi.FindMsgByName(m.MsgName)
 	if !ok {
-		log.SysLog.Errorf("msg not found", "MsgName", msg.MsgName)
+		log.SysLog.Errorf("msg not found", "MsgName", m.MsgName)
 		return nil
 	}
 
-	if msg.Data == nil {
+	if m.Data == nil {
 		return pt
 	}
 
-	if err := proto.Unmarshal(msg.Data, pt.(proto.Message)); err != nil {
-		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", msg.MsgName)
+	if err := proto.Unmarshal(m.Data, pt.(proto.Message)); err != nil {
+		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", m.MsgName)
 		return nil
 	}
 	return pt
