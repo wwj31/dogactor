@@ -51,7 +51,7 @@ func New(opt Option) *Logger {
 
 	// zap
 	cfg := zap.NewProductionEncoderConfig()
-	cfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	cfg.EncodeLevel = zapcore.CapitalLevelEncoder
 	cfg.EncodeTime = func(t time.Time, encoder zapcore.PrimitiveArrayEncoder) {
 		defaultFormat := "2006-01-02 15:04:05.000"
 		defaultFormat = time.RFC3339

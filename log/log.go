@@ -5,8 +5,8 @@ import (
 )
 
 var (
-	SysLog *logger.Logger
-	Option = defaultOption
+	SysLog       *logger.Logger
+	SysLogOption = defaultOption
 
 	defaultOption = logger.Option{
 		Level:          logger.InfoLevel,
@@ -21,6 +21,5 @@ var (
 )
 
 func Init() {
-	SysLog = logger.New(Option)
-	SysLog.Color(logger.Cyan)
+	SysLog = logger.New(SysLogOption)
 }
