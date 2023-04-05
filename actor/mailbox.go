@@ -1,10 +1,10 @@
 package actor
 
 import (
-	"github.com/wwj31/dogactor/tools"
 	"time"
 
 	"github.com/wwj31/dogactor/log"
+	"github.com/wwj31/dogactor/tools"
 )
 
 type mailBox struct {
@@ -24,6 +24,6 @@ func (m *mailBox) recording(t time.Time, msgName string) {
 	}
 }
 
-func (m *mailBox) Empty() bool {
+func (m *mailBox) empty() bool {
 	return len(m.ch) == 0
 }

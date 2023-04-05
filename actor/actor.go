@@ -13,6 +13,8 @@ import (
 	"github.com/wwj31/dogactor/tools"
 )
 
+var stopMsg = &actor_msg.ActorMessage{MsgName: "actorStop"}
+
 const (
 	starting = iota + 1
 	idle
@@ -22,42 +24,41 @@ const (
 
 type Id = string
 
-type (
-	Option func(*actor)
-	actor  struct {
-		system *System
+type actor struct {
+	system *System
 
-		id      Id
-		handler actorHandler
-		mailBox mailBox
+	id      Id
+	handler actorHandler
+	mailBox mailBox
 
-		remote bool
+	remote bool
 
-		// timer
-		timerMgr *timer.Manager
-		timer    *time.Timer
-		nextAt   time.Time
+	// timer
+	timerMgr *timer.Manager
+	timer    *time.Timer
+	nextAt   time.Time
 
-		//lua
-		lua     script.ILua
-		luapath string
+	//lua
+	lua     script.ILua
+	luaPath string
 
-		// record Request msg and delete after done
-		requests map[RequestId]*request
+	// record Request msg and delete after done
+	requests map[RequestId]*request
 
-		// actor status schedule
-		status   atomic.Value
-		handleAt time.Time
+	// actor status schedule
+	status   atomic.Value
+	handleAt time.Time
 
-		// drain
-		draining     atomic.Value
-		afterDrained []func()
-	}
-)
+	// the draining mode is a safe exit mode provided for
+	// the purpose of securely and seamlessly transitioning an actor from
+	// one system to another for continued run.
+	draining     atomic.Value
+	afterDrained []func()
+}
 
 func (s *actor) ID() string      { return s.id }
 func (s *actor) System() *System { return s.system }
-func (s *actor) Exit()           { _ = s.push(actorStop) }
+func (s *actor) Exit()           { _ = s.push(stopMsg) }
 func (s *actor) Drain(afterDrained ...func()) {
 	s.Request(s.system.clusterId, &ReqMsgDrain{}, 5*time.Minute).Handle(func(resp any, err error) {
 		if err != nil {
@@ -102,7 +103,6 @@ func (s *actor) AddTimer(timeId string, endAt time.Time, callback func(dt time.D
 	return timeId
 }
 
-// CancelTimer remote a timer with
 func (s *actor) CancelTimer(timerId string) {
 	s.timerMgr.Cancel(timerId)
 	s.resetTime()
@@ -114,10 +114,7 @@ func (s *actor) push(msg Message) error {
 	}
 
 	if l, c := len(s.mailBox.ch), cap(s.mailBox.ch); l > c*2/3 {
-		log.SysLog.Warnw("mail box is almost full",
-			"len", l,
-			"cap", c,
-			"actorId", s.id)
+		log.SysLog.Warnw("mail box is almost full", "len", l, "cap", c, "actorId", s.id)
 	}
 
 	deadline := globalTimerPool.Get(time.Minute)
@@ -131,10 +128,6 @@ func (s *actor) push(msg Message) error {
 	s.activate()
 	return nil
 }
-
-var (
-	actorStop = &actor_msg.ActorMessage{MsgName: "actorStop"} // actor stop msg
-)
 
 func (s *actor) init(ok chan<- struct{}) {
 	tools.Try(s.handler.OnInit)
@@ -153,6 +146,7 @@ func (s *actor) activate() {
 	}
 }
 
+// actor event loop
 func (s *actor) run() {
 	idleTicker := time.NewTicker(time.Minute)
 	defer idleTicker.Stop()
@@ -169,7 +163,7 @@ func (s *actor) run() {
 			s.handleAt = tools.Now()
 			msg.Free()
 
-			if s.draining.Load() == true && s.mailBox.Empty() {
+			if s.draining.Load() == true && s.mailBox.empty() {
 				for _, fn := range s.afterDrained {
 					fn()
 				}
@@ -203,7 +197,7 @@ func (s *actor) run() {
 					s.activate()
 				}
 
-				// there are the return just for idle with the mailBox was empty and the timerMgr was empty
+				// there are the return just for idle state when both the mailBox and the timerMgr are empty
 				return
 			}
 
@@ -213,29 +207,23 @@ func (s *actor) run() {
 
 func (s *actor) handleMsg(msg Message) {
 	rawMsg := msg.RawMsg()
+	if rawMsg == nil {
+		return
+	}
 
-	var msgType string
-	// message is ActorMessage when msg from remote OnRecv
+	// if the message comes from a cluster, it can be asserted
+	// that it's an ActorMessage representing that the message
+	// was sent from a remote location,otherwise,it can be used directly.
 	if actMsg, ok := rawMsg.(*actor_msg.ActorMessage); ok {
 		if actMsg.MsgName != "" {
 			defer actMsg.Free()
-			msgType = actMsg.GetMsgName()
 			rawMsg = actMsg.Fill(s.system.protoIndex)
 			actMsg.SetMessage(rawMsg)
 			msg = actMsg
 		}
 	}
 
-	if rawMsg == nil {
-		return
-	}
-
-	if msgType == "" {
-		msgType = reflect.TypeOf(rawMsg).String()
-	}
-
-	s.mailBox.processingTime = 0
-	defer s.mailBox.recording(tools.Now(), msgType)
+	defer s.mailBox.recording(tools.Now(), msg.GetMsgName())
 
 	reqId := RequestId(msg.GetRequestId())
 	reqSourceId, _, _, _ := reqId.Parse()
@@ -256,19 +244,19 @@ func (s *actor) handleMsg(msg Message) {
 
 // system close
 func (s *actor) stop() {
-	var stop bool
+	var canceled bool
 	tools.Try(func() {
-		stop = s.handler.OnStop()
+		canceled = s.handler.OnStop()
 	}, func(ex interface{}) {
-		stop = true
+		canceled = true
 	})
 
-	if stop {
-		_ = s.push(actorStop)
+	if canceled {
+		_ = s.push(stopMsg)
 	}
 }
 
-// resetTime reset timer of timerMgr
+// resetTime reset the timer of the timerMgr
 func (s *actor) resetTime(n ...time.Time) {
 	reset := func(nt time.Time) {
 		globalTimerPool.Put(s.timer)
@@ -293,14 +281,14 @@ func (s *actor) resetTime(n ...time.Time) {
 
 func (s *actor) isStop(msg Message) bool {
 	message, ok := msg.(*actor_msg.ActorMessage)
-	if ok && message == actorStop {
+	if ok && message == stopMsg {
 		return true
 	}
 	return false
 }
 
 func (s *actor) isDrained() bool {
-	return s.draining.Load() == true && s.mailBox.Empty()
+	return s.draining.Load() == true && s.mailBox.empty()
 }
 
 func (s *actor) exit(emitEvent bool) {
@@ -315,7 +303,8 @@ func (s *actor) exit(emitEvent bool) {
 	s.system.waitStop.Done()
 }
 
-// Extra Option //////////
+// Option the extra options of the new actor
+type Option func(*actor)
 
 func SetMailBoxSize(boxSize int) Option {
 	return func(a *actor) {
@@ -323,6 +312,8 @@ func SetMailBoxSize(boxSize int) Option {
 	}
 }
 
+// SetLocalized indicates that it can't be discovered
+// by other System, meaning, this actor is localized.
 func SetLocalized() Option {
 	return func(a *actor) {
 		a.remote = false
@@ -333,7 +324,7 @@ func SetLua(path string) Option {
 	return func(a *actor) {
 		a.lua = script.New()
 		a.register2Lua()
-		a.luapath = path
-		a.lua.Load(a.luapath)
+		a.luaPath = path
+		a.lua.Load(a.luaPath)
 	}
 }
