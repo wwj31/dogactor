@@ -43,7 +43,8 @@ func (s *ProtoIndex) UnmarshalPbMsg(msgId int32, data []byte) proto.Message {
 	}
 
 	_, ptName, _ := strings.Cut(enumName, s.enum.Prefix)
-	v, ok := s.structByName(ptName)
+	fullName := s.enum.PackageName + "." + ptName
+	v, ok := s.structByName(fullName)
 	if !ok {
 		log.SysLog.Errorw("cannot find enumName", "msgId", msgId, "enumName", enumName)
 		return nil
@@ -63,9 +64,10 @@ func (s *ProtoIndex) MsgIdToName(msgId int32) (msgName string, ok bool) {
 	if !ok {
 		return
 	}
-	_, ptName, _ := strings.Cut(enumName, s.enum.Prefix)
 
-	return ptName, ok
+	_, ptName, _ := strings.Cut(enumName, s.enum.Prefix)
+	fullName := s.enum.PackageName + "." + ptName
+	return fullName, ok
 }
 
 func (s *ProtoIndex) MsgNameToId(msgName string) (msgId int32, ok bool) {
