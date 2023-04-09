@@ -29,7 +29,7 @@ type (
 	}
 
 	Drainer interface {
-		Drain(afterDrained ...func())
+		Drain(afterDrained func(), timeout ...time.Duration)
 		isDraining() bool
 	}
 

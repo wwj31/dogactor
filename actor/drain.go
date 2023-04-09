@@ -16,7 +16,7 @@ type drain struct {
 	*Base
 
 	draining     atomic.Value
-	afterDrained []func()
+	afterDrained func()
 }
 
 type drained struct{}
@@ -36,8 +36,13 @@ func newDrain(base *Base) *drain {
 	return dr
 }
 
-func (s *drain) Drain(afterDrained ...func()) {
-	s.Request(s.System().clusterId, &internal.ReqMsgDrain{}, 5*time.Minute).Handle(func(resp any, err error) {
+func (s *drain) Drain(afterDrained func(), timeout ...time.Duration) {
+	dur := 3 * time.Minute
+	if len(timeout) > 0 {
+		dur = timeout[0]
+	}
+
+	s.Request(s.System().clusterId, &internal.ReqMsgDrain{}, dur).Handle(func(resp any, err error) {
 		if err != nil {
 			log.SysLog.Errorw("drain failed ", "err", err)
 			return
@@ -65,8 +70,8 @@ func (s *drain) isDraining() bool {
 }
 
 func (s *drain) drained() {
-	for _, fn := range s.afterDrained {
-		fn()
+	if s.afterDrained != nil {
+		s.afterDrained()
 	}
 	s.Exit()
 }

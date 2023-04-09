@@ -2,7 +2,7 @@ package actor
 
 import "github.com/wwj31/dogactor/log"
 
-// create actor by Base anonymously,example:
+// create the actor by Base anonymously,for example:
 // type MyActor struct{
 // 	 Base
 // }
@@ -19,9 +19,9 @@ func (s *Base) Exit() {
 	s.Actor.Exit()
 }
 
-func (s *Base) OnInit()              { log.SysLog.Warnw("actor default init", "actorId", s.ID()) }
-func (s *Base) OnHandle(msg Message) { log.SysLog.Errorw("actor default hande", "actorId", s.ID()) }
-func (s *Base) OnStop() bool         { return true }
+func (s *Base) OnInit()          { log.SysLog.Warnw("must override OnInit", "actorId", s.ID()) }
+func (s *Base) OnHandle(Message) { log.SysLog.Errorw("must override OnHandle", "actorId", s.ID()) }
+func (s *Base) OnStop() bool     { return true }
 
 func (s *Base) initActor(actor Actor) {
 	s.Actor = actor
@@ -30,7 +30,7 @@ func (s *Base) initActor(actor Actor) {
 	s.Drainer = newDrain(s)
 }
 
-// create functional actor by BaseFunc ,example:
+// create the functional actor by BaseFunc ,for example:
 // bar := BaseFunc{}
 // bar.Init = func(){}
 // bar.Handle = func(msg Message){}
