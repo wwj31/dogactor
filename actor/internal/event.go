@@ -1,25 +1,13 @@
-package actor
-
-type EvNewActor struct {
-	ActorId     Id
-	Publish     bool
-	FromCluster bool
-}
-
-type EvDelActor struct {
-	ActorId     Id
-	Publish     bool
-	FromCluster bool
-}
+package internal
 
 type EvClusterUpdate struct {
-	ActorId Id
+	ActorId string
 	Host    string
 	Add     bool
 }
 
 type EvActorSubMqFin struct {
-	ActorId Id
+	ActorId string
 }
 
 type EvSessionClosed struct {

@@ -10,7 +10,6 @@ import (
 
 	"github.com/wwj31/dogactor/actor/cluster/mq"
 	"github.com/wwj31/dogactor/log"
-	"github.com/wwj31/dogactor/tools"
 )
 
 // https://github.com/nats-io/nats.go
@@ -150,11 +149,9 @@ func (n *Nats) SubASync(subject string, callback func(data []byte)) (err error) 
 				}
 			}
 
-			tools.Try(func() {
-				for _, msg := range msgs {
-					callback(msg.Data)
-				}
-			})
+			for _, msg := range msgs {
+				callback(msg.Data)
+			}
 		}
 	}()
 

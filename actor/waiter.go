@@ -1,6 +1,7 @@
 package actor
 
 import (
+	"github.com/wwj31/dogactor/timer"
 	"reflect"
 	"time"
 
@@ -29,14 +30,14 @@ func (s *waiter) OnHandle(msg Message) {
 	case *requestWait:
 		s.Request(data.targetId, data.msg, data.timeout).Handle(func(resp any, er error) {
 			go func() {
-				deadline := globalTimerPool.Get(10 * time.Second)
+				deadline := timer.Get(10 * time.Second)
 				select {
 				case data.response <- result{data: resp, err: er}:
 				case <-deadline.C:
 					log.SysLog.Warnw("waiter result put time out sourceId:%v targetId:%v", msg.GetSourceId(), data.targetId)
 					break
 				}
-				globalTimerPool.Put(deadline)
+				timer.Put(deadline)
 			}()
 		})
 

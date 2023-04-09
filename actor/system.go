@@ -3,7 +3,6 @@ package actor
 import (
 	"fmt"
 	"io"
-	"math"
 	"reflect"
 	"runtime"
 	"sync"
@@ -14,10 +13,8 @@ import (
 
 	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/internal/actor_msg"
-	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/logger"
-	"github.com/wwj31/dogactor/timer"
 	"github.com/wwj31/dogactor/tools"
 )
 
@@ -137,17 +134,28 @@ func (s *System) Stop() {
 // id is invalid if contain '@' or '$'
 func (s *System) NewActor(id Id, handler spawnActor, opt ...Option) error {
 	newer := &actor{
+		system:   s,
 		id:       id,
 		handler:  handler,
+		msgChain: make([]func(message Message) bool, 0, 1),
 		mailBox:  mailBox{ch: make(chan Message, 100)},
 		remote:   true,
-		timerMgr: timer.New(),
-		timer:    globalTimerPool.Get(math.MaxInt),
-		requests: make(map[RequestId]*request),
 	}
+
+	newer.AppendHandler(func(message Message) bool {
+		handler.OnHandle(message)
+		return false
+	})
+
+	newer.AppendHandler(func(message Message) bool {
+		if fn, ok := message.RawMsg().(func()); ok {
+			fn()
+			return false
+		}
+		return true
+	})
+
 	newer.status.Store(starting)
-	newer.draining.Store(false)
-	newer.timer.Stop()
 
 	handler.initActor(newer)
 
@@ -162,8 +170,6 @@ func (s *System) add(actor *actor) error {
 	if atomic.LoadInt32(&s.exiting) == 1 {
 		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSystemErr, actor.ID())
 	}
-
-	actor.system = s
 
 	if _, has := s.actorCache.LoadOrStore(actor.ID(), actor); has {
 		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSameIdErr, actor.ID())
@@ -194,9 +200,9 @@ func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg any) (err 
 		atr = localActor.(*actor)
 	}
 
-	// when the actor into draining or not found locally,
+	// when the actor into draining mode or not found locally,
 	// send the message to the cluster.
-	if atr == nil || atr.draining.Load() == true {
+	if drainer, ok := atr.handler.(Drainer); (ok && drainer.Draining()) || atr == nil {
 		pt, canRemote := msg.(proto.Message)
 		if canRemote {
 			v, _ := s.actorCache.Load(s.Cluster())
@@ -232,26 +238,6 @@ func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg any) (err 
 	localMsg.SetMessage(msg)
 
 	return atr.push(localMsg)
-}
-
-// RequestWait sync request
-func (s *System) RequestWait(targetId string, msg any, timeout ...time.Duration) (resp any, err error) {
-	var t time.Duration
-	if len(timeout) > 0 && timeout[0] > 0 {
-		t = timeout[0]
-	}
-
-	waitRsp := make(chan result)
-	expect.Nil(s.Send("", s.requestWaiter, "", &requestWait{
-		targetId: targetId,
-		timeout:  t,
-		msg:      msg,
-		response: waitRsp,
-	}))
-
-	// wait to result
-	res := <-waitRsp
-	return res.data, res.err
 }
 
 func (s *System) HasActor(actorId string) bool {

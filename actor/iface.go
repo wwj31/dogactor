@@ -11,11 +11,8 @@ type (
 		ID() string
 		System() *System
 		Exit()
-		Drain(afterDrained ...func())
+		AppendHandler(fn func(message Message) bool)
 		CallLua(name string, ret int, args ...lua.LValue) []lua.LValue
-
-		Timer
-		Messenger
 	}
 
 	Timer interface {
@@ -28,6 +25,11 @@ type (
 		Request(targetId Id, msg any, timeout ...time.Duration) (req *request)
 		RequestWait(targetId Id, msg any, timeout ...time.Duration) (result interface{}, err error)
 		Response(requestId string, msg any) error
+	}
+
+	Drainer interface {
+		Drain(afterDrained ...func())
+		Draining() bool
 	}
 
 	Message interface {

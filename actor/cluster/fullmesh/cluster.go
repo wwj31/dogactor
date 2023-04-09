@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/wwj31/dogactor/actor/event"
+	"github.com/wwj31/dogactor/actor/internal"
 	"reflect"
 	"sort"
 
@@ -108,7 +110,7 @@ func (c *Cluster) OnHandle(msg actor.Message) {
 
 // OnNewServ dispatch a new remote node
 func (c *Cluster) OnNewServ(actorId, host string, add bool) {
-	c.System().DispatchEvent("", actor.EvClusterUpdate{ActorId: actorId, Host: host, Add: add})
+	c.System().DispatchEvent("", internal.EvClusterUpdate{ActorId: actorId, Host: host, Add: add})
 }
 
 ////////////////////////////////////// RemoteHandler /////////////////////////////////////////////////////////////////
@@ -117,10 +119,10 @@ func (c *Cluster) Address() string {
 	return c.System().Address()
 }
 func (c *Cluster) OnSessionClosed(peerHost string) {
-	c.System().DispatchEvent(c.ID(), actor.EvSessionClosed{PeerHost: peerHost})
+	c.System().DispatchEvent(c.ID(), internal.EvSessionClosed{PeerHost: peerHost})
 }
 func (c *Cluster) OnSessionOpened(peerHost string) {
-	c.System().DispatchEvent(c.ID(), actor.EvSessionOpened{PeerHost: peerHost})
+	c.System().DispatchEvent(c.ID(), internal.EvSessionOpened{PeerHost: peerHost})
 }
 
 func (c *Cluster) OnSessionRecv(msg *actor_msg.ActorMessage) {
@@ -152,7 +154,7 @@ func (c *Cluster) watchRemote(actorId actor.Id, host string, add bool) {
 				"ready", c.ready[host],
 			)
 			if c.ready[host] {
-				c.System().DispatchEvent(c.ID(), actor.EvNewActor{ActorId: actorId, FromCluster: true})
+				c.System().DispatchEvent(c.ID(), event.EvNewActor{ActorId: actorId, FromCluster: true})
 			}
 		}()
 
@@ -183,7 +185,7 @@ func (c *Cluster) delRemoteActor(actorId actor.Id) {
 	old := c.actors[actorId]
 	delete(c.actors, actorId)
 
-	c.System().DispatchEvent(c.ID(), actor.EvDelActor{ActorId: actorId, FromCluster: true})
+	c.System().DispatchEvent(c.ID(), event.EvDelActor{ActorId: actorId, FromCluster: true})
 
 	if actors, ok := c.hosts[old]; ok {
 		delete(actors, actorId)
@@ -195,42 +197,42 @@ func (c *Cluster) delRemoteActor(actorId actor.Id) {
 	}
 }
 
-func (c *Cluster) OnEventNewActor(event actor.EvNewActor) {
+func (c *Cluster) OnEventNewActor(event event.EvNewActor) {
 	if event.Publish {
 		_ = c.serviceMesh.RegisterService(event.ActorId, c.System().Address())
 	}
 }
 
-func (c *Cluster) OnEventDelActor(event actor.EvDelActor) {
-	if !event.FromCluster && event.Publish {
-		_ = c.serviceMesh.UnregisterService(event.ActorId)
+func (c *Cluster) OnEventDelActor(ev event.EvDelActor) {
+	if !ev.FromCluster && ev.Publish {
+		_ = c.serviceMesh.UnregisterService(ev.ActorId)
 	}
 
 	// 等待requestWaiter退出后，才能退出Cluster
-	if event.ActorId == c.System().WaiterId() {
+	if ev.ActorId == c.System().WaiterId() {
 		log.SysLog.Infow("waiter was stopped")
 		c.stop()
 	}
 }
 
-func (c *Cluster) OnEventClusterUpdate(event actor.EvClusterUpdate) {
+func (c *Cluster) OnEventClusterUpdate(event internal.EvClusterUpdate) {
 	c.watchRemote(event.ActorId, event.Host, event.Add)
 }
 
-func (c *Cluster) OnEventSessionClosed(event actor.EvSessionClosed) {
-	delete(c.ready, event.PeerHost)
+func (c *Cluster) OnEventSessionClosed(ev internal.EvSessionClosed) {
+	delete(c.ready, ev.PeerHost)
 	for actorId, host := range c.actors {
-		if host == event.PeerHost {
-			c.System().DispatchEvent(c.ID(), actor.EvDelActor{ActorId: actorId, FromCluster: true})
+		if host == ev.PeerHost {
+			c.System().DispatchEvent(c.ID(), event.EvDelActor{ActorId: actorId, FromCluster: true})
 		}
 	}
 }
 
-func (c *Cluster) OnEventSessionOpened(event actor.EvSessionOpened) {
-	c.ready[event.PeerHost] = true
+func (c *Cluster) OnEventSessionOpened(ev internal.EvSessionOpened) {
+	c.ready[ev.PeerHost] = true
 	for actorId, host := range c.actors {
-		if host == event.PeerHost {
-			c.System().DispatchEvent(c.ID(), actor.EvNewActor{ActorId: actorId, FromCluster: true})
+		if host == ev.PeerHost {
+			c.System().DispatchEvent(c.ID(), event.EvNewActor{ActorId: actorId, FromCluster: true})
 		}
 	}
 }

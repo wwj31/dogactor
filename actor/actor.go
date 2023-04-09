@@ -1,7 +1,7 @@
 package actor
 
 import (
-	"reflect"
+	"github.com/wwj31/dogactor/actor/event"
 	"sync/atomic"
 	"time"
 
@@ -27,86 +27,26 @@ type Id = string
 type actor struct {
 	system *System
 
-	id      Id
-	handler actorHandler
-	mailBox mailBox
+	id       Id
+	handler  actorHandler
+	msgChain []func(message Message) bool
+	mailBox  mailBox
 
 	remote bool
-
-	// timer
-	timerMgr *timer.Manager
-	timer    *time.Timer
-	nextAt   time.Time
 
 	//lua
 	lua     script.ILua
 	luaPath string
 
-	// record Request msg and delete after done
-	requests map[RequestId]*request
-
 	// actor status schedule
-	status   atomic.Value
-	handleAt time.Time
-
-	// the draining mode is a safe exit mode provided for
-	// the purpose of securely and seamlessly transitioning an actor from
-	// one system to another for continued run.
-	draining     atomic.Value
-	afterDrained []func()
+	status         atomic.Value
+	handleLatestAt time.Time
 }
 
-func (s *actor) ID() string      { return s.id }
-func (s *actor) System() *System { return s.system }
-func (s *actor) Exit()           { _ = s.push(stopMsg) }
-func (s *actor) Drain(afterDrained ...func()) {
-	s.Request(s.system.clusterId, &ReqMsgDrain{}, 5*time.Minute).Handle(func(resp any, err error) {
-		if err != nil {
-			log.SysLog.Errorw("drain failed ", "err", err)
-			return
-		}
-
-		respMsgDrain, ok := resp.(*RespMsgDrain)
-		if !ok {
-			log.SysLog.Errorw("drain resp failed  ", "resp", reflect.TypeOf(resp).String())
-			return
-		}
-
-		if respMsgDrain.Err != nil {
-			log.SysLog.Errorw("drain return err ", "err", respMsgDrain.Err)
-			return
-		}
-
-		s.afterDrained = afterDrained
-		s.draining.Store(true)
-	})
-}
-
-func (s *actor) Send(targetId string, msg any) error {
-	return s.system.Send(s.id, targetId, "", msg)
-}
-
-// AddTimer default value of timeId is uuid.
-// if you need to ensure idempotency of the method,explicit the timeId.
-// when timeId is existed the timer will update with endAt and callback and count.
-// if times == -1 timer will repack in timer system infinitely util call CancelTimer.
-func (s *actor) AddTimer(timeId string, endAt time.Time, callback func(dt time.Duration), times ...int) string {
-	n := 1
-	if len(times) > 0 {
-		n = times[0]
-	}
-
-	timeId = s.timerMgr.Add(tools.Now(), endAt, callback, n, timeId)
-
-	s.resetTime()
-	s.activate()
-	return timeId
-}
-
-func (s *actor) CancelTimer(timerId string) {
-	s.timerMgr.Cancel(timerId)
-	s.resetTime()
-}
+func (s *actor) ID() string                                  { return s.id }
+func (s *actor) System() *System                             { return s.system }
+func (s *actor) Exit()                                       { _ = s.push(stopMsg) }
+func (s *actor) AppendHandler(fn func(message Message) bool) { s.msgChain = append(s.msgChain, fn) }
 
 func (s *actor) push(msg Message) error {
 	if msg == nil {
@@ -117,13 +57,13 @@ func (s *actor) push(msg Message) error {
 		log.SysLog.Warnw("mail box is almost full", "len", l, "cap", c, "actorId", s.id)
 	}
 
-	deadline := globalTimerPool.Get(time.Minute)
+	deadline := timer.Get(time.Minute)
 	select {
 	case s.mailBox.ch <- msg:
 	case <-deadline.C:
 		log.SysLog.Warnw("mail box was full", "actorId", s.id)
 	}
-	globalTimerPool.Put(deadline)
+	timer.Put(deadline)
 
 	s.activate()
 	return nil
@@ -135,7 +75,7 @@ func (s *actor) init(ok chan<- struct{}) {
 		ok <- struct{}{}
 	}
 	s.status.CompareAndSwap(starting, idle)
-	s.system.DispatchEvent(s.id, EvNewActor{ActorId: s.id, Publish: s.remote})
+	s.system.DispatchEvent(s.id, event.EvNewActor{ActorId: s.id, Publish: s.remote})
 	s.activate()
 }
 
@@ -155,40 +95,16 @@ func (s *actor) run() {
 		select {
 		case msg := <-s.mailBox.ch:
 			if s.isStop(msg) {
-				s.exit(true)
+				s.exit()
 				return
 			}
 
 			tools.Try(func() { s.handleMsg(msg) })
-			s.handleAt = tools.Now()
+			s.handleLatestAt = tools.Now()
 			msg.Free()
 
-			if s.draining.Load() == true && s.mailBox.empty() {
-				for _, fn := range s.afterDrained {
-					fn()
-				}
-
-				s.exit(false)
-				return
-			}
-
-			s.resetTime()
-		case <-s.timer.C:
-			tools.Try(func() {
-				// upset timer
-				now := tools.Now()
-				if d := s.timerMgr.Update(now); d > 0 {
-					s.resetTime(now.Add(d))
-				}
-			})
-
 		case <-idleTicker.C:
-			if s.timerMgr.Len() > 0 {
-				s.timerMgr.Update(tools.Now())
-				break
-			}
-
-			if len(s.mailBox.ch) == 0 && tools.Now().Sub(s.handleAt) > 5*time.Minute {
+			if len(s.mailBox.ch) == 0 && tools.Now().Sub(s.handleLatestAt) > 5*time.Minute {
 				s.status.Store(idle)
 				log.SysLog.Infow("actor into idle", "actor", s.ID())
 
@@ -225,24 +141,13 @@ func (s *actor) handleMsg(msg Message) {
 
 	defer s.mailBox.recording(tools.Now(), msg.GetMsgName())
 
-	reqId := RequestId(msg.GetRequestId())
-	reqSourceId, _, _, _ := reqId.Parse()
-	if s.id == reqSourceId {
-		//handle Response
-		s.doneRequest(msg.GetRequestId(), rawMsg)
-		return
+	for i := len(s.msgChain) - 1; i >= 0; i-- {
+		if !s.msgChain[i](msg) {
+			break
+		}
 	}
-
-	// fn
-	if fn, ok := rawMsg.(func()); ok {
-		fn()
-		return
-	}
-
-	s.handler.OnHandle(msg)
 }
 
-// system close
 func (s *actor) stop() {
 	var canceled bool
 	tools.Try(func() {
@@ -256,29 +161,6 @@ func (s *actor) stop() {
 	}
 }
 
-// resetTime reset the timer of the timerMgr
-func (s *actor) resetTime(n ...time.Time) {
-	reset := func(nt time.Time) {
-		globalTimerPool.Put(s.timer)
-		s.timer = globalTimerPool.Get(nt.Sub(tools.Now()))
-		s.nextAt = nt
-	}
-
-	if len(n) > 0 {
-		reset(n[0])
-		return
-	}
-
-	nextAt := s.timerMgr.NextUpdateAt()
-	if nextAt.IsZero() {
-		return
-	}
-
-	if !nextAt.Equal(s.nextAt) {
-		reset(nextAt)
-	}
-}
-
 func (s *actor) isStop(msg Message) bool {
 	message, ok := msg.(*actor_msg.ActorMessage)
 	if ok && message == stopMsg {
@@ -287,18 +169,11 @@ func (s *actor) isStop(msg Message) bool {
 	return false
 }
 
-func (s *actor) isDrained() bool {
-	return s.draining.Load() == true && s.mailBox.empty()
-}
-
-func (s *actor) exit(emitEvent bool) {
+func (s *actor) exit() {
 	log.SysLog.Infow("actor done", "actorId", s.ID())
 	s.status.Store(stop)
 
-	if emitEvent {
-		s.system.DispatchEvent(s.id, EvDelActor{ActorId: s.id, Publish: s.remote})
-	}
-
+	s.system.DispatchEvent(s.id, event.EvDelActor{ActorId: s.id, Publish: s.remote})
 	s.system.actorCache.Delete(s.ID())
 	s.system.waitStop.Done()
 }
