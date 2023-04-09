@@ -202,7 +202,16 @@ func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg any) (err 
 
 	// when the actor into draining mode or not found locally,
 	// send the message to the cluster.
-	if drainer, ok := atr.handler.(Drainer); (ok && drainer.Draining()) || atr == nil {
+	var sendToCluster bool
+	if atr == nil {
+		sendToCluster = true
+	} else {
+		if drainer, ok := atr.handler.(Drainer); ok {
+			sendToCluster = drainer.Draining()
+		}
+	}
+
+	if sendToCluster {
 		pt, canRemote := msg.(proto.Message)
 		if canRemote {
 			v, _ := s.actorCache.Load(s.Cluster())
