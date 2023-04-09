@@ -72,7 +72,7 @@ func (c *Cluster) OnInit() {
 			if err != nil {
 				log.SysLog.Errorw("mq cluster SubAsync failed!", "err", err, "event", ev)
 			}
-			c.System().DispatchEvent(c.ID(), internal.EvActorSubMqFin{ActorId: ev.ActorId})
+			c.System().DispatchEvent(c.ID(), event.EvActorSubMqFin{ActorId: ev.ActorId})
 		}
 	})
 

@@ -11,3 +11,7 @@ type EvDelActor struct {
 	Publish     bool
 	FromCluster bool
 }
+
+type EvActorSubMqFin struct {
+	ActorId string
+}
