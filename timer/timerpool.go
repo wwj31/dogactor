@@ -13,7 +13,7 @@
 
 // copy from https://github.com/nats-io/nats.go/blob/main/timer.go
 
-package actor
+package timer
 
 import (
 	"sync"
@@ -21,17 +21,17 @@ import (
 )
 
 // global pool of *time.Timer's. can be used by multiple goroutines concurrently.
-var globalTimerPool timerPool
+var globalTimerPool goTimerPool
 
 // timerPool provides GC-able pooling of *time.Timer's.
 // can be used by multiple goroutines concurrently.
-type timerPool struct {
+type goTimerPool struct {
 	p sync.Pool
 }
 
 // Get returns a timer that completes after the given duration.
-func (tp *timerPool) Get(d time.Duration) *time.Timer {
-	if t, _ := tp.p.Get().(*time.Timer); t != nil {
+func Get(d time.Duration) *time.Timer {
+	if t, _ := globalTimerPool.p.Get().(*time.Timer); t != nil {
 		t.Reset(d)
 		return t
 	}
@@ -46,7 +46,11 @@ func (tp *timerPool) Get(d time.Duration) *time.Timer {
 // Put will try to stop the timer before pooling. If the
 // given timer already expired, Put will read the unreceived
 // value if there is one.
-func (tp *timerPool) Put(t *time.Timer) {
+func Put(t *time.Timer) {
+	if t == nil {
+		return
+	}
+
 	if !t.Stop() {
 		select {
 		case <-t.C:
@@ -54,5 +58,5 @@ func (tp *timerPool) Put(t *time.Timer) {
 		}
 	}
 
-	tp.p.Put(t)
+	globalTimerPool.p.Put(t)
 }

@@ -11,10 +11,16 @@ import (
 
 type Base struct {
 	Actor
+	Timer
+	Messenger
+	Drainer
 }
 
 func (s *Base) initActor(actor Actor) {
 	s.Actor = actor
+	s.Timer = newTimerScheduler(s)
+	s.Messenger = newCommunication(s)
+	s.Drainer = newDrain(s)
 }
 
 func (s *Base) OnInit()              { log.SysLog.Warnw("actor default init", "actorId", s.ID()) }

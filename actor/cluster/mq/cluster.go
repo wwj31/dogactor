@@ -2,6 +2,8 @@ package mq
 
 import (
 	"fmt"
+	"github.com/wwj31/dogactor/actor/event"
+	"github.com/wwj31/dogactor/actor/internal"
 
 	"github.com/nats-io/nats.go"
 
@@ -56,7 +58,7 @@ func (c *Cluster) OnInit() {
 		return
 	}
 
-	c.System().OnEvent(c.ID(), func(ev actor.EvNewActor) {
+	c.System().OnEvent(c.ID(), func(ev event.EvNewActor) {
 		if ev.Publish {
 			err := c.mq.SubASync(subFormat(ev.ActorId), func(data []byte) {
 				msg := actor_msg.NewActorMessage() // remote recv message
@@ -70,11 +72,11 @@ func (c *Cluster) OnInit() {
 			if err != nil {
 				log.SysLog.Errorw("mq cluster SubAsync failed!", "err", err, "event", ev)
 			}
-			c.System().DispatchEvent(c.ID(), actor.EvActorSubMqFin{ActorId: ev.ActorId})
+			c.System().DispatchEvent(c.ID(), internal.EvActorSubMqFin{ActorId: ev.ActorId})
 		}
 	})
 
-	c.System().OnEvent(c.ID(), func(ev actor.EvDelActor) {
+	c.System().OnEvent(c.ID(), func(ev event.EvDelActor) {
 		if ev.Publish {
 			err := c.mq.UnSub(subFormat(ev.ActorId), false)
 			if err != nil {
@@ -103,9 +105,9 @@ func (c *Cluster) OnHandle(msg actor.Message) {
 	}
 
 	switch msg.RawMsg().(type) {
-	case *actor.ReqMsgDrain:
+	case *internal.ReqMsgDrain:
 		err := c.mq.UnSub(subFormat(msg.GetSourceId()), true)
-		_ = c.Response(msg.GetRequestId(), &actor.RespMsgDrain{Err: err})
+		_ = c.Response(msg.GetRequestId(), &internal.RespMsgDrain{Err: err})
 	}
 }
 

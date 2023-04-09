@@ -11,17 +11,17 @@ import (
 func TestIdleAndRunning(t *testing.T) {
 	system, _ := actor.NewSystem()
 	a := &actor.TmpActor{}
-	_ = system.NewActor("tmp", a)
+	_ = system.NewActor("actor1", a)
 	a.Init = func() {
 		fmt.Println("actor init")
 	}
 	a.Handle = func(msg actor.Message) {
-		fmt.Println("processing msg", msg)
+		fmt.Println("processing msg ", msg.RawMsg())
 	}
 
 	go func() {
 		for {
-			time.Sleep(65 * time.Second)
+			time.Sleep(10 * time.Second)
 			system.Send("", a.ID(), "", "foo")
 		}
 	}()

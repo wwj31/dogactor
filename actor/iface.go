@@ -11,11 +11,8 @@ type (
 		ID() string
 		System() *System
 		Exit()
-		Drain(afterDrained ...func())
+		AppendHandler(fn func(message Message) bool)
 		CallLua(name string, ret int, args ...lua.LValue) []lua.LValue
-
-		Timer
-		Sender
 	}
 
 	Timer interface {
@@ -23,11 +20,16 @@ type (
 		CancelTimer(timerId string)
 	}
 
-	Sender interface {
-		Send(targetId Id, msg interface{}) error
-		Request(targetId Id, msg interface{}, timeout ...time.Duration) (req *request)
-		RequestWait(targetId Id, msg interface{}, timeout ...time.Duration) (result interface{}, err error)
-		Response(requestId string, msg interface{}) error
+	Messenger interface {
+		Send(targetId Id, msg any) error
+		Request(targetId Id, msg any, timeout ...time.Duration) (req *request)
+		RequestWait(targetId Id, msg any, timeout ...time.Duration) (result interface{}, err error)
+		Response(requestId string, msg any) error
+	}
+
+	Drainer interface {
+		Drain(afterDrained ...func())
+		Draining() bool
 	}
 
 	Message interface {
