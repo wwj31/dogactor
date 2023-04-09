@@ -55,8 +55,8 @@ func (s *drain) Drain(afterDrained ...func()) {
 		}
 
 		s.afterDrained = afterDrained
-		s.draining.Store(true)
 		_ = s.Send(s.ID(), drained{})
+		s.draining.Store(true)
 	})
 }
 
