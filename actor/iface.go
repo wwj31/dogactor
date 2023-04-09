@@ -18,6 +18,7 @@ type (
 	Timer interface {
 		AddTimer(timeId string, endAt time.Time, callback func(dt time.Duration), times ...int) string
 		CancelTimer(timerId string)
+		clear()
 	}
 
 	Messenger interface {
@@ -29,7 +30,7 @@ type (
 
 	Drainer interface {
 		Drain(afterDrained ...func())
-		Draining() bool
+		isDraining() bool
 	}
 
 	Message interface {

@@ -1,7 +1,6 @@
 package actor
 
 import (
-	"github.com/wwj31/dogactor/actor/event"
 	"github.com/wwj31/dogactor/timer"
 	"github.com/wwj31/dogactor/tools"
 	"time"
@@ -21,7 +20,6 @@ func newTimerScheduler(base *Base) *timerScheduler {
 		timerMgr: timer.New(),
 	}
 
-	base.System().OnEvent(base.ID(), ts.actorExitEvent)
 	return ts
 }
 
@@ -77,6 +75,6 @@ func (s *timerScheduler) resetTime(n ...time.Time) {
 	}
 }
 
-func (s *timerScheduler) actorExitEvent(ev event.EvDelActor) {
+func (s *timerScheduler) clear() {
 	timer.Put(s.timer)
 }

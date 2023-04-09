@@ -10,7 +10,7 @@ import (
 
 func TestIdleAndRunning(t *testing.T) {
 	system, _ := actor.NewSystem()
-	a := &actor.TmpActor{}
+	a := &actor.BaseFunc{}
 	_ = system.NewActor("actor1", a)
 	a.Init = func() {
 		fmt.Println("actor init")

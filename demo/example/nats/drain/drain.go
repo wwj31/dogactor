@@ -26,8 +26,8 @@ func main() {
 	system2, _ := actor.NewSystem(mq.WithRemote(natsUrl, nats.New()), actor.ProtoIndex(protoIndex))
 
 	name := "drainActor"
-	drainActor1 := actor.TmpActor{}
-	drainActor2 := actor.TmpActor{}
+	drainActor1 := actor.BaseFunc{}
+	drainActor2 := actor.BaseFunc{}
 	drainActor1.Handle = func(v actor.Message) {
 		drainData := v.RawMsg().(*msg.DrainTest)
 		fmt.Println("drain actor 1 receive msg:", drainData.Data)

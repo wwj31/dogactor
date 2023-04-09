@@ -60,7 +60,7 @@ func (s *drain) Drain(afterDrained ...func()) {
 	})
 }
 
-func (s *drain) Draining() bool {
+func (s *drain) isDraining() bool {
 	return s.draining.Load() == true
 }
 
