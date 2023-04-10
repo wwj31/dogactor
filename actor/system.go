@@ -207,7 +207,7 @@ func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg any) (err 
 		sendToCluster = true
 	} else {
 		if drainer, ok := atr.handler.(Drainer); ok {
-			sendToCluster = drainer.Draining()
+			sendToCluster = drainer.isDraining()
 		}
 	}
 
