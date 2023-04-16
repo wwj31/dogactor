@@ -11,14 +11,7 @@ type (
 		ID() string
 		System() *System
 		Exit()
-		AppendHandler(fn func(message Message) bool)
 		CallLua(name string, ret int, args ...lua.LValue) []lua.LValue
-	}
-
-	Timer interface {
-		AddTimer(timeId string, endAt time.Time, callback func(dt time.Duration), times ...int) string
-		CancelTimer(timerId string)
-		clear()
 	}
 
 	Messenger interface {
@@ -26,6 +19,12 @@ type (
 		Request(targetId Id, msg any, timeout ...time.Duration) (req *request)
 		RequestWait(targetId Id, msg any, timeout ...time.Duration) (result interface{}, err error)
 		Response(requestId string, msg any) error
+	}
+
+	Timer interface {
+		AddTimer(timeId string, endAt time.Time, callback func(dt time.Duration), times ...int) string
+		CancelTimer(timerId string)
+		clear()
 	}
 
 	Drainer interface {
@@ -58,6 +57,6 @@ type (
 
 	// only Base implement
 	actorInitiator interface {
-		initActor(actor Actor)
+		initActor(actor *actor)
 	}
 )

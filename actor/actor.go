@@ -43,11 +43,11 @@ type actor struct {
 	handleLatestAt time.Time
 }
 
-func (s *actor) ID() string                                  { return s.id }
-func (s *actor) System() *System                             { return s.system }
-func (s *actor) Exit()                                       { _ = s.push(stopMsg) }
-func (s *actor) AppendHandler(fn func(message Message) bool) { s.msgChain = append(s.msgChain, fn) }
+func (s *actor) ID() string      { return s.id }
+func (s *actor) System() *System { return s.system }
+func (s *actor) Exit()           { _ = s.push(stopMsg) }
 
+func (s *actor) appendHandler(fn func(message Message) bool) { s.msgChain = append(s.msgChain, fn) }
 func (s *actor) push(msg Message) error {
 	if msg == nil {
 		return actorerr.ActorPushMsgErr

@@ -26,7 +26,8 @@ func newDrain(base *Base) *drain {
 
 	dr.draining.Store(false)
 
-	dr.AppendHandler(func(message Message) bool {
+	atr := base.Actor.(*actor)
+	atr.appendHandler(func(message Message) bool {
 		if _, ok := message.RawMsg().(drained); ok {
 			dr.drained()
 			return false

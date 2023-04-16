@@ -24,7 +24,8 @@ func newCommunication(base *Base) *communication {
 		requests: make(map[RequestId]*request),
 	}
 
-	base.AppendHandler(func(message Message) bool {
+	atr := base.Actor.(*actor)
+	atr.appendHandler(func(message Message) bool {
 		reqId := RequestId(message.GetRequestId())
 		reqSourceId, _, _, _ := reqId.Parse()
 		if cm.ID() == reqSourceId {

@@ -142,12 +142,12 @@ func (s *System) NewActor(id Id, handler spawnActor, opt ...Option) error {
 		remote:   true,
 	}
 
-	newer.AppendHandler(func(message Message) bool {
+	newer.appendHandler(func(message Message) bool {
 		handler.OnHandle(message)
 		return false
 	})
 
-	newer.AppendHandler(func(message Message) bool {
+	newer.appendHandler(func(message Message) bool {
 		if fn, ok := message.RawMsg().(func()); ok {
 			fn()
 			return false

@@ -23,7 +23,7 @@ func (s *Base) OnInit()          { log.SysLog.Warnw("must override OnInit", "act
 func (s *Base) OnHandle(Message) { log.SysLog.Errorw("must override OnHandle", "actorId", s.ID()) }
 func (s *Base) OnStop() bool     { return true }
 
-func (s *Base) initActor(actor Actor) {
+func (s *Base) initActor(actor *actor) {
 	s.Actor = actor
 	s.Timer = newTimerScheduler(s)
 	s.Messenger = newCommunication(s)
