@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/wwj31/dogactor/actor/event"
 	"github.com/wwj31/dogactor/actor/internal"
+	"github.com/wwj31/dogactor/actor/internal/innermsg"
 	"reflect"
 	"sort"
 

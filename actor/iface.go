@@ -2,8 +2,6 @@ package actor
 
 import (
 	"time"
-
-	lua "github.com/yuin/gopher-lua"
 )
 
 type (
@@ -11,7 +9,6 @@ type (
 		ID() string
 		System() *System
 		Exit()
-		CallLua(name string, ret int, args ...lua.LValue) []lua.LValue
 	}
 
 	Messenger interface {

@@ -194,11 +194,11 @@ func SetLocalized() Option {
 	}
 }
 
-func SetLua(path string) Option {
-	return func(a *actor) {
-		a.lua = script.New()
-		a.register2Lua()
-		a.luaPath = path
-		a.lua.Load(a.luaPath)
-	}
-}
+//func SetLua(path string) Option {
+//	return func(a *actor) {
+//		a.lua = script.New()
+//		a.register2Lua()
+//		a.luaPath = path
+//		a.lua.Load(a.luaPath)
+//	}
+//}
