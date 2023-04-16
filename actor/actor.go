@@ -1,19 +1,19 @@
 package actor
 
 import (
-	"github.com/wwj31/dogactor/actor/event"
 	"sync/atomic"
 	"time"
 
 	"github.com/wwj31/dogactor/actor/actorerr"
-	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/actor/event"
+	"github.com/wwj31/dogactor/actor/internal/innermsg"
 	"github.com/wwj31/dogactor/actor/internal/script"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/timer"
 	"github.com/wwj31/dogactor/tools"
 )
 
-var stopMsg = &actor_msg.ActorMessage{MsgName: "actorStop"}
+var stopMsg = &innermsg.ActorMessage{MsgName: "actorStop"}
 
 const (
 	starting = iota + 1
@@ -130,7 +130,7 @@ func (s *actor) handleMsg(msg Message) {
 	// if the message comes from the cluster, it is a nesting of the message
 	// that it's an ActorMessage representing that the message
 	// was sent from a remote location,otherwise,it can be used directly.
-	if atrMsg, ok := payload.(*actor_msg.ActorMessage); ok {
+	if atrMsg, ok := payload.(*innermsg.ActorMessage); ok {
 		if atrMsg.MsgName != "" {
 			defer atrMsg.Free()
 			atrMsg.Parse(s.system.protoIndex)
@@ -161,7 +161,7 @@ func (s *actor) stop() {
 }
 
 func (s *actor) isStop(msg Message) bool {
-	message, ok := msg.(*actor_msg.ActorMessage)
+	message, ok := msg.(*innermsg.ActorMessage)
 	if ok && message == stopMsg {
 		return true
 	}

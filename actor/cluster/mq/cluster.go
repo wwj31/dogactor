@@ -2,14 +2,14 @@ package mq
 
 import (
 	"fmt"
-	"github.com/wwj31/dogactor/actor/event"
-	"github.com/wwj31/dogactor/actor/internal"
 
 	"github.com/nats-io/nats.go"
 
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/actorerr"
-	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/actor/event"
+	"github.com/wwj31/dogactor/actor/internal"
+	"github.com/wwj31/dogactor/actor/internal/innermsg"
 	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
@@ -61,7 +61,7 @@ func (c *Cluster) OnInit() {
 	c.System().OnEvent(c.ID(), func(ev event.EvNewActor) {
 		if ev.Publish {
 			err := c.mq.SubASync(subFormat(ev.ActorId), func(data []byte) {
-				msg := actor_msg.NewActorMessage() // remote recv message
+				msg := innermsg.NewActorMessage() // remote recv message
 				if err := msg.Unmarshal(data); err != nil {
 					log.SysLog.Errorf("unmarshal msg failed", "err", err)
 					return

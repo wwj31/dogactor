@@ -3,12 +3,13 @@ package actor
 import (
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/wwj31/dogactor/actor/actorerr"
-	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/actor/internal/innermsg"
 	"github.com/wwj31/dogactor/expect"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
-	"time"
 )
 
 type communication struct {
@@ -64,7 +65,7 @@ func (s *communication) Request(targetId string, msg any, timeout ...time.Durati
 	}
 
 	req.timeoutId = s.AddTimer(tools.XUID(), tools.Now().Add(interval), func(dt time.Duration) {
-		expect.Nil(s.Response(req.id.String(), &actor_msg.RequestDeadLetter{Err: "Request timeout"}))
+		expect.Nil(s.Response(req.id.String(), &innermsg.RequestDeadLetter{Err: "Request timeout"}))
 	})
 	return req
 }
@@ -115,7 +116,7 @@ func (s *communication) doneRequest(requestId string, resp interface{}) {
 	delete(s.requests, RequestId(requestId))
 
 	switch r := resp.(type) {
-	case *actor_msg.RequestDeadLetter:
+	case *innermsg.RequestDeadLetter:
 		req.result.err = errors.New(r.Err)
 	case error:
 		req.result.err = r

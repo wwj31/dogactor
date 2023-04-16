@@ -1,4 +1,4 @@
-package actor_msg
+package innermsg
 
 import (
 	"github.com/gogo/protobuf/proto"

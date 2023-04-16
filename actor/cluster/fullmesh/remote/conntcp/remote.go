@@ -8,7 +8,6 @@ import (
 	"go.uber.org/atomic"
 	"time"
 
-	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/network"
 )
@@ -46,14 +45,14 @@ func (s *RemoteMgr) Start(h remote.Handler) error {
 		return err
 	}
 
-	ping := actor_msg.NewActorMessage() // ping message
+	ping := innermsg.NewActorMessage() // ping message
 	ping.MsgName = "$ping"
 	s.ping, err = ping.Marshal()
 	if err != nil {
 		return err
 	}
 
-	reg := actor_msg.NewActorMessage() // registry message
+	reg := innermsg.NewActorMessage() // registry message
 	reg.MsgName = "$registry"
 	reg.Data = []byte(s.remoteHandler.Address())
 	s.registry, err = reg.Marshal()
@@ -149,7 +148,7 @@ func (s *remoteHandler) OnRecv(data []byte) {
 		return
 	}
 
-	msg := actor_msg.NewActorMessage() // remote recv message
+	msg := innermsg.NewActorMessage() // remote recv message
 	err := msg.Unmarshal(data)
 	if err != nil {
 		log.SysLog.Errorf("unmarshal msg failed", "err", err)

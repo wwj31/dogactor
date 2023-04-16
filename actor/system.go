@@ -10,9 +10,8 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
-
 	"github.com/wwj31/dogactor/actor/actorerr"
-	"github.com/wwj31/dogactor/actor/internal/actor_msg"
+	"github.com/wwj31/dogactor/actor/internal/innermsg"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/logger"
 	"github.com/wwj31/dogactor/tools"
@@ -222,7 +221,7 @@ func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg any) (err 
 			}
 
 			// remote message
-			actorMsg := &actor_msg.ActorMessage{
+			actorMsg := &innermsg.ActorMessage{
 				SourceId:  sourceId,
 				TargetId:  targetId,
 				RequestId: requestId.String(),
@@ -240,7 +239,7 @@ func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg any) (err 
 		return actorerr.ActorNotFoundErr
 	}
 
-	localMsg := actor_msg.NewActorMessage() // local message
+	localMsg := innermsg.NewActorMessage() // local message
 	localMsg.SourceId = sourceId
 	localMsg.TargetId = targetId
 	localMsg.RequestId = requestId.String()

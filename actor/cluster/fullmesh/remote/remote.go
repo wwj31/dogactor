@@ -1,12 +1,8 @@
 package remote
 
-import (
-	"github.com/wwj31/dogactor/actor/internal/actor_msg"
-)
-
 type Handler interface {
 	Address() string
 	OnSessionClosed(peerHost string)
 	OnSessionOpened(peerHost string)
-	OnSessionRecv(msg *actor_msg.ActorMessage)
+	OnSessionRecv(msg *innermsg.ActorMessage)
 }

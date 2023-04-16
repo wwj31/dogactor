@@ -13,7 +13,6 @@ import (
 	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote/conntcp"
 	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh/etcd"
-	"github.com/wwj31/dogactor/actor/internal/actor_msg"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 )
@@ -125,7 +124,7 @@ func (c *Cluster) OnSessionOpened(peerHost string) {
 	c.System().DispatchEvent(c.ID(), internal.EvSessionOpened{PeerHost: peerHost})
 }
 
-func (c *Cluster) OnSessionRecv(msg *actor_msg.ActorMessage) {
+func (c *Cluster) OnSessionRecv(msg *innermsg.ActorMessage) {
 	err := c.System().Send(msg.SourceId, msg.TargetId, actor.RequestId(msg.RequestId), msg)
 	if err != nil {
 		log.SysLog.Errorw("cluster OnSessionRecv send error", "msg", msg.String(), "err", err)
