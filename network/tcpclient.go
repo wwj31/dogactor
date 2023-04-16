@@ -10,8 +10,6 @@ import (
 	"github.com/wwj31/dogactor/log"
 )
 
-type OptionClient func(l *TcpClient)
-
 type TcpClient struct {
 	addr    string
 	running int32
@@ -26,7 +24,7 @@ type TcpClient struct {
 	connMux sync.Mutex
 }
 
-func NewTcpClient(addr string, newCodec func() DecodeEncoder, opt ...OptionClient) Client {
+func NewTcpClient(addr string, newCodec func() DecodeEncoder) Client {
 	c := &TcpClient{
 		addr:        addr,
 		running:     1,
@@ -38,16 +36,12 @@ func NewTcpClient(addr string, newCodec func() DecodeEncoder, opt ...OptionClien
 		return &tcpReconnectHandler{reconnect: c.recon}
 	}
 	c.AddHandler(h)
-
-	for _, f := range opt {
-		f(c)
-	}
 	return c
 }
 
 // AddHandler add handler to tail of list
-func (s *TcpClient) AddHandler(hander func() SessionHandler) {
-	s.handlersFun = append(s.handlersFun, hander)
+func (s *TcpClient) AddHandler(handler func() SessionHandler) {
+	s.handlersFun = append(s.handlersFun, handler)
 }
 
 func (s *TcpClient) Start(reconnect bool) error {

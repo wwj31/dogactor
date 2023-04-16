@@ -9,17 +9,11 @@ import (
 	"github.com/wwj31/dogactor/tools"
 )
 
-type OptionListen func(l *TcpListener)
-
-func StartTcpListen(addr string, newCodec func() DecodeEncoder, newHandler func() SessionHandler, op ...OptionListen) Listener {
+func StartTcpListen(addr string, newCodec func() DecodeEncoder, newHandler func() SessionHandler) Listener {
 	l := &TcpListener{
 		addr:       addr,
 		newCodec:   newCodec,
 		newHandler: newHandler,
-	}
-
-	for _, f := range op {
-		f(l)
 	}
 	return l
 }

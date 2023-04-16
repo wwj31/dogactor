@@ -47,7 +47,6 @@ func (s *PingActor) OnHandle(msg actor.Message) {
 	switch msg.RawMsg() {
 	case 99999:
 		fmt.Println(msg.GetSourceId(), msg.GetTargetId())
-		fmt.Println()
 	}
 }
 
