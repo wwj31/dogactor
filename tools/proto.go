@@ -80,11 +80,12 @@ func (s *ProtoIndex) MsgNameToId(msgName string) (msgId int32, ok bool) {
 }
 
 func (s *ProtoIndex) MsgName(msg proto.Message) string {
-	name := reflect.TypeOf(msg).String()
-	if len(name) > 0 && name[0] == '*' {
-		name = name[1:]
+	typeOf := reflect.TypeOf(msg)
+	if typeOf.Kind() == reflect.Pointer {
+		return typeOf.Elem().String()
+
 	}
-	return name
+	return typeOf.String()
 }
 
 func (s *ProtoIndex) FindMsgByName(msgName string) (proto.Message, bool) {
