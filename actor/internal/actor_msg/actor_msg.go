@@ -32,46 +32,46 @@ type ActorMessage struct {
 	MapCarrier map[string]string `protobuf:"bytes,6,rep,name=MapCarrier,proto3" json:"MapCarrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
-func (a *ActorMessage) Payload() interface{} {
-	return a.payload
+func (m *ActorMessage) Payload() interface{} {
+	return m.payload
 }
 
-func (a *ActorMessage) Free() {
-	if a.pool != nil {
-		a.payload = nil
-		a.SourceId = ""
-		a.TargetId = ""
-		a.RequestId = ""
-		a.MsgName = ""
-		a.MapCarrier = nil
-		a.Data = nil
-		a.pool.Put(a)
+func (m *ActorMessage) Free() {
+	if m.pool != nil {
+		m.payload = nil
+		m.SourceId = ""
+		m.TargetId = ""
+		m.RequestId = ""
+		m.MsgName = ""
+		m.MapCarrier = nil
+		m.Data = nil
+		m.pool.Put(m)
 	}
 }
 
-func (a *ActorMessage) SetPayload(v interface{}) {
-	a.payload = v
+func (m *ActorMessage) SetPayload(v interface{}) {
+	m.payload = v
 }
 
-func (a *ActorMessage) Parse(pi *tools.ProtoIndex) {
+func (m *ActorMessage) Parse(pi *tools.ProtoIndex) {
 	if pi == nil {
 		log.SysLog.Errorf("protoIndex is nil")
 		return
 	}
-	pt, ok := pi.FindMsgByName(a.MsgName)
+	pt, ok := pi.FindMsgByName(m.MsgName)
 	if !ok {
-		log.SysLog.Errorf("msg not found", "MsgName", a.MsgName)
+		log.SysLog.Errorf("msg not found", "MsgName", m.MsgName)
 		return
 	}
 
-	if a.Data == nil {
+	if m.Data == nil {
 		return
 	}
 
-	if err := proto.Unmarshal(a.Data, pt.(proto.Message)); err != nil {
-		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", a.MsgName)
+	if err := proto.Unmarshal(m.Data, pt.(proto.Message)); err != nil {
+		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", m.MsgName)
 		return
 	}
 
-	a.SetPayload(pt)
+	m.SetPayload(pt)
 }

@@ -26,77 +26,77 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-func (a *ActorMessage) Reset()         { *a = ActorMessage{} }
-func (a *ActorMessage) String() string { return proto.CompactTextString(a) }
+func (m *ActorMessage) Reset()         { *m = ActorMessage{} }
+func (m *ActorMessage) String() string { return proto.CompactTextString(m) }
 func (*ActorMessage) ProtoMessage()    {}
 func (*ActorMessage) Descriptor() ([]byte, []int) {
 	return fileDescriptor_b5bf8dd4e82efef3, []int{0}
 }
-func (a *ActorMessage) XXX_Unmarshal(b []byte) error {
-	return a.Unmarshal(b)
+func (m *ActorMessage) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
 }
-func (a *ActorMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ActorMessage) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_ActorMessage.Marshal(b, a, deterministic)
+		return xxx_messageInfo_ActorMessage.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
-		n, err := a.MarshalToSizedBuffer(b)
+		n, err := m.MarshalToSizedBuffer(b)
 		if err != nil {
 			return nil, err
 		}
 		return b[:n], nil
 	}
 }
-func (a *ActorMessage) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ActorMessage.Merge(a, src)
+func (m *ActorMessage) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ActorMessage.Merge(m, src)
 }
-func (a *ActorMessage) XXX_Size() int {
-	return a.Size()
+func (m *ActorMessage) XXX_Size() int {
+	return m.Size()
 }
-func (a *ActorMessage) XXX_DiscardUnknown() {
-	xxx_messageInfo_ActorMessage.DiscardUnknown(a)
+func (m *ActorMessage) XXX_DiscardUnknown() {
+	xxx_messageInfo_ActorMessage.DiscardUnknown(m)
 }
 
 var xxx_messageInfo_ActorMessage proto.InternalMessageInfo
 
-func (a *ActorMessage) GetSourceId() string {
-	if a != nil {
-		return a.SourceId
+func (m *ActorMessage) GetSourceId() string {
+	if m != nil {
+		return m.SourceId
 	}
 	return ""
 }
 
-func (a *ActorMessage) GetTargetId() string {
-	if a != nil {
-		return a.TargetId
+func (m *ActorMessage) GetTargetId() string {
+	if m != nil {
+		return m.TargetId
 	}
 	return ""
 }
 
-func (a *ActorMessage) GetRequestId() string {
-	if a != nil {
-		return a.RequestId
+func (m *ActorMessage) GetRequestId() string {
+	if m != nil {
+		return m.RequestId
 	}
 	return ""
 }
 
-func (a *ActorMessage) GetMsgName() string {
-	if a != nil {
-		return a.MsgName
+func (m *ActorMessage) GetMsgName() string {
+	if m != nil {
+		return m.MsgName
 	}
 	return ""
 }
 
-func (a *ActorMessage) GetData() []byte {
-	if a != nil {
-		return a.Data
+func (m *ActorMessage) GetData() []byte {
+	if m != nil {
+		return m.Data
 	}
 	return nil
 }
 
-func (a *ActorMessage) GetMapCarrier() map[string]string {
-	if a != nil {
-		return a.MapCarrier
+func (m *ActorMessage) GetMapCarrier() map[string]string {
+	if m != nil {
+		return m.MapCarrier
 	}
 	return nil
 }
@@ -289,29 +289,29 @@ var _ActorService_serviceDesc = grpc.ServiceDesc{
 	Metadata: "actor_msg.proto",
 }
 
-func (a *ActorMessage) Marshal() (dAtA []byte, err error) {
-	size := a.Size()
+func (m *ActorMessage) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
 	dAtA = make([]byte, size)
-	n, err := a.MarshalToSizedBuffer(dAtA[:size])
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
 	if err != nil {
 		return nil, err
 	}
 	return dAtA[:n], nil
 }
 
-func (a *ActorMessage) MarshalTo(dAtA []byte) (int, error) {
-	size := a.Size()
-	return a.MarshalToSizedBuffer(dAtA[:size])
+func (m *ActorMessage) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (a *ActorMessage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ActorMessage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
-	if len(a.MapCarrier) > 0 {
-		for k := range a.MapCarrier {
-			v := a.MapCarrier[k]
+	if len(m.MapCarrier) > 0 {
+		for k := range m.MapCarrier {
+			v := m.MapCarrier[k]
 			baseI := i
 			i -= len(v)
 			copy(dAtA[i:], v)
@@ -328,38 +328,38 @@ func (a *ActorMessage) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 			dAtA[i] = 0x32
 		}
 	}
-	if len(a.Data) > 0 {
-		i -= len(a.Data)
-		copy(dAtA[i:], a.Data)
-		i = encodeVarintActorMsg(dAtA, i, uint64(len(a.Data)))
+	if len(m.Data) > 0 {
+		i -= len(m.Data)
+		copy(dAtA[i:], m.Data)
+		i = encodeVarintActorMsg(dAtA, i, uint64(len(m.Data)))
 		i--
 		dAtA[i] = 0x2a
 	}
-	if len(a.MsgName) > 0 {
-		i -= len(a.MsgName)
-		copy(dAtA[i:], a.MsgName)
-		i = encodeVarintActorMsg(dAtA, i, uint64(len(a.MsgName)))
+	if len(m.MsgName) > 0 {
+		i -= len(m.MsgName)
+		copy(dAtA[i:], m.MsgName)
+		i = encodeVarintActorMsg(dAtA, i, uint64(len(m.MsgName)))
 		i--
 		dAtA[i] = 0x22
 	}
-	if len(a.RequestId) > 0 {
-		i -= len(a.RequestId)
-		copy(dAtA[i:], a.RequestId)
-		i = encodeVarintActorMsg(dAtA, i, uint64(len(a.RequestId)))
+	if len(m.RequestId) > 0 {
+		i -= len(m.RequestId)
+		copy(dAtA[i:], m.RequestId)
+		i = encodeVarintActorMsg(dAtA, i, uint64(len(m.RequestId)))
 		i--
 		dAtA[i] = 0x1a
 	}
-	if len(a.TargetId) > 0 {
-		i -= len(a.TargetId)
-		copy(dAtA[i:], a.TargetId)
-		i = encodeVarintActorMsg(dAtA, i, uint64(len(a.TargetId)))
+	if len(m.TargetId) > 0 {
+		i -= len(m.TargetId)
+		copy(dAtA[i:], m.TargetId)
+		i = encodeVarintActorMsg(dAtA, i, uint64(len(m.TargetId)))
 		i--
 		dAtA[i] = 0x12
 	}
-	if len(a.SourceId) > 0 {
-		i -= len(a.SourceId)
-		copy(dAtA[i:], a.SourceId)
-		i = encodeVarintActorMsg(dAtA, i, uint64(len(a.SourceId)))
+	if len(m.SourceId) > 0 {
+		i -= len(m.SourceId)
+		copy(dAtA[i:], m.SourceId)
+		i = encodeVarintActorMsg(dAtA, i, uint64(len(m.SourceId)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -407,34 +407,34 @@ func encodeVarintActorMsg(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (a *ActorMessage) Size() (n int) {
-	if a == nil {
+func (m *ActorMessage) Size() (n int) {
+	if m == nil {
 		return 0
 	}
 	var l int
 	_ = l
-	l = len(a.SourceId)
+	l = len(m.SourceId)
 	if l > 0 {
 		n += 1 + l + sovActorMsg(uint64(l))
 	}
-	l = len(a.TargetId)
+	l = len(m.TargetId)
 	if l > 0 {
 		n += 1 + l + sovActorMsg(uint64(l))
 	}
-	l = len(a.RequestId)
+	l = len(m.RequestId)
 	if l > 0 {
 		n += 1 + l + sovActorMsg(uint64(l))
 	}
-	l = len(a.MsgName)
+	l = len(m.MsgName)
 	if l > 0 {
 		n += 1 + l + sovActorMsg(uint64(l))
 	}
-	l = len(a.Data)
+	l = len(m.Data)
 	if l > 0 {
 		n += 1 + l + sovActorMsg(uint64(l))
 	}
-	if len(a.MapCarrier) > 0 {
-		for k, v := range a.MapCarrier {
+	if len(m.MapCarrier) > 0 {
+		for k, v := range m.MapCarrier {
 			_ = k
 			_ = v
 			mapEntrySize := 1 + len(k) + sovActorMsg(uint64(len(k))) + 1 + len(v) + sovActorMsg(uint64(len(v)))
@@ -463,7 +463,7 @@ func sovActorMsg(x uint64) (n int) {
 func sozActorMsg(x uint64) (n int) {
 	return sovActorMsg(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (a *ActorMessage) Unmarshal(dAtA []byte) error {
+func (m *ActorMessage) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -522,7 +522,7 @@ func (a *ActorMessage) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			a.SourceId = string(dAtA[iNdEx:postIndex])
+			m.SourceId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
@@ -554,7 +554,7 @@ func (a *ActorMessage) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			a.TargetId = string(dAtA[iNdEx:postIndex])
+			m.TargetId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
 			if wireType != 2 {
@@ -586,7 +586,7 @@ func (a *ActorMessage) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			a.RequestId = string(dAtA[iNdEx:postIndex])
+			m.RequestId = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
@@ -618,7 +618,7 @@ func (a *ActorMessage) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			a.MsgName = string(dAtA[iNdEx:postIndex])
+			m.MsgName = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 5:
 			if wireType != 2 {
@@ -649,9 +649,9 @@ func (a *ActorMessage) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			a.Data = append(a.Data[:0], dAtA[iNdEx:postIndex]...)
-			if a.Data == nil {
-				a.Data = []byte{}
+			m.Data = append(m.Data[:0], dAtA[iNdEx:postIndex]...)
+			if m.Data == nil {
+				m.Data = []byte{}
 			}
 			iNdEx = postIndex
 		case 6:
@@ -683,8 +683,8 @@ func (a *ActorMessage) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if a.MapCarrier == nil {
-				a.MapCarrier = make(map[string]string)
+			if m.MapCarrier == nil {
+				m.MapCarrier = make(map[string]string)
 			}
 			var mapkey string
 			var mapvalue string
@@ -779,7 +779,7 @@ func (a *ActorMessage) Unmarshal(dAtA []byte) error {
 					iNdEx += skippy
 				}
 			}
-			a.MapCarrier[mapkey] = mapvalue
+			m.MapCarrier[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex
