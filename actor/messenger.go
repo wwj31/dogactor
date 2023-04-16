@@ -30,7 +30,7 @@ func newCommunication(base *Base) *communication {
 		reqSourceId, _, _, _ := reqId.Parse()
 		if cm.ID() == reqSourceId {
 			//handle Response
-			cm.doneRequest(message.GetRequestId(), message.RawMsg())
+			cm.doneRequest(message.GetRequestId(), message.Payload())
 			return false
 		}
 		return true

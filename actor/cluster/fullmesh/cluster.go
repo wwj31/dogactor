@@ -88,7 +88,7 @@ func (c *Cluster) stop() {
 
 func (c *Cluster) OnHandle(msg actor.Message) {
 	if c.ID() != msg.GetTargetId() {
-		if err := c.sendRemote(msg.GetTargetId(), actor.RequestId(msg.GetRequestId()), msg.RawMsg().([]byte)); err != nil {
+		if err := c.sendRemote(msg.GetTargetId(), actor.RequestId(msg.GetRequestId()), msg.Payload().([]byte)); err != nil {
 			log.SysLog.Errorw("remote actor send failed",
 				"id", c.ID(),
 				"sourceId", msg.GetSourceId(),
@@ -100,7 +100,7 @@ func (c *Cluster) OnHandle(msg actor.Message) {
 		return
 	}
 
-	if str, ok := msg.RawMsg().(string); ok && str == "stop" {
+	if str, ok := msg.Payload().(string); ok && str == "stop" {
 		c.stop()
 	} else {
 		log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", str)

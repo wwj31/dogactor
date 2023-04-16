@@ -28,7 +28,7 @@ func newDrain(base *Base) *drain {
 
 	atr := base.Actor.(*actor)
 	atr.appendHandler(func(message Message) bool {
-		if _, ok := message.RawMsg().(drained); ok {
+		if _, ok := message.Payload().(drained); ok {
 			dr.drained()
 			return false
 		}

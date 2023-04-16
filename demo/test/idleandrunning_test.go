@@ -16,7 +16,7 @@ func TestIdleAndRunning(t *testing.T) {
 		fmt.Println("actor init")
 	}
 	a.Handle = func(msg actor.Message) {
-		fmt.Println("processing msg ", msg.RawMsg())
+		fmt.Println("processing msg ", msg.Payload())
 	}
 
 	go func() {

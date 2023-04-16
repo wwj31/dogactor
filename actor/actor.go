@@ -122,20 +122,19 @@ func (s *actor) run() {
 }
 
 func (s *actor) handleMsg(msg Message) {
-	rawMsg := msg.RawMsg()
-	if rawMsg == nil {
+	payload := msg.Payload()
+	if payload == nil {
 		return
 	}
 
-	// if the message comes from a cluster, it can be asserted
+	// if the message comes from the cluster, it is a nesting of the message
 	// that it's an ActorMessage representing that the message
 	// was sent from a remote location,otherwise,it can be used directly.
-	if actMsg, ok := rawMsg.(*actor_msg.ActorMessage); ok {
-		if actMsg.MsgName != "" {
-			defer actMsg.Free()
-			rawMsg = actMsg.Fill(s.system.protoIndex)
-			actMsg.SetMessage(rawMsg)
-			msg = actMsg
+	if atrMsg, ok := payload.(*actor_msg.ActorMessage); ok {
+		if atrMsg.MsgName != "" {
+			defer atrMsg.Free()
+			atrMsg.Parse(s.system.protoIndex)
+			msg = atrMsg
 		}
 	}
 

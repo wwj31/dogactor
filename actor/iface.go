@@ -37,7 +37,7 @@ type (
 		GetTargetId() Id
 		GetRequestId() string
 		GetMsgName() string
-		RawMsg() interface{}
+		Payload() interface{}
 		String() string
 		Free()
 	}

@@ -57,7 +57,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 	}
 	log.Init()
 
-	if &s.protoIndex == nil {
+	if s.protoIndex == nil {
 		log.SysLog.Warnw("without protobuf index,can't find ptoro struct")
 	}
 
@@ -148,7 +148,7 @@ func (s *System) NewActor(id Id, handler spawnActor, opt ...Option) error {
 	})
 
 	newer.appendHandler(func(message Message) bool {
-		if fn, ok := message.RawMsg().(func()); ok {
+		if fn, ok := message.Payload().(func()); ok {
 			fn()
 			return false
 		}
@@ -244,7 +244,7 @@ func (s *System) Send(sourceId, targetId Id, requestId RequestId, msg any) (err 
 	localMsg.SourceId = sourceId
 	localMsg.TargetId = targetId
 	localMsg.RequestId = requestId.String()
-	localMsg.SetMessage(msg)
+	localMsg.SetPayload(msg)
 
 	return atr.push(localMsg)
 }

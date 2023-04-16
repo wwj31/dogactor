@@ -93,7 +93,7 @@ func (c *Cluster) OnInit() {
 
 func (c *Cluster) OnHandle(msg actor.Message) {
 	if msg.GetTargetId() != c.ID() {
-		if e := c.mq.Pub(subFormat(msg.GetTargetId()), msg.RawMsg().([]byte)); e != nil {
+		if e := c.mq.Pub(subFormat(msg.GetTargetId()), msg.Payload().([]byte)); e != nil {
 			log.SysLog.Errorw("cluster handle message",
 				"id", c.ID(),
 				"sourceId", msg.GetSourceId(),
@@ -104,7 +104,7 @@ func (c *Cluster) OnHandle(msg actor.Message) {
 		return
 	}
 
-	switch msg.RawMsg().(type) {
+	switch msg.Payload().(type) {
 	case *internal.ReqMsgDrain:
 		err := c.mq.UnSub(subFormat(msg.GetSourceId()), true)
 		_ = c.Response(msg.GetRequestId(), &internal.RespMsgDrain{Err: err})

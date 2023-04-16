@@ -22,7 +22,7 @@ func NewActorMessage() *ActorMessage {
 
 type ActorMessage struct {
 	pool    *sync.Pool
-	message interface{}
+	payload interface{}
 
 	SourceId   string            `protobuf:"bytes,1,opt,name=SourceId,proto3" json:"SourceId,omitempty"`
 	TargetId   string            `protobuf:"bytes,2,opt,name=TargetId,proto3" json:"TargetId,omitempty"`
@@ -32,45 +32,46 @@ type ActorMessage struct {
 	MapCarrier map[string]string `protobuf:"bytes,6,rep,name=MapCarrier,proto3" json:"MapCarrier,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
-func (m *ActorMessage) RawMsg() interface{} {
-	return m.message
+func (a *ActorMessage) Payload() interface{} {
+	return a.payload
 }
 
-func (m *ActorMessage) Free() {
-	if m.pool != nil {
-		m.message = nil
-		m.SourceId = ""
-		m.TargetId = ""
-		m.RequestId = ""
-		m.MsgName = ""
-		m.MapCarrier = nil
-		m.Data = nil
-		m.pool.Put(m)
+func (a *ActorMessage) Free() {
+	if a.pool != nil {
+		a.payload = nil
+		a.SourceId = ""
+		a.TargetId = ""
+		a.RequestId = ""
+		a.MsgName = ""
+		a.MapCarrier = nil
+		a.Data = nil
+		a.pool.Put(a)
 	}
 }
 
-func (m *ActorMessage) SetMessage(v interface{}) {
-	m.message = v
+func (a *ActorMessage) SetPayload(v interface{}) {
+	a.payload = v
 }
 
-func (m *ActorMessage) Fill(pi *tools.ProtoIndex) interface{} {
+func (a *ActorMessage) Parse(pi *tools.ProtoIndex) {
 	if pi == nil {
 		log.SysLog.Errorf("protoIndex is nil")
-		return nil
+		return
 	}
-	pt, ok := pi.FindMsgByName(m.MsgName)
+	pt, ok := pi.FindMsgByName(a.MsgName)
 	if !ok {
-		log.SysLog.Errorf("msg not found", "MsgName", m.MsgName)
-		return nil
+		log.SysLog.Errorf("msg not found", "MsgName", a.MsgName)
+		return
 	}
 
-	if m.Data == nil {
-		return pt
+	if a.Data == nil {
+		return
 	}
 
-	if err := proto.Unmarshal(m.Data, pt.(proto.Message)); err != nil {
-		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", m.MsgName)
-		return nil
+	if err := proto.Unmarshal(a.Data, pt.(proto.Message)); err != nil {
+		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", a.MsgName)
+		return
 	}
-	return pt
+
+	a.SetPayload(pt)
 }

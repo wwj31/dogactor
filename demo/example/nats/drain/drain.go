@@ -29,12 +29,12 @@ func main() {
 	drainActor1 := actor.BaseFunc{}
 	drainActor2 := actor.BaseFunc{}
 	drainActor1.Handle = func(v actor.Message) {
-		drainData := v.RawMsg().(*msg.DrainTest)
+		drainData := v.Payload().(*msg.DrainTest)
 		fmt.Println("drain actor 1 receive msg:", drainData.Data)
 		time.Sleep(200 * time.Millisecond)
 	}
 	drainActor2.Handle = func(v actor.Message) {
-		drainData := v.RawMsg().(*msg.DrainTest)
+		drainData := v.Payload().(*msg.DrainTest)
 		fmt.Println("drain actor 2 receive msg:", drainData.Data)
 		time.Sleep(100 * time.Millisecond)
 	}
