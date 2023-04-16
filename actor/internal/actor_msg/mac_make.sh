@@ -1,2 +1,2 @@
 #!/bin/bash
-protoc --gogofaster_out=. actor_msg.proto
+protoc --gogofaster_out=plugins=grpc:. msg.proto
