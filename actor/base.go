@@ -6,6 +6,11 @@ import "github.com/wwj31/dogactor/log"
 // type MyActor struct{
 // 	 Base
 // }
+//
+// then override following functions to use the actor
+// (s *MyActor) OnInit()  { ... }
+// (s *MyActor) OnHandle(Message)  { ... }
+// (s *MyActor) OnStop() bool  { ... }
 
 type Base struct {
 	Actor
@@ -32,8 +37,9 @@ func (s *Base) initActor(actor *actor) {
 
 // create the functional actor by BaseFunc ,for example:
 // bar := BaseFunc{}
-// bar.Init = func(){}
-// bar.Handle = func(msg Message){}
+// bar.Init = func() { ... }
+// bar.Handle = func(msg Message) { ... }
+// bar.Stop = func() bool { ... }
 
 type BaseFunc struct {
 	Base
