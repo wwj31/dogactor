@@ -11,7 +11,7 @@ $ go get -u github.com/wwj31/dogactor
 ```
 
 # 2.Quick Start
-Code below is a simple impementation of dogactor,
+Code below is a simple implementation of dogactor,
 run it after copy to your main, or see [demo/example](demo/example)
 ```go
 package main
