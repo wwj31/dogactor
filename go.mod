@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/gogo/protobuf v1.3.2
 	github.com/google/uuid v1.3.0
+	github.com/gorilla/websocket v1.5.0
 	github.com/nats-io/nats.go v1.19.0
 	github.com/orcaman/concurrent-map v0.0.0-20210501183033-44dafcb38ecc
 	github.com/rs/xid v1.4.0

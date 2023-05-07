@@ -7,11 +7,6 @@ import (
 	"github.com/wwj31/dogactor/tools"
 )
 
-type DecodeEncoder interface {
-	Decode([]byte) ([][]byte, error)
-	Encode(data []byte) []byte
-}
-
 var ErrRecvLen = errors.New("data is too long")
 
 // the message package base infrastructure

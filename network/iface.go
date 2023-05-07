@@ -10,6 +10,7 @@ type SessionType int
 const (
 	TypeTCP SessionType = 1
 	TypeUDP SessionType = 2
+	TypeWS  SessionType = 3
 )
 
 type Listener interface {
@@ -41,6 +42,11 @@ type SessionHandler interface {
 	OnSessionCreated(Session)
 	OnSessionClosed()
 	OnRecv([]byte)
+}
+
+type DecodeEncoder interface {
+	Decode([]byte) ([][]byte, error)
+	Encode(data []byte) []byte
 }
 
 var sessionGenId uint64
