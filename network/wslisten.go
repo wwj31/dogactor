@@ -25,9 +25,15 @@ type WebSocketListener struct {
 }
 
 func (w *WebSocketListener) Start() error {
-	w.ctx, w.cancel = context.WithCancel(context.Background())
-	log.SysLog.Infow("ws listen", "addr", w.addr)
-	return http.ListenAndServe(w.addr, http.HandlerFunc(w.msg))
+	go func() {
+		w.ctx, w.cancel = context.WithCancel(context.Background())
+		log.SysLog.Infow("ws listen", "addr", w.addr)
+		err := http.ListenAndServe(w.addr, http.HandlerFunc(w.msg))
+		if err != nil {
+			log.SysLog.Errorw("web socket stop err", "err", err)
+		}
+	}()
+	return nil
 }
 
 func (w *WebSocketListener) Stop() {
