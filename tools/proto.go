@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 
 	"github.com/wwj31/dogactor/log"
 )
@@ -75,7 +75,9 @@ func (s *ProtoIndex) MsgIdToName(msgId int32) (msgName string, ok bool) {
 }
 
 func (s *ProtoIndex) MsgNameToId(msgName string) (msgId int32, ok bool) {
-	enumName := s.enum.Prefix + msgName
+	str := strings.Split(msgName,".")
+	name := str[1]
+	enumName := s.enum.Prefix + name
 	id, ok := s.enum.Name2Enum[enumName]
 	if !ok {
 		return
