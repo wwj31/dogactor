@@ -51,6 +51,10 @@ func (s *ProtoIndex) UnmarshalPbMsg(msgId int32, data []byte) proto.Message {
 	}
 
 	msg := v.(proto.Message)
+	if len(data) == 0 {
+		return msg
+	}
+
 	err := proto.Unmarshal(data, msg)
 	if err != nil {
 		log.SysLog.Errorw("the message parse failed", "msgId", msgId, "data", data)
