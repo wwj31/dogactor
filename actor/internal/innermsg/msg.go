@@ -63,15 +63,15 @@ func (m *ActorMessage) Parse(pi *tools.ProtoIndex) {
 		log.SysLog.Errorf("msg not found", "MsgName", m.MsgName)
 		return
 	}
+	m.SetPayload(pt)
 
 	if m.Data == nil {
 		return
 	}
 
-	if err := proto.Unmarshal(m.Data, pt.(proto.Message)); err != nil {
+	if err := proto.Unmarshal(m.Data, pt); err != nil {
 		log.SysLog.Errorf("Unmarshal failed", "err", err, "MsgName", m.MsgName)
 		return
 	}
 
-	m.SetPayload(pt)
 }
