@@ -1,5 +1,10 @@
 package internal
 
+type EvNewLocalActor struct {
+	ActorId string
+	Publish bool
+	Reg     chan struct{}
+}
 type EvClusterUpdate struct {
 	ActorId string
 	Host    string

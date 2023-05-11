@@ -2,7 +2,6 @@ package fullmesh
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"sort"
@@ -146,7 +145,12 @@ func (c *Cluster) sendRemote(targetId actor.Id, requestId actor.RequestId, bytes
 	if reqSourceId, _, _addr, _ := requestId.Parse(); reqSourceId == targetId {
 		addr = _addr
 	} else if addr = c.actors[targetId]; addr == "" {
-		return errors.New("target actor not find")
+		// 本地没有，尝试去注册中心找一下
+		var err error
+		addr, err = c.serviceMesh.Get(targetId)
+		if err != nil {
+			return err
+		}
 	}
 	return c.remote.SendMsg(addr, bytes)
 }
@@ -203,9 +207,15 @@ func (c *Cluster) delRemoteActor(actorId actor.Id) {
 	}
 }
 
-func (c *Cluster) OnEventNewActor(event event.EvNewActor) {
+func (c *Cluster) OnEventNewActor(event internal.EvNewLocalActor) {
 	if event.Publish {
 		_ = c.serviceMesh.RegisterService(event.ActorId, c.remote.Addr())
+		if event.Reg != nil {
+			select {
+			case event.Reg <- struct{}{}:
+			default:
+			}
+		}
 	}
 }
 

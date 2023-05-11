@@ -130,6 +130,20 @@ func (s *Etcd) UnregisterService(key string) error {
 	return err
 }
 
+func (s *Etcd) Get(key string) (val string, err error) {
+	if s.IsStop() {
+		return "", errors.New("etcd has stopped")
+	}
+
+	var result *etcd.GetResponse
+	result, err = s.etcdClient.Get(context.TODO(), path.Join(s.prefix, key))
+	if len(result.Kvs) > 0 {
+		_, val = s.shiftStruct(result.Kvs[0])
+	}
+
+	return
+}
+
 // ////////////////////////////////////////////// inner func ///////////////////////////////////////////
 func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelFunc, bool) {
 	if s.IsStop() {

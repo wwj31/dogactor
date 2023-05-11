@@ -58,7 +58,7 @@ func (c *Cluster) OnInit() {
 		return
 	}
 
-	c.System().OnEvent(c.ID(), func(ev event.EvNewActor) {
+	c.System().OnEvent(c.ID(), func(ev internal.EvNewLocalActor) {
 		if ev.Publish {
 			err := c.mq.SubASync(subFormat(ev.ActorId), func(data []byte) {
 				msg := innermsg.NewActorMessage() // remote recv message

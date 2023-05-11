@@ -2,7 +2,6 @@ package event
 
 type EvNewActor struct {
 	ActorId     string
-	Publish     bool
 	FromCluster bool
 }
 

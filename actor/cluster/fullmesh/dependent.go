@@ -10,6 +10,7 @@ type ServiceMeshProvider interface {
 	Stop()
 	RegisterService(key string, value string) error
 	UnregisterService(key string) error
+	Get(key string) (val string, err error)
 }
 
 type RemoteProvider interface {

@@ -6,6 +6,7 @@ import (
 
 	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/event"
+	"github.com/wwj31/dogactor/actor/internal"
 	"github.com/wwj31/dogactor/actor/internal/innermsg"
 	"github.com/wwj31/dogactor/actor/internal/script"
 	"github.com/wwj31/dogactor/log"
@@ -71,11 +72,27 @@ func (s *actor) push(msg Message) error {
 
 func (s *actor) init(ok chan<- struct{}) {
 	tools.Try(s.handler.OnInit)
+	s.status.CompareAndSwap(starting, idle)
+	var reg chan struct{}
+	if s.remote {
+		reg = make(chan struct{})
+	}
+
+	s.system.DispatchEvent(s.id, internal.EvNewLocalActor{ActorId: s.id, Reg: reg, Publish: s.remote})
+	s.system.DispatchEvent(s.id, event.EvNewActor{ActorId: s.id, FromCluster: false})
+
+	if reg != nil {
+		select {
+		case <-reg:
+		case <-time.After(10 * time.Second):
+			log.SysLog.Warnw("new actor register timeout", "actor", s.id)
+		}
+	}
+
 	if ok != nil {
 		ok <- struct{}{}
 	}
-	s.status.CompareAndSwap(starting, idle)
-	s.system.DispatchEvent(s.id, event.EvNewActor{ActorId: s.id, Publish: s.remote})
+
 	s.activate()
 }
 
