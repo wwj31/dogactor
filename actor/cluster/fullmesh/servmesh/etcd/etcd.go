@@ -3,7 +3,6 @@ package etcd
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path"
 	"strings"
 	"sync"
@@ -110,7 +109,6 @@ func (s *Etcd) RegisterService(key, value string) error {
 			"value", value,
 		)
 	}
-	fmt.Println("register~~~~~~~~~~~~~~")
 	return err
 }
 
