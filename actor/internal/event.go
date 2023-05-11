@@ -5,6 +5,7 @@ type EvNewLocalActor struct {
 	Publish bool
 	Reg     chan struct{}
 }
+
 type EvClusterUpdate struct {
 	ActorId string
 	Host    string

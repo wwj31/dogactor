@@ -1,8 +1,7 @@
 package event
 
 type EvNewActor struct {
-	ActorId     string
-	FromCluster bool
+	ActorId string
 }
 
 type EvDelActor struct {

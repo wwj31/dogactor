@@ -164,7 +164,7 @@ func (c *Cluster) watchRemote(actorId actor.Id, host string, add bool) {
 				"ready", c.ready[host],
 			)
 			if c.ready[host] {
-				c.System().DispatchEvent(c.ID(), event.EvNewActor{ActorId: actorId, FromCluster: true})
+				c.System().DispatchEvent(c.ID(), event.EvNewActor{ActorId: actorId})
 			}
 		}()
 
@@ -248,7 +248,7 @@ func (c *Cluster) OnEventSessionOpened(ev internal.EvSessionOpened) {
 	c.ready[ev.PeerHost] = true
 	for actorId, host := range c.actors {
 		if host == ev.PeerHost {
-			c.System().DispatchEvent(c.ID(), event.EvNewActor{ActorId: actorId, FromCluster: true})
+			c.System().DispatchEvent(c.ID(), event.EvNewActor{ActorId: actorId})
 		}
 	}
 }

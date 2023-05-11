@@ -73,17 +73,18 @@ func (s *actor) push(msg Message) error {
 func (s *actor) init(ok chan<- struct{}) {
 	tools.Try(s.handler.OnInit)
 	s.status.CompareAndSwap(starting, idle)
-	var reg chan struct{}
+
+	// if remote of the actor is true,make sure that the addr
+	// has been successfully registered before startup the actor.
+	var registered chan struct{}
 	if s.remote {
-		reg = make(chan struct{})
+		registered = make(chan struct{})
 	}
+	s.system.DispatchEvent(s.id, internal.EvNewLocalActor{ActorId: s.id, Reg: registered, Publish: s.remote})
 
-	s.system.DispatchEvent(s.id, internal.EvNewLocalActor{ActorId: s.id, Reg: reg, Publish: s.remote})
-	s.system.DispatchEvent(s.id, event.EvNewActor{ActorId: s.id, FromCluster: false})
-
-	if reg != nil {
+	if registered != nil {
 		select {
-		case <-reg:
+		case <-registered:
 		case <-time.After(10 * time.Second):
 			log.SysLog.Warnw("new actor register timeout", "actor", s.id)
 		}
@@ -93,6 +94,7 @@ func (s *actor) init(ok chan<- struct{}) {
 		ok <- struct{}{}
 	}
 
+	s.system.DispatchEvent(s.id, event.EvNewActor{ActorId: s.id})
 	s.activate()
 }
 
