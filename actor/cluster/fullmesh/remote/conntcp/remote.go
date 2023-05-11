@@ -2,18 +2,24 @@ package conntcp
 
 import (
 	"errors"
+	"fmt"
+	"net"
+	"time"
+
 	cmap "github.com/orcaman/concurrent-map"
+	"go.uber.org/atomic"
+
 	"github.com/wwj31/dogactor/actor/cluster/fullmesh/remote"
 	"github.com/wwj31/dogactor/actor/internal/innermsg"
 	"github.com/wwj31/dogactor/expect"
-	"go.uber.org/atomic"
-	"time"
 
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/network"
 )
 
 type RemoteMgr struct {
+	addr          string
+	exceptPort    []int
 	remoteHandler remote.Handler
 	listener      network.Listener
 
@@ -25,26 +31,38 @@ type RemoteMgr struct {
 	registry []byte
 }
 
-func NewRemoteMgr() *RemoteMgr {
+func NewRemoteMgr(exceptPort ...int) *RemoteMgr {
 	mgr := &RemoteMgr{
-		sessions: cmap.New(),
-		clients:  cmap.New(),
+		exceptPort: exceptPort,
+		sessions:   cmap.New(),
+		clients:    cmap.New(),
 	}
 	return mgr
+}
+
+func (s *RemoteMgr) Addr() string {
+	return s.addr
 }
 
 func (s *RemoteMgr) Start(h remote.Handler) error {
 	s.remoteHandler = h
 
-	listener := network.StartTcpListen(s.remoteHandler.Address(),
+	var (
+		port int
+		err  error
+	)
+
+	s.listener = network.StartTcpListen("0.0.0.0:0",
 		func() network.DecodeEncoder { return &network.StreamCode{} },
 		func() network.SessionHandler { return &remoteHandler{remote: s} },
 	)
 
-	err := listener.Start()
+	err = s.listener.Start(s.exceptPort...)
 	if err != nil {
 		return err
 	}
+
+	port = s.listener.Port()
 
 	ping := innermsg.NewActorMessage() // ping message
 	ping.MsgName = "$ping"
@@ -55,15 +73,22 @@ func (s *RemoteMgr) Start(h remote.Handler) error {
 
 	reg := innermsg.NewActorMessage() // registry message
 	reg.MsgName = "$registry"
-	reg.Data = []byte(s.remoteHandler.Address())
+
+	ip, ipErr := getIntranetIP()
+	if ipErr != nil {
+		return ipErr
+	}
+
+	s.addr = fmt.Sprintf("%v:%v", ip, port)
+	reg.Data = []byte(s.addr)
 	s.registry, err = reg.Marshal()
 	if err != nil {
 		return err
 	}
 
-	s.listener = listener
 	go s.keepAlive()
 
+	log.SysLog.Infow("fullMesh listen success", "addr", s.addr)
 	return err
 }
 
@@ -171,4 +196,23 @@ func (s *remoteHandler) OnRecv(data []byte) {
 
 		s.remote.remoteHandler.OnSessionRecv(msg)
 	}
+}
+
+// getIntranetIP 获取本机内网IP，只返回其中一个
+func getIntranetIP() (string, error) {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return "", err
+	}
+
+	for _, address := range addrs {
+		// 检查ip地址判断是否回环地址
+		if ipNet, ok := address.(*net.IPNet); ok && !ipNet.IP.IsLoopback() {
+			if ipNet.IP.To4() != nil {
+				return ipNet.IP.String(), nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("cannot find intra net")
 }

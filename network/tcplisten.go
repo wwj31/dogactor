@@ -2,6 +2,7 @@ package network
 
 import (
 	"net"
+	"strconv"
 	"strings"
 	"sync/atomic"
 
@@ -26,20 +27,46 @@ type TcpListener struct {
 	newHandler func() SessionHandler
 }
 
-func (s *TcpListener) Start() error {
-	return s.listen()
+func (s *TcpListener) Start(exceptPort ...int) error {
+	return s.listen(exceptPort...)
 }
 
-func (s *TcpListener) listen() error {
-	listener, err := net.Listen("tcp", s.addr)
-	if err != nil {
-		return err
+func (s *TcpListener) Port() int {
+	str := strings.Split(s.listener.Addr().String(), ":")
+	port, _ := strconv.Atoi(str[len(str)-1])
+	return port
+}
+
+func (s *TcpListener) inExceptPort(port int, exceptPort ...int) bool {
+	for _, p := range exceptPort {
+		if port == p {
+			return true
+		}
 	}
-	s.listener = listener
+	return false
+}
+
+func (s *TcpListener) listen(exceptPort ...int) error {
+	for {
+		var err error
+		s.listener, err = net.Listen("tcp", s.addr)
+		if err != nil {
+			return err
+		}
+
+		str := strings.Split(s.listener.Addr().String(), ":")
+		port, _ := strconv.Atoi(str[len(str)-1])
+		if s.inExceptPort(port, exceptPort...) {
+			log.SysLog.Warnw("listen the port in except the port ",
+				"port", port, "exceptPort", exceptPort)
+			continue
+		}
+		break
+	}
 
 	go tools.Try(func() {
 		for {
-			if conn, err := listener.Accept(); err != nil {
+			if conn, err := s.listener.Accept(); err != nil {
 				if strings.Contains(err.Error(), "use of closed network connection") {
 					break
 				}
@@ -50,6 +77,7 @@ func (s *TcpListener) listen() error {
 		}
 		s.Stop()
 	})
+
 	return nil
 }
 

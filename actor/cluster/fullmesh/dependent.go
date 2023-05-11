@@ -14,6 +14,7 @@ type ServiceMeshProvider interface {
 
 type RemoteProvider interface {
 	Start(remote.Handler) error
+	Addr() string
 	Stop()
 	NewClient(host string)
 	StopClient(host string)

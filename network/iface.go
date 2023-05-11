@@ -14,7 +14,8 @@ const (
 )
 
 type Listener interface {
-	Start() error
+	Start(exceptPort ...int) error
+	Port() int
 	Stop()
 }
 

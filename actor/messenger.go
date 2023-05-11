@@ -45,7 +45,7 @@ func (s *communication) Send(targetId string, msg any) error {
 
 func (s *communication) Request(targetId string, msg any, timeout ...time.Duration) (req *request) {
 	req = requestPool.Get().(*request)
-	req.id = requestId(s.ID(), targetId, s.System().Address())
+	req.id = requestId(s.ID(), targetId, s.System().Addr)
 	req.sourceId = s.ID()
 	req.targetId = targetId
 	req.result.data = nil

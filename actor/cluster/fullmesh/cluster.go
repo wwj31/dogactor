@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+	"sort"
+
 	"github.com/wwj31/dogactor/actor/event"
 	"github.com/wwj31/dogactor/actor/internal"
 	"github.com/wwj31/dogactor/actor/internal/innermsg"
-	"reflect"
-	"sort"
 
 	"github.com/wwj31/dogactor/actor"
 	"github.com/wwj31/dogactor/actor/actorerr"
@@ -20,28 +21,33 @@ import (
 
 func WithRemote(etcdAddr, prefix string) actor.SystemOption {
 	return func(system *actor.System) error {
-		cluster := newCluster(etcd.NewEtcd(etcdAddr, prefix), conntcp.NewRemoteMgr())
+		addr := make(chan string, 1)
+		cluster := newCluster(etcd.NewEtcd(etcdAddr, prefix), conntcp.NewRemoteMgr(), addr)
 		clusterId := "cluster_" + tools.XUID()
 		if e := system.NewActor(
 			clusterId,
 			cluster,
 			actor.SetLocalized(),
-			actor.SetMailBoxSize(5000),
+			actor.SetMailBoxSize(2000),
 		); e != nil {
 			return fmt.Errorf("%w %v", actorerr.RegisterClusterErr, e)
 		}
+		go func() {
+			system.Addr = <-addr
+		}()
 		system.SetCluster(clusterId)
 		return nil
 	}
 }
 
-func newCluster(cluster ServiceMeshProvider, remote RemoteProvider) *Cluster {
+func newCluster(cluster ServiceMeshProvider, remote RemoteProvider, randPort chan<- string) *Cluster {
 	c := &Cluster{
 		serviceMesh: cluster,
 		remote:      remote,
 		actors:      make(map[string]string),
 		hosts:       make(map[string]map[string]bool),
 		ready:       make(map[string]bool),
+		RandAddr:    randPort,
 	}
 
 	return c
@@ -49,6 +55,7 @@ func newCluster(cluster ServiceMeshProvider, remote RemoteProvider) *Cluster {
 
 type Cluster struct {
 	actor.Base
+	RandAddr chan<- string
 
 	serviceMesh ServiceMeshProvider
 	remote      RemoteProvider
@@ -67,13 +74,15 @@ func (c *Cluster) OnInit() {
 		log.SysLog.Errorw("serviceMesh start error", "err", err)
 	}
 
+	c.RandAddr <- c.remote.Addr()
+
 	c.System().OnEvent(c.ID(), c.OnEventNewActor)
 	c.System().OnEvent(c.ID(), c.OnEventDelActor)
 	c.System().OnEvent(c.ID(), c.OnEventClusterUpdate)
 	c.System().OnEvent(c.ID(), c.OnEventSessionClosed)
 	c.System().OnEvent(c.ID(), c.OnEventSessionOpened)
 
-	c.ready[c.System().Address()] = true
+	c.ready[c.remote.Addr()] = true
 }
 
 func (c *Cluster) OnStop() bool {
@@ -115,9 +124,6 @@ func (c *Cluster) OnNewServ(actorId, host string, add bool) {
 
 ////////////////////////////////////// RemoteHandler /////////////////////////////////////////////////////////////////
 
-func (c *Cluster) Address() string {
-	return c.System().Address()
-}
 func (c *Cluster) OnSessionClosed(peerHost string) {
 	c.System().DispatchEvent(c.ID(), internal.EvSessionClosed{PeerHost: peerHost})
 }
@@ -164,7 +170,7 @@ func (c *Cluster) watchRemote(actorId actor.Id, host string, add bool) {
 			c.delRemoteActor(actorId)
 		}
 		c.actors[actorId] = host
-		if host >= c.System().Address() {
+		if host >= c.remote.Addr() {
 			return
 		}
 
@@ -199,7 +205,7 @@ func (c *Cluster) delRemoteActor(actorId actor.Id) {
 
 func (c *Cluster) OnEventNewActor(event event.EvNewActor) {
 	if event.Publish {
-		_ = c.serviceMesh.RegisterService(event.ActorId, c.System().Address())
+		_ = c.serviceMesh.RegisterService(event.ActorId, c.remote.Addr())
 	}
 }
 

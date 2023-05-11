@@ -41,10 +41,8 @@ func main() {
 		return msg.Spawner(name)
 	}, tools.EnumIdx{})
 
-	system1, _ := actor.NewSystem(actor.Addr("127.0.0.1:5000"),
-		fullmesh.WithRemote(EtcdAddr, EtcdPrefix), actor.ProtoIndex(protoIndex))
-	system2, _ := actor.NewSystem(actor.Addr("127.0.0.1:5001"),
-		fullmesh.WithRemote(EtcdAddr, EtcdPrefix), actor.ProtoIndex(protoIndex))
+	system1, _ := actor.NewSystem(fullmesh.WithRemote(EtcdAddr, EtcdPrefix), actor.ProtoIndex(protoIndex))
+	system2, _ := actor.NewSystem(fullmesh.WithRemote(EtcdAddr, EtcdPrefix), actor.ProtoIndex(protoIndex))
 
 	_ = system1.NewActor("LiLei", &Student{Name: "LiLei", Age: 19})
 	_ = system2.NewActor("HanMeimei", &Student{Name: "HanMeimei", Age: 15})

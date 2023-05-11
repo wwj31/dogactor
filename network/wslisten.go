@@ -2,9 +2,13 @@ package network
 
 import (
 	"context"
-	"github.com/gorilla/websocket"
-	"github.com/wwj31/dogactor/log"
 	"net/http"
+	"strconv"
+	"strings"
+
+	"github.com/gorilla/websocket"
+
+	"github.com/wwj31/dogactor/log"
 )
 
 func StartWSListen(addr string, newCodec func() DecodeEncoder, newHandler func() SessionHandler) Listener {
@@ -24,7 +28,7 @@ type WebSocketListener struct {
 	newHandler func() SessionHandler
 }
 
-func (w *WebSocketListener) Start() error {
+func (w *WebSocketListener) Start(exceptPort ...int) error {
 	go func() {
 		w.ctx, w.cancel = context.WithCancel(context.Background())
 		log.SysLog.Infow("ws listen", "addr", w.addr)
@@ -38,6 +42,12 @@ func (w *WebSocketListener) Start() error {
 
 func (w *WebSocketListener) Stop() {
 	w.cancel()
+}
+
+func (w *WebSocketListener) Port() int {
+	str := strings.Split(w.addr, ":")
+	port, _ := strconv.Atoi(str[len(str)-1])
+	return port
 }
 
 func (w *WebSocketListener) msg(wt http.ResponseWriter, r *http.Request) {

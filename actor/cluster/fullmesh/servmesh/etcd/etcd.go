@@ -3,21 +3,24 @@ package etcd
 import (
 	"context"
 	"errors"
-	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh"
-	"go.etcd.io/etcd/api/v3/mvccpb"
-	etcd "go.etcd.io/etcd/client/v3"
-	"go.uber.org/atomic"
+	"fmt"
 	"path"
 	"strings"
 	"sync"
 	"time"
 
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	etcd "go.etcd.io/etcd/client/v3"
+	"go.uber.org/atomic"
+
+	"github.com/wwj31/dogactor/actor/cluster/fullmesh/servmesh"
+
 	"github.com/wwj31/dogactor/log"
 )
 
 const (
-	timeout        = 5 * time.Second //etcd连接超时
-	grantTTL       = 6               //etcd timer to live
+	timeout        = 10 * time.Second //etcd连接超时
+	grantTTL       = 6                //etcd timer to live
 	invalidLeaseId = -1
 )
 
@@ -25,15 +28,16 @@ type Etcd struct {
 	endpoints string
 	prefix    string
 
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	etcdClient *etcd.Client
 	leaseId    atomic.Int64 // 租约
 	revision   int64        // 当前监听版本号
-	retry      bool         // 当出现任何错误时，重新建立链接
 
 	localActors sync.Map //
 	handler     servmesh.ServMeshHander
 	stop        atomic.Int32
-	wg          sync.WaitGroup
 }
 
 func NewEtcd(endpoints, prefix string) *Etcd {
@@ -57,22 +61,23 @@ func (s *Etcd) Start(h servmesh.ServMeshHander) (err error) {
 		return err
 	}
 
-	s.wg.Add(1)
 	go func() {
-		defer s.wg.Done()
 		for !s.IsStop() {
-			s.run()
-			time.Sleep(time.Second)
-		}
+			if err := s.syncLocalToEtcd(); err != nil {
+				log.SysLog.Errorw("failed to synchronize local node to etcd.", "err", err)
+				return
+			}
 
-		log.SysLog.Infow("etcd stop", logInfo...)
+			s.run()
+			time.Sleep(3 * time.Second)
+		}
 	}()
 	return
 }
 
 func (s *Etcd) Stop() {
 	if s.stop.CAS(0, 1) {
-		s.wg.Wait()
+		s.cancel()
 	}
 }
 
@@ -85,7 +90,6 @@ func (s *Etcd) RegisterService(key, value string) error {
 	s.localActors.Store(key, value)
 
 	if s.IsStop() {
-		s.retry = true
 		return errors.New("etcd has stopped")
 	}
 
@@ -105,8 +109,8 @@ func (s *Etcd) RegisterService(key, value string) error {
 			"key", key,
 			"value", value,
 		)
-		s.retry = true
 	}
+	fmt.Println("register~~~~~~~~~~~~~~")
 	return err
 }
 
@@ -114,7 +118,6 @@ func (s *Etcd) UnregisterService(key string) error {
 	s.localActors.Delete(key)
 
 	if s.IsStop() {
-		s.retry = true
 		return errors.New("etcd has stopped")
 	}
 
@@ -125,12 +128,11 @@ func (s *Etcd) UnregisterService(key string) error {
 			"revision", resp.Header.GetRevision(),
 			"key", key,
 		)
-		s.retry = true
 	}
 	return err
 }
 
-//////////////////////////////////////////////// inner func ///////////////////////////////////////////
+// ////////////////////////////////////////////// inner func ///////////////////////////////////////////
 func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelFunc, bool) {
 	if s.IsStop() {
 		return nil, nil, false
@@ -154,9 +156,6 @@ func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelF
 	}
 
 	s.setLeaseID(lease.ID)
-
-	s.retry = false
-	log.SysLog.Infow("etcd keepAlive success!", "lease", s.getLeaseID())
 	return alive, cancelAlive, true
 }
 
@@ -179,7 +178,7 @@ func (s *Etcd) fetchNode() {
 	}
 }
 
-//把本地所有actor注册到etcd上
+// 把本地所有actor注册到etcd上
 func (s *Etcd) syncLocalToEtcd() (err error) {
 	s.localActors.Range(func(key, value interface{}) bool {
 		if err = s.RegisterService(key.(string), value.(string)); err != nil {
@@ -191,37 +190,32 @@ func (s *Etcd) syncLocalToEtcd() (err error) {
 }
 
 func (s *Etcd) run() {
+	s.ctx, s.cancel = context.WithCancel(context.Background())
 	alive, cancelAlive, ok := s.keepAlive()
 	if !ok {
 		return
 	}
 	defer cancelAlive()
 
-	if err := s.syncLocalToEtcd(); err != nil {
-		log.SysLog.Errorw("failed to synchronize local node to etcd.", "err", err)
-		return
-	}
+	// pull all node from etcd
+	s.fetchNode()
 
 	ctx, cancelWatch := context.WithCancel(context.TODO())
 	defer cancelWatch()
 	watch := s.etcdClient.Watch(ctx, s.prefix, etcd.WithPrefix(), etcd.WithPrevKV())
 
-	s.fetchNode()
-
-	ticker := time.NewTicker(time.Second * 5)
-	defer ticker.Stop()
-
 	for {
 		select {
-		case <-ticker.C:
-			if s.retry || s.IsStop() {
-				return
-			}
+		case <-s.ctx.Done():
+			log.SysLog.Infow("etcd stop")
+			return
+
 		case resp := <-alive:
 			if resp == nil {
 				log.SysLog.Warnw("etcd keepalive response a nil")
 				return
 			}
+
 		case watchResp := <-watch:
 			if err := watchResp.Err(); err != nil {
 				log.SysLog.Errorw("watch etcd error", "error", err)
@@ -237,11 +231,14 @@ func (s *Etcd) run() {
 
 			for _, e := range watchResp.Events {
 				key, val := s.shiftStruct(e.Kv)
-				log.SysLog.Infow("watch etcd", "actorId", key, "revision", revision, "put", e.Type == etcd.EventTypePut)
+				if _, load := s.localActors.Load(key); load {
+					continue
+				}
 				s.handler.OnNewServ(key, val, e.Type == etcd.EventTypePut)
 			}
 		}
 	}
+
 }
 
 func (s *Etcd) shiftStruct(kv *mvccpb.KeyValue) (k, v string) {

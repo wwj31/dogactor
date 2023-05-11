@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gogo/protobuf/proto"
+
 	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/internal/innermsg"
 	"github.com/wwj31/dogactor/log"
@@ -21,15 +22,11 @@ import (
 	actor system
 */
 
-const (
-	DefaultSysAddr = ":8888"
-)
-
 type System struct {
 	Stopped chan struct{}
+	Addr    string
 
 	name          string
-	sysAddr       string          // cluster listen addr
 	waitStop      *sync.WaitGroup // stop wait
 	exiting       int32           // state of stopping
 	actorCache    sync.Map        // all local actor
@@ -42,7 +39,6 @@ type System struct {
 
 func NewSystem(op ...SystemOption) (*System, error) {
 	s := &System{
-		sysAddr:  DefaultSysAddr,
 		Stopped:  make(chan struct{}, 1),
 		waitStop: &sync.WaitGroup{},
 		newList:  make(chan *actor, 100),
@@ -61,7 +57,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 	}
 
 	s.requestWaiter = "waiter_" + s.name + "_" + tools.XUID()
-	_ = s.NewActor(s.requestWaiter, &waiter{})
+	_ = s.NewActor(s.requestWaiter, &waiter{}, SetLocalized())
 
 	// first,create waiter and cluster
 	for len(s.newList) > 0 {
@@ -82,7 +78,6 @@ func NewSystem(op ...SystemOption) (*System, error) {
 		}
 	}()
 
-	log.SysLog.Infof("System Start")
 	return s, nil
 }
 
@@ -262,10 +257,6 @@ func (s *System) runActor(actor *actor, ok chan<- struct{}) {
 	go actor.init(ok)
 }
 
-func (s *System) Address() string {
-	return s.sysAddr
-}
-
 func (s *System) WaiterId() string {
 	return s.requestWaiter
 }
@@ -288,13 +279,6 @@ type SystemOption func(*System) error
 func ProtoIndex(pi *tools.ProtoIndex) SystemOption {
 	return func(system *System) error {
 		system.protoIndex = pi
-		return nil
-	}
-}
-
-func Addr(addr string) SystemOption {
-	return func(system *System) error {
-		system.sysAddr = addr
 		return nil
 	}
 }
