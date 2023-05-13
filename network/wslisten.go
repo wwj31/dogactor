@@ -50,9 +50,18 @@ func (w *WebSocketListener) Port() int {
 	return port
 }
 
+var upgrade = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true // 允许所有来源连接
+	},
+}
+
 func (w *WebSocketListener) msg(wt http.ResponseWriter, r *http.Request) {
-	defaultUpgrade := websocket.Upgrader{}
-	conn, err := defaultUpgrade.Upgrade(wt, r, nil)
+	wt.Header().Set("Access-Control-Allow-Origin", "*")                   // 允许所有来源访问，也可以指定特定的来源
+	wt.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS") // 允许的HTTP方法
+	wt.Header().Set("Access-Control-Allow-Headers", "Content-Type")       // 允许的自定义请求头
+
+	conn, err := upgrade.Upgrade(wt, r, nil)
 	if err != nil {
 		log.SysLog.Errorw("ws upgrade failed ", "err", err)
 		return
