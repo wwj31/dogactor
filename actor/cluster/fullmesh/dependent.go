@@ -6,7 +6,7 @@ import (
 )
 
 type ServiceMeshProvider interface {
-	Start(servmesh.ServMeshHander) error
+	Start(servmesh.MeshHandler) error
 	Stop()
 	RegisterService(key string, value string) error
 	UnregisterService(key string) error

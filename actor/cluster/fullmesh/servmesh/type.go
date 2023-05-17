@@ -1,5 +1,5 @@
 package servmesh
 
-type ServMeshHander interface {
+type MeshHandler interface {
 	OnNewServ(actorId, host string, add bool)
 }

@@ -290,6 +290,14 @@ func Name(name string) SystemOption {
 	}
 }
 
+func LogFileName(path, fileName string) SystemOption {
+	return func(system *System) error {
+		log.SysLogOption.LogPath = path
+		log.SysLogOption.FileName = fileName
+		return nil
+	}
+}
+
 func LogLevel(level logger.Level) SystemOption {
 	return func(system *System) error {
 		log.SysLogOption.Level = level

@@ -3,6 +3,7 @@ package etcd
 import (
 	"context"
 	"errors"
+	"fmt"
 	"path"
 	"strings"
 	"sync"
@@ -18,8 +19,7 @@ import (
 )
 
 const (
-	timeout        = 10 * time.Second //etcd连接超时
-	grantTTL       = 6                //etcd timer to live
+	grantTTL       = 10 //etcd timer to live (s)
 	invalidLeaseId = -1
 )
 
@@ -35,7 +35,7 @@ type Etcd struct {
 	revision   int64        // 当前监听版本号
 
 	localActors sync.Map //
-	handler     servmesh.ServMeshHander
+	handler     servmesh.MeshHandler
 	stop        atomic.Int32
 }
 
@@ -48,26 +48,34 @@ func NewEtcd(endpoints, prefix string) *Etcd {
 	return nEtcd
 }
 
-func (s *Etcd) Start(h servmesh.ServMeshHander) (err error) {
+func (s *Etcd) Start(h servmesh.MeshHandler) (err error) {
 	s.handler = h
 
 	logInfo := []interface{}{"endpoints", s.endpoints, "prefix", s.prefix}
 	log.SysLog.Infow("etcd start", logInfo...)
 
-	s.etcdClient, err = etcd.New(etcd.Config{Endpoints: strings.Split(s.endpoints, "_"), DialTimeout: timeout})
+	s.etcdClient, err = etcd.New(etcd.Config{Endpoints: strings.Split(s.endpoints, "_"), DialTimeout: 20 * time.Second})
 	if err != nil {
 		log.SysLog.Errorw("new etcd client failed", append(logInfo, "err", err)...)
 		return err
 	}
 
+	s.ctx, s.cancel = context.WithCancel(context.Background())
+
 	go func() {
 		for !s.IsStop() {
+			alive, cancelAlive := s.createLeaseAndKeepAlive()
+			watcher, cancel := s.watch()
+
 			if err := s.syncLocalToEtcd(); err != nil {
 				log.SysLog.Errorw("failed to synchronize local node to etcd.", "err", err)
 				return
 			}
 
-			s.run()
+			// pull all node from etcd
+			s.fetchNode()
+
+			s.run(watcher, cancel, alive, cancelAlive)
 			time.Sleep(3 * time.Second)
 		}
 	}()
@@ -98,13 +106,12 @@ func (s *Etcd) RegisterService(key, value string) error {
 		leaseId = s.getLeaseID()
 	}
 
-	resp, err := s.etcdClient.Put(context.TODO(),
+	_, err := s.etcdClient.Put(context.TODO(),
 		path.Join(s.prefix, key), value, etcd.WithLease(leaseId))
 
 	if err != nil {
 		log.SysLog.Errorf("RegisterService etcd failed",
 			"error", err,
-			"revision", resp.Header.GetRevision(),
 			"key", key,
 			"value", value,
 		)
@@ -119,11 +126,10 @@ func (s *Etcd) UnregisterService(key string) error {
 		return errors.New("etcd has stopped")
 	}
 
-	resp, err := s.etcdClient.Delete(context.TODO(), path.Join(s.prefix, key))
+	_, err := s.etcdClient.Delete(context.TODO(), path.Join(s.prefix, key))
 	if err != nil {
 		log.SysLog.Errorf("UnregisterService etcd failed",
 			"error", err,
-			"revision", resp.Header.GetRevision(),
 			"key", key,
 		)
 	}
@@ -145,30 +151,25 @@ func (s *Etcd) Get(key string) (val string, err error) {
 }
 
 // ////////////////////////////////////////////// inner func ///////////////////////////////////////////
-func (s *Etcd) keepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelFunc, bool) {
-	if s.IsStop() {
-		return nil, nil, false
-	}
-
+func (s *Etcd) createLeaseAndKeepAlive() (<-chan *etcd.LeaseKeepAliveResponse, context.CancelFunc) {
 	s.setLeaseID(invalidLeaseId)
 
 	// Grant authorization to obtain a lease
-	ctx, _ := context.WithTimeout(context.TODO(), timeout)
-	lease, err := s.etcdClient.Grant(ctx, grantTTL)
+	lease, err := s.etcdClient.Grant(s.ctx, grantTTL)
 	if err != nil {
 		log.SysLog.Errorw("etcd keepAlive create lease failed", "err", err)
-		return nil, nil, false
+		return nil, nil
 	}
 
-	ctx, cancelAlive := context.WithCancel(context.TODO())
+	ctx, cancelAlive := context.WithCancel(s.ctx)
 	alive, err := s.etcdClient.KeepAlive(ctx, lease.ID)
 	if err != nil {
 		log.SysLog.Errorw("etcd keepAlive failed", "err", err)
-		return alive, cancelAlive, false
+		return alive, cancelAlive
 	}
 
 	s.setLeaseID(lease.ID)
-	return alive, cancelAlive, true
+	return alive, cancelAlive
 }
 
 func (s *Etcd) getLeaseID() etcd.LeaseID {
@@ -184,10 +185,13 @@ func (s *Etcd) fetchNode() {
 	if err != nil {
 		return
 	}
+	var nodes []string
 	for _, kv := range resp.Kvs {
 		key, val := s.shiftStruct(kv)
 		s.handler.OnNewServ(key, val, true)
+		nodes = append(nodes, fmt.Sprintf("%v:%v", key, val))
 	}
+	log.SysLog.Infow("etcd fetch all nodes", "nodes", nodes)
 }
 
 // 把本地所有actor注册到etcd上
@@ -201,20 +205,15 @@ func (s *Etcd) syncLocalToEtcd() (err error) {
 	return
 }
 
-func (s *Etcd) run() {
-	s.ctx, s.cancel = context.WithCancel(context.Background())
-	alive, cancelAlive, ok := s.keepAlive()
-	if !ok {
-		return
-	}
+func (s *Etcd) watch() (etcd.WatchChan, context.CancelFunc) {
+	ctx, cancel := context.WithCancel(s.ctx)
+	return s.etcdClient.Watch(ctx, s.prefix, etcd.WithPrefix(), etcd.WithPrevKV()), cancel
+}
+
+func (s *Etcd) run(watcher etcd.WatchChan, watcherCancel context.CancelFunc,
+	alive <-chan *etcd.LeaseKeepAliveResponse, cancelAlive context.CancelFunc) {
 	defer cancelAlive()
-
-	// pull all node from etcd
-	s.fetchNode()
-
-	ctx, cancelWatch := context.WithCancel(context.TODO())
-	defer cancelWatch()
-	watch := s.etcdClient.Watch(ctx, s.prefix, etcd.WithPrefix(), etcd.WithPrevKV())
+	defer watcherCancel()
 
 	for {
 		select {
@@ -228,7 +227,7 @@ func (s *Etcd) run() {
 				return
 			}
 
-		case watchResp := <-watch:
+		case watchResp := <-watcher:
 			if err := watchResp.Err(); err != nil {
 				log.SysLog.Errorw("watch etcd error", "error", err)
 				return
