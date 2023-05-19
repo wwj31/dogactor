@@ -2,8 +2,9 @@ package tools
 
 import (
 	"fmt"
-	"github.com/wwj31/dogactor/log"
 	"runtime/debug"
+
+	"github.com/wwj31/dogactor/log"
 )
 
 func Try(fn func(), catch ...func(ex interface{})) {

@@ -31,11 +31,13 @@ type WebSocketListener struct {
 func (w *WebSocketListener) Start(exceptPort ...int) error {
 	go func() {
 		w.ctx, w.cancel = context.WithCancel(context.Background())
-		log.SysLog.Infow("ws listen", "addr", w.addr)
 		err := http.ListenAndServe(w.addr, http.HandlerFunc(w.msg))
 		if err != nil {
 			log.SysLog.Errorw("web socket stop err", "err", err)
+			return
 		}
+
+		log.SysLog.Infow("ws listen", "addr", w.addr)
 	}()
 	return nil
 }
