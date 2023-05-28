@@ -191,6 +191,7 @@ func (s *actor) exit() {
 	log.SysLog.Infow("actor done", "actorId", s.ID())
 	s.status.Store(stop)
 
+	s.system.CancelAll(s.id)
 	s.system.DispatchEvent(s.id, event.EvDelActor{ActorId: s.id, Publish: s.remote})
 	s.system.actorCache.Delete(s.ID())
 	s.system.waitStop.Done()
