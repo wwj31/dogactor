@@ -46,7 +46,7 @@ type actor struct {
 
 func (s *actor) ID() string      { return s.id }
 func (s *actor) System() *System { return s.system }
-func (s *actor) Exit()           { _ = s.push(stopMsg) }
+func (s *actor) Exit()           { s.stop() }
 
 func (s *actor) appendHandler(fn func(message Message) bool) { s.msgChain = append(s.msgChain, fn) }
 func (s *actor) push(msg Message) error {
