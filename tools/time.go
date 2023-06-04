@@ -45,7 +45,7 @@ func ModifyTimeOffset(add int64) {
 }
 
 func Now() time.Time {
-	return time.Now().Add(time.Duration(TimeOffset))
+	return time.Now().UTC().Add(time.Duration(TimeOffset))
 }
 
 func TimeFormat(data time.Time) string {

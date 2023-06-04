@@ -54,7 +54,7 @@ func New(opt Option) *Logger {
 	cfg.EncodeLevel = zapcore.CapitalLevelEncoder
 	cfg.EncodeTime = func(t time.Time, encoder zapcore.PrimitiveArrayEncoder) {
 		defaultFormat := "2006-01-02 15:04:05.000"
-		defaultFormat = time.RFC3339
+		//defaultFormat = time.RFC3339
 		encoder.AppendString(t.Format(defaultFormat))
 	}
 
