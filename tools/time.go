@@ -9,7 +9,7 @@ import (
 
 const (
 	SecondsPerDay = 24 * 60 * 60
-	StdTimeLayout = "2006-01-02 15:04:05"
+	StdTimeLayout = "2006-01-02 15:04:05.000"
 )
 
 var (
@@ -54,7 +54,8 @@ func TimeFormat(data time.Time) string {
 }
 
 func TimeParse(data string) time.Time {
-	t, err := time.ParseInLocation(StdTimeLayout, data, time.Local)
+	//t, err := time.ParseInLocation(StdTimeLayout, data, time.Local)
+	t, err := time.Parse(StdTimeLayout, data)
 	if err != nil {
 		return TimeZero
 	}
