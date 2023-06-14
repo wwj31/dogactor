@@ -76,7 +76,7 @@ func (s *Etcd) Start(h servmesh.MeshHandler) (err error) {
 			s.fetchNode()
 
 			s.run(watcher, cancel, alive, cancelAlive)
-			time.Sleep(3 * time.Second)
+			time.Sleep(time.Second)
 		}
 	}()
 	return

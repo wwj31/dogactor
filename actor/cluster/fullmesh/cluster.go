@@ -55,6 +55,7 @@ func newCluster(cluster ServiceMeshProvider, remote RemoteProvider, randPort cha
 type Cluster struct {
 	actor.Base
 	RandAddr chan<- string
+	canStop  bool
 
 	serviceMesh ServiceMeshProvider
 	remote      RemoteProvider
@@ -85,9 +86,10 @@ func (c *Cluster) OnInit() {
 }
 
 func (c *Cluster) OnStop() bool {
-	return false
+	return c.canStop
 }
 func (c *Cluster) stop() {
+	c.canStop = true
 	c.System().CancelAll(c.ID())
 	c.serviceMesh.Stop()
 	c.remote.Stop()

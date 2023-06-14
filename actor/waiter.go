@@ -20,6 +20,7 @@ type (
 )
 
 type waiter struct {
+	canStop bool
 	Base
 }
 
@@ -42,7 +43,8 @@ func (s *waiter) OnHandle(msg Message) {
 		})
 
 	case string:
-		if data == "stop" {
+		if data == "canStop" {
+			s.canStop = true
 			s.Exit()
 		} else {
 			log.SysLog.Errorw("no such case type", "t", reflect.TypeOf(msg).Name(), "str", data)
@@ -51,5 +53,5 @@ func (s *waiter) OnHandle(msg Message) {
 }
 
 func (s *waiter) OnStop() bool {
-	return false
+	return s.canStop
 }
