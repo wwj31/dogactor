@@ -1,7 +1,6 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/wwj31/dogactor)](https://goreportcard.com/report/github.com/wwj31/dogactor)
 ![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed-raw/wwj31/dogactor)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/wwj31/dogactor?color=red&label=Go)
-![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/wwj31/dogactor?color=red&label=Go)
 
 <p align="center">game server framework</a></p>
 
