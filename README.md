@@ -1,4 +1,5 @@
 <p align="center">game server framework</a></p>
+[![Go Report Card](https://goreportcard.com/badge/github.com/wwj31/dogactor)](https://goreportcard.com/report/github.com/wwj31/dogactor)
 
 a actor model framework written in Go, two ways to communicate internally： 
 1. Service discovery based on ETCD.
