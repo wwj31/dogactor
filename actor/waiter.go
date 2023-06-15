@@ -43,7 +43,7 @@ func (s *waiter) OnHandle(msg Message) {
 		})
 
 	case string:
-		if data == "canStop" {
+		if data == "stop" {
 			s.canStop = true
 			s.Exit()
 		} else {
