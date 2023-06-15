@@ -1,5 +1,5 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/wwj31/dogactor)](https://goreportcard.com/report/github.com/wwj31/dogactor)
-[![Closed PR](https://img.shields.io/github/issues-pr-closed-raw/wwj31/dogactor.io.svg?color=brightgreen)](https://github.com/wwj31/dogactor.io/pulls?q=is%3Apr+is%3Aclosed)
+![GitHub closed pull requests](https://img.shields.io/github/issues-pr-closed-raw/wwj31/dogactor?style=plastic)
 
 <p align="center">game server framework</a></p>
 
