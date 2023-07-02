@@ -24,11 +24,14 @@ import (
 
 type System struct {
 	Stopped chan struct{}
-	Addr    string
+
+	// bind the inter-service communication port
+	// to system-assigned random port
+	Addr string
 
 	name          string
 	waitStop      *sync.WaitGroup // stop wait
-	exiting       int32           // state of stopping
+	stopping      atomic.Bool     // state of stopping
 	actorCache    sync.Map        // all local actor
 	newList       chan *actor     // newcomers
 	clusterId     Id              // exactly one of etcd(based service discovery) or mq
@@ -82,7 +85,7 @@ func NewSystem(op ...SystemOption) (*System, error) {
 }
 
 func (s *System) Stop() {
-	if atomic.CompareAndSwapInt32(&s.exiting, 0, 1) {
+	if s.stopping.CompareAndSwap(false, true) {
 		go func() {
 			// notify all actor to stop
 			s.actorCache.Range(func(key, value interface{}) bool {
@@ -161,7 +164,7 @@ func (s *System) NewActor(id Id, handler spawnActor, opt ...Option) error {
 
 // Add startup a new actor
 func (s *System) add(actor *actor) error {
-	if atomic.LoadInt32(&s.exiting) == 1 {
+	if s.stopping.Load() {
 		return fmt.Errorf("%w actor:%v", actorerr.RegisterActorSystemErr, actor.ID())
 	}
 
@@ -250,7 +253,7 @@ func (s *System) HasActor(actorId string) bool {
 
 // if ok != nil, caller wait for actor call init to finish
 func (s *System) runActor(actor *actor, ok chan<- struct{}) {
-	if atomic.LoadInt32(&s.exiting) == 1 {
+	if s.stopping.Load() {
 		return
 	}
 
