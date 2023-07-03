@@ -35,8 +35,8 @@ func (m *Manager) Add(now, endAt time.Time, timerCallback callback, times int, i
 		timerId = xid.New().String()
 	}
 
-	if endAt.Before(now) {
-		endAt = now
+	if !endAt.After(now) {
+		endAt = now.Add(time.Nanosecond)
 	}
 
 	if oldTimer, exist := m.timers[timerId]; exist {
