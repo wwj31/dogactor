@@ -20,7 +20,7 @@ const (
 	starting = iota + 1
 	idle
 	running
-	stop
+	stopped
 )
 
 type Id = string
@@ -167,15 +167,21 @@ func (s *actor) handleMsg(msg Message) {
 }
 
 func (s *actor) stop() {
-	var canceled bool
+	if statues := s.status.Load(); statues == stopped {
+		return
+	}
+
+	var canStop bool
 	tools.Try(func() {
-		canceled = s.handler.OnStop()
+		canStop = s.handler.OnStop()
 	}, func(ex interface{}) {
-		canceled = true
+		canStop = true
 	})
 
-	if canceled {
-		_ = s.push(stopMsg)
+	if canStop {
+		if s.status.CompareAndSwap(running, stopped) || s.status.CompareAndSwap(idle, stopped) {
+			_ = s.push(stopMsg)
+		}
 	}
 }
 
@@ -189,7 +195,7 @@ func (s *actor) isStop(msg Message) bool {
 
 func (s *actor) exit() {
 	log.SysLog.Infow("actor done", "actorId", s.ID())
-	s.status.Store(stop)
+	s.status.Store(stopped)
 
 	s.system.CancelAll(s.id)
 	s.system.DispatchEvent(s.id, event.EvDelActor{ActorId: s.id, Publish: s.remote})

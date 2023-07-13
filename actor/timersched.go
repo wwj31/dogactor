@@ -1,9 +1,10 @@
 package actor
 
 import (
+	"time"
+
 	"github.com/wwj31/dogactor/timer"
 	"github.com/wwj31/dogactor/tools"
-	"time"
 )
 
 type timerScheduler struct {
@@ -28,6 +29,10 @@ func newTimerScheduler(base *Base) *timerScheduler {
 // when timeId is existed the timer will update with endAt and callback and count.
 // if times == -1 timer will repack in timer system infinitely util call CancelTimer.
 func (s *timerScheduler) AddTimer(timeId string, endAt time.Time, callback func(dt time.Duration), times ...int) string {
+	if s.timerMgr == nil {
+		return ""
+	}
+
 	n := 1
 	if len(times) > 0 {
 		n = times[0]
@@ -40,12 +45,20 @@ func (s *timerScheduler) AddTimer(timeId string, endAt time.Time, callback func(
 }
 
 func (s *timerScheduler) CancelTimer(timerId string) {
+	if s.timerMgr == nil {
+		return
+	}
+
 	s.timerMgr.Cancel(timerId)
 	s.resetTime()
 }
 
 // resetTime reset the timer of the timerMgr
 func (s *timerScheduler) resetTime(n ...time.Time) {
+	if s.timerMgr == nil {
+		return
+	}
+
 	reset := func(next time.Time) {
 		timer.Put(s.timer)
 
@@ -77,4 +90,5 @@ func (s *timerScheduler) resetTime(n ...time.Time) {
 
 func (s *timerScheduler) clear() {
 	timer.Put(s.timer)
+	s.timerMgr = nil
 }
