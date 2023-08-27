@@ -22,6 +22,7 @@ type Option struct {
 	DisplayConsole bool        // 是否在控制台显示
 	Skip           int         // 跳过的栈底
 	ExtraWriter    []io.Writer // 扩展输出
+	Caller         bool        // 是否带上调用文件
 }
 
 func New(opt Option) *Logger {
@@ -67,7 +68,7 @@ func New(opt Option) *Logger {
 	sugar := zap.New(zcore,
 		zap.AddStacktrace(zap.ErrorLevel),
 		zap.AddCallerSkip(opt.Skip),
-		zap.AddCaller(),
+		zap.WithCaller(opt.Caller),
 	).Sugar()
 
 	logger := &Logger{
