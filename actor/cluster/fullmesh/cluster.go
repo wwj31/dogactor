@@ -160,7 +160,7 @@ func (c *Cluster) sendRemote(targetId actor.Id, requestId actor.RequestId, bytes
 func (c *Cluster) watchRemote(actorId actor.Id, host string, add bool) {
 	if add {
 		defer func() {
-			log.SysLog.Infow("remote actor register",
+			log.SysLog.Infow("register remote actor",
 				"host", host,
 				"actorId", actorId,
 				"ready", c.ready[host],
@@ -170,11 +170,15 @@ func (c *Cluster) watchRemote(actorId actor.Id, host string, add bool) {
 			}
 		}()
 
-		if old := c.actors[actorId]; old == host { //重复put
-			return
-		} else if _, ok := c.hosts[old]; ok {
-			c.delRemoteActor(actorId)
+		oldHost, ok := c.actors[actorId]
+		if ok {
+			if oldHost == host { //重复put
+				return
+			} else {
+				c.delRemoteActor(actorId)
+			}
 		}
+
 		c.actors[actorId] = host
 		if host >= c.remote.Addr() {
 			return
@@ -189,6 +193,9 @@ func (c *Cluster) watchRemote(actorId actor.Id, host string, add bool) {
 		c.hosts[host] = map[string]bool{actorId: true}
 		c.remote.NewClient(host)
 	} else {
+		if oldHost := c.actors[actorId]; oldHost != host {
+			return
+		}
 		c.delRemoteActor(actorId)
 	}
 }
@@ -199,7 +206,8 @@ func (c *Cluster) delRemoteActor(actorId actor.Id) {
 
 	c.System().DispatchEvent(c.ID(), event.EvDelActor{ActorId: actorId, FromCluster: true})
 
-	if actors, ok := c.hosts[old]; ok {
+	actors, ok := c.hosts[old]
+	if ok {
 		delete(actors, actorId)
 		if len(actors) == 0 {
 			delete(c.hosts, old)
@@ -207,6 +215,8 @@ func (c *Cluster) delRemoteActor(actorId actor.Id) {
 			c.remote.StopClient(old)
 		}
 	}
+
+	log.SysLog.Infow("remove remote actor", "actor", actorId, "old host", old)
 }
 
 func (c *Cluster) OnEventNewActor(event internal.EvNewLocalActor) {

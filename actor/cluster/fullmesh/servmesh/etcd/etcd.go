@@ -67,16 +67,17 @@ func (s *Etcd) Start(h servmesh.MeshHandler) (err error) {
 			alive, cancelAlive := s.createLeaseAndKeepAlive()
 			watcher, cancel := s.watch()
 
-			if err := s.syncLocalToEtcd(); err != nil {
-				log.SysLog.Errorw("failed to synchronize local node to etcd.", "err", err)
-				return
-			}
-
 			// pull all node from etcd
 			s.fetchNode()
 
 			s.run(watcher, cancel, alive, cancelAlive)
 			time.Sleep(time.Second)
+
+			if err := s.syncLocalToEtcd(); err != nil {
+				log.SysLog.Errorw("failed to synchronize local node to etcd.", "err", err)
+				return
+			}
+
 		}
 	}()
 	return
@@ -241,11 +242,18 @@ func (s *Etcd) run(watcher etcd.WatchChan, watcherCancel context.CancelFunc,
 			s.revision = revision
 
 			for _, e := range watchResp.Events {
-				key, val := s.shiftStruct(e.Kv)
-				if _, load := s.localActors.Load(key); load {
+				var kv *mvccpb.KeyValue
+				if e.Type == etcd.EventTypePut {
+					kv = e.Kv
+				} else {
+					kv = e.PrevKv
+				}
+
+				actorId, host := s.shiftStruct(kv)
+				if _, load := s.localActors.Load(actorId); load {
 					continue
 				}
-				s.handler.OnNewServ(key, val, e.Type == etcd.EventTypePut)
+				s.handler.OnNewServ(actorId, host, e.Type == etcd.EventTypePut)
 			}
 		}
 	}
