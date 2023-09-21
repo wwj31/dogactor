@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	grantTTL       = 10 //etcd timer to live (s)
+	grantTTL       = 2 //etcd timer to live (s)
 	invalidLeaseId = -1
 )
 
