@@ -9,7 +9,9 @@ import (
 
 const (
 	SecondsPerDay = 24 * 60 * 60
+	Day           = 24 * time.Hour
 	StdTimeLayout = "2006-01-02 15:04:05.000"
+	StdDateFormat = "2006-01-02"
 )
 
 var (
