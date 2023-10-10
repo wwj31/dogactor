@@ -8,10 +8,11 @@ import (
 )
 
 const (
-	SecondsPerDay = 24 * 60 * 60
-	Day           = 24 * time.Hour
-	StdTimeLayout = "2006-01-02 15:04:05.000"
-	StdDateFormat = "2006-01-02"
+	SecondsPerDay       = 24 * 60 * 60
+	Day                 = 24 * time.Hour
+	StdTimeLayout       = "2006-01-02 15:04:05.000"
+	StdTimeSimpleLayout = "2006-1-2 15:4:5"
+	StdDateFormat       = "2006-01-02"
 )
 
 var (

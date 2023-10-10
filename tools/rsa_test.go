@@ -3,10 +3,11 @@ package tools
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRSAGenKey(t *testing.T) {
