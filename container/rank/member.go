@@ -28,6 +28,8 @@ func (s Member) Less(other interface{}) bool {
 	return len(omember.Scores) < len(s.Scores)
 }
 
+var _inc int64
+
 // Score 作为 Rank.Add 第二参数，传入分数依次作为排名权重
 func score(scores ...int64) []num {
 	var nums []num
@@ -35,7 +37,7 @@ func score(scores ...int64) []num {
 		nums = append(nums, num(i64))
 	}
 
-	nums = append(nums, num(math.MaxInt64-(int64(tools.Now().Nanosecond())+_inc)))
+	nums = append(nums, num(math.MaxInt64-(tools.Now().UnixNano()+_inc)))
 	_inc++
 	return nums
 }

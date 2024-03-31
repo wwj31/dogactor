@@ -16,7 +16,6 @@ const (
 )
 
 var (
-	TimeZero       = time.Unix(0, 0)
 	TimeOffset     int64
 	TimeOffsetPath = "./.timeoffset"
 )
@@ -56,13 +55,12 @@ func TimeFormat(data time.Time) string {
 	return data.Format(StdTimeLayout)
 }
 
-func TimeParse(data string) time.Time {
-	//t, err := time.ParseInLocation(StdTimeLayout, data, time.Local)
-	t, err := time.Parse(StdTimeLayout, data)
+func TimeParse(data string) (t time.Time, err error) {
+	t, err = time.Parse(StdTimeLayout, data)
 	if err != nil {
-		return TimeZero
+		return
 	}
-	return t
+	return
 }
 
 // NextIntervalTime 以当天开始时间为初始值 间隔 intervalSeconds触发一次，返回下次触发的时间

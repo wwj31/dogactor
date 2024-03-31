@@ -27,8 +27,6 @@ func (r *Rank) Len() int {
 	return r.skiplist.Len()
 }
 
-var _inc int64
-
 // Add Rank.Add("xxxx",999) 单分排行
 // Rank.Add("xxxx",999,123,456) 多分排行
 func (r *Rank) Add(key string, scores ...int64) *Rank {
