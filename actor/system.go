@@ -2,14 +2,13 @@ package actor
 
 import (
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"io"
 	"reflect"
 	"runtime"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"github.com/gogo/protobuf/proto"
 
 	"github.com/wwj31/dogactor/actor/actorerr"
 	"github.com/wwj31/dogactor/actor/internal/innermsg"

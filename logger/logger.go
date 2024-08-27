@@ -102,7 +102,9 @@ func (s *Logger) Close() {
 		return
 	}
 	_ = s.sugar.Sync()
-	_ = s.rotate.Close()
+	if s.rotate != nil {
+		_ = s.rotate.Close()
+	}
 }
 
 func (s *Logger) DefaultMsg(msg string) *Logger {

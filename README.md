@@ -6,8 +6,8 @@
 
 
 a actor model framework written in Go, two ways to communicate internally： 
-1. Service discovery based on ETCD.
-2. Use NATS(jetStream) as a means of communication(default).
+1. Service discovery based on ETCD (recommend).
+2. Use NATS(jetStream) as a means of communication.
 # <img align="center" src="https://github.com/wwj31/dogactor/raw/master/.github/images/image.png" alt="img" title="img" />
 # 1.Installation
 #### To start using dogactor, install Go and run `go get`:

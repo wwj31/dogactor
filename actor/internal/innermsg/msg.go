@@ -1,7 +1,7 @@
 package innermsg
 
 import (
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/wwj31/dogactor/log"
 	"github.com/wwj31/dogactor/tools"
 	"sync"
