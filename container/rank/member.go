@@ -1,41 +1,35 @@
 package rank
 
-import (
-	"github.com/wwj31/dogactor/tools"
-	"math"
-)
-
-type num int64 // 分数类型
+type Score = int64 // 分数类型
 
 type Member struct {
-	Key    string
-	Scores []num
+	ID     string
+	Scores []Score
 }
 
-func (s Member) Less(other interface{}) bool {
-	min := len(s.Scores)
-	omember := other.(Member)
-	if min > len(omember.Scores) {
-		min = len(omember.Scores)
+// Less 对m和other进行比较，返回m是否应该排在other的前面，含义同golang中sort.Interface的Less
+func (m Member) Less(other interface{}) bool {
+	l := len(m.Scores)
+	member := other.(Member)
+	if l > len(member.Scores) {
+		l = len(member.Scores)
 	}
-	for i := 0; i < min; i++ {
-		if s.Scores[i] > omember.Scores[i] {
-			return true
-		} else if s.Scores[i] < omember.Scores[i] {
-			return false
+
+	// 按照优先级先比较分数
+	for i := 0; i < l-1; i++ {
+		if m.Scores[i] != member.Scores[i] {
+			return m.Scores[i] > member.Scores[i]
 		}
 	}
-	return len(omember.Scores) < len(s.Scores)
-}
 
-// Score 作为 Rank.Add 第二参数，传入分数依次作为排名权重
-func score(scores ...int64) []num {
-	var nums []num
-	for _, i64 := range scores {
-		nums = append(nums, num(i64))
+	// 分数相同，长度一致比插入先后
+	if len(m.Scores) == len(member.Scores) {
+		t1 := m.Scores[len(m.Scores)-1]
+		t2 := member.Scores[len(member.Scores)-1]
+		if t1 != t2 {
+			return t1 < t2
+		}
 	}
 
-	nums = append(nums, num(math.MaxInt64-(int64(tools.Now().Nanosecond())+_inc)))
-	_inc++
-	return nums
+	return len(m.Scores) > len(member.Scores)
 }

@@ -9,6 +9,18 @@ type StateFnHandler struct {
 
 func (s *StateFnHandler) State() int { return s.StateFn }
 
-func (s *StateFnHandler) Enter(fsm *FSM)                    { s.EnterFn(fsm) }
-func (s *StateFnHandler) Leave(fsm *FSM)                    { s.LeaveFn(fsm) }
-func (s *StateFnHandler) Handle(fsm *FSM, v ...interface{}) { s.HandleFn(fsm, v...) }
+func (s *StateFnHandler) Enter(fsm *FSM) {
+	if s.EnterFn != nil {
+		s.EnterFn(fsm)
+	}
+}
+func (s *StateFnHandler) Leave(fsm *FSM) {
+	if s.LeaveFn != nil {
+		s.LeaveFn(fsm)
+	}
+}
+func (s *StateFnHandler) Handle(fsm *FSM, v ...interface{}) {
+	if s.HandleFn != nil {
+		s.HandleFn(fsm, v...)
+	}
+}

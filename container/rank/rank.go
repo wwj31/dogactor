@@ -1,68 +1,76 @@
 package rank
 
 import (
-	"bytes"
+	"fmt"
 	"math"
 	"reflect"
-	"unsafe"
+	"time"
 
 	"github.com/wwj31/dogactor/container/skiplist"
+	"github.com/wwj31/dogactor/tools"
 )
 
 type (
 	Rank struct {
-		skiplist *skiplist.SkipList
-		members  map[string]Member
+		Key      string
+		SkipList *skiplist.SkipList `json:"-"`
+		Members  map[string]Member
+		ExpireAt time.Time // 零值表示不过期
+		ScoreInc int64
+		Modify   bool `json:"-"`
 	}
 )
 
-func New() *Rank {
+func New(key string, expireAt time.Time) *Rank {
 	return &Rank{
-		skiplist: skiplist.New(),
-		members:  make(map[string]Member, 10),
+		Key:      key,
+		SkipList: skiplist.New(),
+		Members:  make(map[string]Member, 10),
+		ExpireAt: expireAt,
 	}
 }
 
 func (r *Rank) Len() int {
-	return r.skiplist.Len()
+	return len(r.Members)
 }
 
-var _inc int64
-
-// Add Rank.Add("xxxx",999) 单分排行
-// Rank.Add("xxxx",999,123,456) 多分排行
-func (r *Rank) Add(key string, scores ...int64) *Rank {
-	m, ok := r.members[key]
-
-	s := score(scores...)
-	// Fast path
-	if reflect.DeepEqual(m.Scores, s) {
-		return r
+// Add 多分排行，按照scores传入顺序，优先级由高到低排序
+func (r *Rank) Add(memberID string, scores ...Score) (*Rank, error) {
+	if len(scores) == 0 {
+		return nil, fmt.Errorf("add failed scores len == 0")
 	}
 
-	// Slow path
-	if ok {
-		r.skiplist.Delete(m)
+	if member, ok := r.Members[memberID]; ok {
+		// 分数没有变化，无需更改排名
+		if reflect.DeepEqual(scores, r.ScoreWithoutInc(member.Scores)) {
+			return r, nil
+		}
+
+		// 分数有变，先删老数据再加新数据
+		r.SkipList.Delete(member)
 	}
-	m.Scores = s
-	m.Key = key
-	r.members[key] = m
-	r.skiplist.Insert(m)
-	return r
+
+	r.Members[memberID] = r.SkipList.Insert(Member{
+		ID:     memberID,
+		Scores: r.Score(scores...),
+	}).Value.(Member)
+
+	r.Modify = true
+	return r, nil
 }
 
 // Get rankSection 名次区间
 // Rank.Get() 获得全部名次
 // Rank.Get(1) 获得1名
 // Rank.Get(1,100) 获得1～100名
-func (r *Rank) Get(rankSection ...int) []Member {
+func (r *Rank) Get(rankSection ...int64) []Member {
 	var (
-		top     int
-		bottom  int
+		top     int64
+		bottom  int64
 		members = make([]Member, 0)
 	)
 
-	if len(r.members) == 0 {
+	if len(r.Members) == 0 {
 		return members
 	}
 	if len(rankSection) > 0 {
@@ -76,7 +84,7 @@ func (r *Rank) Get(rankSection ...int) []Member {
 		bottom = math.MaxInt64
 	}
 
-	ele := r.skiplist.GetElementByRank(top)
+	ele := r.SkipList.GetElementByRank(int(top))
 	if ele == nil || ele.Value == nil {
 		return members
 	}
@@ -93,108 +101,68 @@ func (r *Rank) Get(rankSection ...int) []Member {
 	return members
 }
 
-// GetByKey 查找key的名次、分数，找不到返回0
-func (r *Rank) GetByKey(key string) (int, Member) {
-	member, ok := r.members[key]
+// GetByMemberID 查找key的名次、分数，找不到返回0
+func (r *Rank) GetByMemberID(id string) (order int, member Member) {
+	member, ok := r.Members[id]
 	if !ok {
-		return 0, member
+		return
 	}
-	return r.skiplist.GetRank(member), member
+	return r.SkipList.GetRank(member), member
 }
 
-// GetByScore scoreSection 分数区间
-// Rank.GetByScore([]int64{100},[]int64{900}) 获得分数为100~999区间的集合
-func (r *Rank) GetByScore(floorScores, roofScores []int64) []Member {
+// GetByScore 获得区间所有排名信息，闭区间，只能获得权重最大的积分区间
+func (r *Rank) GetByScore(floorScore, roofScore Score) []Member {
 	members := make([]Member, 0)
-	if roofScores == nil || floorScores == nil {
-		return members
-	}
-
-	// 跳表找的是开区间: (roofScores,∞  所以这里对大值+1
-	for k, v := range roofScores {
-		roofScores[k] = v + 1
-	}
-
-	floor := Member{Scores: *((*[]num)(unsafe.Pointer(&floorScores)))}
-	roof := Member{Scores: *((*[]num)(unsafe.Pointer(&roofScores)))}
-	for rf := r.skiplist.Find(roof); rf != nil; rf = rf.Next() {
+	roof := Member{Scores: []Score{roofScore, 0, 0, 0, 0, 0}}
+	floor := Member{Scores: []Score{floorScore, math.MaxInt64}}
+	for rf := r.SkipList.Find(roof); rf != nil; {
 		if rf.Value.Less(floor) {
 			members = append(members, rf.Value.(Member))
-		} else {
-			break
 		}
+		rf = rf.Next()
 	}
 	return members
 }
 
-func (r *Rank) Del(key string) *Rank {
-	member, ok := r.members[key]
+func (r *Rank) Del(memberID string) *Rank {
+	member, ok := r.Members[memberID]
 	if !ok {
 		return r
 	}
-	delete(r.members, key)
-	r.skiplist.Delete(member)
+
+	delete(r.Members, memberID)
+	r.SkipList.Delete(member)
+	r.Modify = true
 	return r
 }
 
-func (r *Rank) Marshal() []byte {
-	buffer := bytes.NewBuffer([]byte{})
-	allLen := int64(len(r.members))
-	buffer.Write((*(*[8]byte)(unsafe.Pointer(&allLen)))[:])
-
-	for key, member := range r.members {
-		keylen := int32(len(key))
-		nlen := int32(len(member.Scores))
-		buffer.Write((*(*[4]byte)(unsafe.Pointer(&keylen)))[:])
-		buffer.Write((*(*[4]byte)(unsafe.Pointer(&nlen)))[:])
-
-		buffer.WriteString(key)
-		for _, n := range member.Scores {
-			buffer.Write(((*[8]byte)(unsafe.Pointer(&n)))[:])
-		}
+func (r *Rank) Expire() bool {
+	if r.ExpireAt.IsZero() {
+		return false
 	}
-	return buffer.Bytes()
+
+	return tools.Now().After(r.ExpireAt)
 }
 
-func (r *Rank) UnMarshal(data []byte) error {
-	buffer := bytes.NewBuffer(data)
-
-	allLenByte8 := [8]byte{}
-	if n, err := buffer.Read(allLenByte8[:]); n != 8 || err != nil {
-		return ErrorUnMarshalRead{err: err, n: n}
-	}
-	allLen := *(*int64)(unsafe.Pointer(&allLenByte8))
-
-	for i := int64(0); i < allLen; i++ {
-		keyLenBytes4 := [4]byte{}
-		if n, err := buffer.Read(keyLenBytes4[:]); n != 4 || err != nil {
-			return ErrorUnMarshalRead{err: err, n: n}
-		}
-		nLenBytes4 := [4]byte{}
-		if n, err := buffer.Read(nLenBytes4[:]); n != 4 || err != nil {
-			return ErrorUnMarshalRead{err: err, n: n}
-		}
-		keylen := *(*int32)(unsafe.Pointer(&keyLenBytes4))
-		nlen := *(*int32)(unsafe.Pointer(&nLenBytes4))
-
-		key := make([]byte, keylen)
-		if n, err := buffer.Read(key); n != int(keylen) || err != nil {
-			return ErrorUnMarshalRead{err: err, n: n}
-		}
-		member := Member{
-			Key:    string(key),
-			Scores: make([]num, 0, nlen),
-		}
-		for i := int32(0); i < nlen; i++ {
-			number := [8]byte{}
-			if n, err := buffer.Read(number[:]); n != 8 || err != nil {
-				return ErrorUnMarshalRead{err: err, n: n}
-			}
-			member.Scores = append(member.Scores, *(*num)(unsafe.Pointer(&number)))
-		}
-		r.members[string(key)] = member
-		r.skiplist.Insert(member)
+// Score 传入分数依次作为排名权重,所有权重相同根据插入顺序先到的排前
+func (r *Rank) Score(scores ...Score) (result []Score) {
+	for _, i64 := range scores {
+		result = append(result, i64)
 	}
 
-	return nil
+	r.ScoreInc = tools.Max(0, r.ScoreInc+1)
+	result = append(result, r.ScoreInc)
+	return result
+}
+
+func (r *Rank) ScoreWithoutInc(scores []Score) (result []Score) {
+	// 排行榜分数，至少2个参数
+	if len(scores) <= 1 {
+		return
+	}
+
+	for i := 0; i < len(scores)-1; i++ {
+		result = append(result, scores[i])
+	}
+	return
 }
